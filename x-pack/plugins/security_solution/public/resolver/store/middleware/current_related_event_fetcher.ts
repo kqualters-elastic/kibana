@@ -34,10 +34,14 @@ export function CurrentRelatedEventFetcher(
     const indices = selectors.treeParameterIndices(state);
 
     const oldParams = last;
+    const newID = selectors.refreshCount(state);
     last = newParams;
 
     // If the panel view params have changed and the current panel view is the `eventDetail`, then fetch the event details for that eventID.
-    if (!isEqual(newParams, oldParams) && newParams.panelView === 'eventDetail') {
+    if (
+      (!isEqual(newParams, oldParams) && newParams.panelView === 'eventDetail') ||
+      (selectors.currentRelatedEventIsStale(state) && newParams.panelView === 'eventDetail')
+    ) {
       const currentEventID = newParams.panelParameters.eventID;
       const currentNodeID = newParams.panelParameters.nodeID;
       const currentEventCategory = newParams.panelParameters.eventCategory;
@@ -46,18 +50,10 @@ export function CurrentRelatedEventFetcher(
       api.dispatch({
         type: 'appRequestedCurrentRelatedEventData',
       });
+      const timeRangeFilters = selectors.timeRangeFilters(state);
 
-      // TODO: Get timeline from selector. @kqualters
-      const today = new Date();
-      const from = new Date();
-      from.setDate(today.getDate() - 2);
-      const to = new Date();
-      to.setDate(today.getDate() + 14);
-      const timeRange = {
-        from,
-        to,
-      };
       let result: SafeResolverEvent | null = null;
+      let payload: { data: SafeResolverEvent; dataRequestID: number } | null = null;
       try {
         result = await dataAccessLayer.event({
           nodeID: currentNodeID,
@@ -65,7 +61,7 @@ export function CurrentRelatedEventFetcher(
           eventTimestamp: currentEventTimestamp,
           eventID: currentEventID,
           indexPatterns: indices,
-          timeRange,
+          timeRange: timeRangeFilters,
         });
       } catch (error) {
         api.dispatch({
@@ -74,9 +70,13 @@ export function CurrentRelatedEventFetcher(
       }
 
       if (result) {
+        payload = {
+          data: result,
+          dataRequestID: newID,
+        };
         api.dispatch({
           type: 'serverReturnedCurrentRelatedEventData',
-          payload: result,
+          payload,
         });
       } else {
         api.dispatch({

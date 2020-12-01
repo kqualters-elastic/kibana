@@ -35,17 +35,6 @@ export function ResolverTreeFetcher(
     const state = api.getState();
     const databaseParameters = selectors.treeParametersToFetch(state);
 
-    // TODO: Get timeline from selector. @kqualters
-    const today = new Date();
-    const from = new Date();
-    from.setDate(today.getDate() - 2);
-    const to = new Date();
-    to.setDate(today.getDate() + 14);
-    const timeRange = {
-      from,
-      to,
-    };
-
     if (selectors.treeRequestParametersToAbort(state) && lastRequestAbortController) {
       lastRequestAbortController.abort();
       // calling abort will cause an action to be fired
@@ -55,6 +44,8 @@ export function ResolverTreeFetcher(
       let dataSource: string | undefined;
       let dataSourceSchema: ResolverSchema | undefined;
       let result: ResolverNode[] | undefined;
+      const timeRangeFilters = selectors.timeRangeFilters(state);
+
       // Inform the state that we've made the request. Without this, the middleware will try to make the request again
       // immediately.
       api.dispatch({
@@ -80,7 +71,7 @@ export function ResolverTreeFetcher(
         result = await dataAccessLayer.resolverTree({
           dataId: entityIDToFetch,
           schema: dataSourceSchema,
-          timeRange,
+          timeRange: timeRangeFilters,
           indices: databaseParameters.indices,
           ancestors: ancestorsRequestAmount(dataSourceSchema),
           descendants: descendantsRequestAmount(),

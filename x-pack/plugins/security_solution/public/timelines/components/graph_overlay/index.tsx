@@ -27,7 +27,11 @@ import { timelineDefaults } from '../../store/timeline/defaults';
 import { isFullScreen } from '../timeline/body/column_headers';
 import { updateTimelineGraphEventId } from '../../../timelines/store/timeline/actions';
 import { Resolver } from '../../../resolver/view';
-
+import {
+  isLoadingSelector,
+  startSelector,
+  endSelector,
+} from '../../../common/components/super_date_picker/selectors';
 import * as i18n from './translations';
 import { useUiSetting$ } from '../../../common/lib/kibana';
 import { useSignalIndex } from '../../../detections/containers/detection_engine/alerts/use_signal_index';
@@ -113,6 +117,32 @@ const GraphOverlayComponent: React.FC<OwnProps> = ({ isEventViewer, timelineId }
     (state) => (getTimeline(state, timelineId) ?? timelineDefaults).graphEventId
   );
 
+  const getStartSelector = startSelector();
+  const getEndSelector = endSelector();
+  const getIsLoadingSelector = isLoadingSelector();
+  const isActive = useMemo(() => timelineId === TimelineId.active, [timelineId]);
+  const shouldUpdate = useDeepEqualSelector((state) => {
+    if (isActive) {
+      return getIsLoadingSelector(state.inputs.timeline);
+    } else {
+      return getIsLoadingSelector(state.inputs.global);
+    }
+  });
+  const from = useDeepEqualSelector((state) => {
+    if (isActive) {
+      return getStartSelector(state.inputs.timeline);
+    } else {
+      return getStartSelector(state.inputs.global);
+    }
+  });
+  const to = useDeepEqualSelector((state) => {
+    if (isActive) {
+      return getEndSelector(state.inputs.timeline);
+    } else {
+      return getEndSelector(state.inputs.global);
+    }
+  });
+
   const {
     timelineFullScreen,
     setTimelineFullScreen,
@@ -175,6 +205,8 @@ const GraphOverlayComponent: React.FC<OwnProps> = ({ isEventViewer, timelineId }
           databaseDocumentID={graphEventId}
           resolverComponentInstanceID={timelineId}
           indices={indices}
+          shouldUpdate={shouldUpdate}
+          filters={{ from, to }}
         />
       )}
     </OverlayContainer>
