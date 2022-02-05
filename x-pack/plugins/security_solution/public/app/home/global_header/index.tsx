@@ -52,8 +52,8 @@ export const GlobalHeader = React.memo(
       (state) => (getTimeline(state, TimelineId.active) ?? timelineDefaults).show
     );
 
-    const sourcererScope = getScopeFromPath(pathname);
-    const showSourcerer = showSourcererByPath(pathname);
+    const sourcererScope = useMemo(() => getScopeFromPath(pathname), [pathname]);
+    const showSourcerer = useMemo(() => showSourcererByPath(pathname), [pathname]);
 
     const href = useMemo(() => prepend(ADD_DATA_PATH), [prepend]);
 
@@ -68,6 +68,11 @@ export const GlobalHeader = React.memo(
         setHeaderActionMenu(undefined);
       };
     }, [portalNode, setHeaderActionMenu, theme.theme$]);
+
+    useEffect(() => {
+      console.log('mount');
+      return () => console.log('unmount');
+    });
 
     return (
       <InPortal node={portalNode}>
@@ -87,9 +92,7 @@ export const GlobalHeader = React.memo(
               >
                 {BUTTON_ADD_DATA}
               </EuiHeaderLink>
-              {showSourcerer && !showTimeline && (
-                <Sourcerer scope={sourcererScope} data-test-subj="sourcerer" />
-              )}
+              <Sourcerer scope={sourcererScope} data-test-subj="sourcerer" />
             </EuiHeaderLinks>
           </EuiHeaderSectionItem>
         </EuiHeaderSection>

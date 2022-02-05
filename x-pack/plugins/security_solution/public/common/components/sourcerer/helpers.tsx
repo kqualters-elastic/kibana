@@ -18,8 +18,6 @@ import styled, { css } from 'styled-components';
 
 import { sourcererModel } from '../../store/sourcerer';
 
-import * as i18n from './translations';
-
 export const FormRow = styled(EuiFormRow)<EuiFormRowProps & { $expandAdvancedOptions: boolean }>`
   display: ${({ $expandAdvancedOptions }) => ($expandAdvancedOptions ? 'flex' : 'none')};
   max-width: none;
@@ -66,59 +64,6 @@ export const Blockquote = styled.span`
   `}
 `;
 
-interface GetDataViewSelectOptionsProps {
-  dataViewId: string;
-  defaultDataViewId: sourcererModel.KibanaDataView['id'];
-  isModified: boolean;
-  isOnlyDetectionAlerts: boolean;
-  kibanaDataViews: sourcererModel.KibanaDataView[];
-}
-
-export const getDataViewSelectOptions = ({
-  dataViewId,
-  defaultDataViewId,
-  isModified,
-  isOnlyDetectionAlerts,
-  kibanaDataViews,
-}: GetDataViewSelectOptionsProps): Array<EuiSuperSelectOption<string>> =>
-  isOnlyDetectionAlerts
-    ? [
-        {
-          inputDisplay: (
-            <span data-test-subj="security-alerts-option-super">
-              <EuiIcon type="logoSecurity" size="s" /> {i18n.SIEM_SECURITY_DATA_VIEW_LABEL}
-              <StyledBadge data-test-subj="security-alerts-option-badge">
-                {i18n.ALERTS_BADGE_TITLE}
-              </StyledBadge>
-            </span>
-          ),
-          value: defaultDataViewId,
-        },
-      ]
-    : kibanaDataViews.map(({ title, id }) => ({
-        inputDisplay:
-          id === defaultDataViewId ? (
-            <span data-test-subj="security-option-super">
-              <EuiIcon type="logoSecurity" size="s" /> {i18n.SECURITY_DEFAULT_DATA_VIEW_LABEL}
-              {isModified && id === dataViewId && (
-                <StyledBadge data-test-subj="security-modified-option-badge">
-                  {i18n.MODIFIED_BADGE_TITLE}
-                </StyledBadge>
-              )}
-            </span>
-          ) : (
-            <span data-test-subj="dataView-option-super">
-              <EuiIcon type="logoKibana" size="s" /> {title}
-              {isModified && id === dataViewId && (
-                <StyledBadge data-test-subj="security-modified-option-badge">
-                  {i18n.MODIFIED_BADGE_TITLE}
-                </StyledBadge>
-              )}
-            </span>
-          ),
-        value: id,
-      }));
-
 interface GetTooltipContent {
   isOnlyDetectionAlerts: boolean;
   isPopoverOpen: boolean;
@@ -137,8 +82,3 @@ export const getTooltipContent = ({
   }
   return (isOnlyDetectionAlerts ? [signalIndexName] : selectedPatterns).join(', ');
 };
-
-export const getPatternListWithoutSignals = (
-  patternList: string[],
-  signalIndexName: string | null
-): string[] => patternList.filter((p) => p !== signalIndexName);
