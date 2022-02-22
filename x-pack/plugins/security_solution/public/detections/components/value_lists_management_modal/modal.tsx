@@ -165,8 +165,7 @@ export const ValueListsModalComponent: React.FC<ValueListsModalProps> = ({
       });
       fetchLists();
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [addSuccess]
+    [addSuccess, fetchLists]
   );
 
   useEffect(() => {

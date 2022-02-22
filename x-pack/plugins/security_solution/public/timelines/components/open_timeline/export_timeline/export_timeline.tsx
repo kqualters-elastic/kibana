@@ -45,9 +45,10 @@ const ExportTimeline: React.FC<{
   }, [onComplete]);
 
   useEffect(() => {
+    const abortCtrl = new AbortController();
     const downloadTimeline = async () => {
       if (exportedIds?.length && isEnableDownloader) {
-        const result = await exportSelectedTimeline({ ids: exportedIds });
+        const result = await exportSelectedTimeline({ ids: exportedIds, signal: abortCtrl.signal });
         if (result instanceof Blob) {
           downloadBlob(result, `${i18n.EXPORT_FILENAME}.ndjson`);
           onExportSuccess(exportedIds.length);
@@ -62,8 +63,10 @@ const ExportTimeline: React.FC<{
     // See https://github.com/elastic/kibana/issues/101571 for more detail.
     // But for now, it uses isEnableDownloader as a signal to start downloading.
     // Other variables are excluded from the deps array to avoid false positives
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exportedIds, isEnableDownloader]);
+    return () => {
+      abortCtrl.abort();
+    };
+  }, [exportedIds, isEnableDownloader, onExportFailure, onExportSuccess]);
 
   return null;
 };

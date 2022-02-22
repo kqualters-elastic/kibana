@@ -46,8 +46,7 @@ export const useIndexPatterns = (refreshToggle = false): Return => {
     return () => {
       isSubscribed = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshToggle]);
+  }, [refreshToggle, dispatchToaster, savedObjects]);
 
   return [isLoading, indexPatterns];
 };

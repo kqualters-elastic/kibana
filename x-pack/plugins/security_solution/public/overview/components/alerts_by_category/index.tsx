@@ -94,8 +94,7 @@ const AlertsByCategoryComponent: React.FC<Props> = ({
         `${SHOWING}: ${numeral(totalCount).format(defaultNumberFormat)} ${UNIT(totalCount)}`,
       legendPosition: Position.Right,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [defaultNumberFormat]
   );
 
   const [filterQuery, kqlError] = useMemo(

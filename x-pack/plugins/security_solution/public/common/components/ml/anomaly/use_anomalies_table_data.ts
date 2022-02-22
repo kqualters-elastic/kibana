@@ -120,18 +120,18 @@ export const useAnomaliesTableData = ({
       isSubscribed = false;
       abortCtrl.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    influencersOrCriteriaToString(influencers),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    influencersOrCriteriaToString(criteriaFields),
+    addError,
+    criteriaFields,
+    influencers,
+    jobIds,
+    threshold,
+    timeZone,
+    anomalyScore,
     startDateMs,
     endDateMs,
     skip,
     isMlUser,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    jobIds.sort().join(),
   ]);
 
   return [loading, tableData];

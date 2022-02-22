@@ -145,8 +145,7 @@ export const AlertsHistogramPanel = memo<AlertsHistogramPanelProps>(
           totalAlertsObj.value,
           totalAlertsObj.relation === 'gte' ? '>' : totalAlertsObj.relation === 'lte' ? '<' : ''
         ),
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [totalAlertsObj]
+      [totalAlertsObj, defaultNumberFormat]
     );
 
     const goToDetectionEngine = useCallback(
@@ -245,8 +244,17 @@ export const AlertsHistogramPanel = memo<AlertsHistogramPanelProps>(
           getAlertsHistogramQuery(selectedStackByOption, from, to, [], runtimeMappings)
         );
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedStackByOption, from, to, query, filters, combinedQueries, runtimeMappings]);
+    }, [
+      selectedStackByOption,
+      from,
+      to,
+      query,
+      filters,
+      combinedQueries,
+      runtimeMappings,
+      kibana.services.uiSettings,
+      setAlertsQuery,
+    ]);
 
     const linkButton = useMemo(() => {
       if (showLinkToAlerts) {

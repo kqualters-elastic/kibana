@@ -109,9 +109,26 @@ export const checkIfIndicesExist = ({
   patternList,
   scopeId,
   signalIndexName,
-}: CheckIfIndicesExistParams) =>
-  scopeId === SourcererScopeName.detections
-    ? patternList.includes(`${signalIndexName}`)
-    : scopeId === SourcererScopeName.default
-    ? patternList.filter((i) => i !== signalIndexName).length > 0
-    : patternList.length > 0;
+}: CheckIfIndicesExistParams) => {
+  const isDetections = scopeId === SourcererScopeName.detections;
+  const isDefault = scopeId === SourcererScopeName.default;
+  const patternListHasSignalIndex = patternList.includes(signalIndexName);
+  console.log({isDetections, isDefault, patternList, signalIndexName});
+  if (isDetections && signalIndexName !== null) {
+    if (patternListHasSignalIndex) {
+      return true;
+    } else {
+      if (isDefault) {
+        return patternList.filter((i) => i !== signalIndexName).length > 0;
+      } else {
+        return patternList.length > 0;
+      }
+    }
+  } else {
+    if (isDefault) {
+      return patternList.filter((i) => i !== signalIndexName).length > 0;
+    } else {
+      return patternList.length > 0;
+    }
+  }
+};

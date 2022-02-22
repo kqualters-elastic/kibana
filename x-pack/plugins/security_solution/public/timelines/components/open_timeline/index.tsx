@@ -222,6 +222,11 @@ export const StatefulOpenTimelineComponent = React.memo<OpenTimelineOwnProps>(
       [deleteTimelines]
     );
 
+    /** Resets the selection state such that all timelines are unselected */
+    const resetSelectionState = useCallback(() => {
+      setSelectedItems([]);
+    }, []);
+
     /** Invoked when the user clicks the action to delete the selected timelines */
     const onDeleteSelected: OnDeleteSelected = useCallback(async () => {
       // The type for `deleteTimelines` is incorrect, it returns a Promise
@@ -232,8 +237,7 @@ export const StatefulOpenTimelineComponent = React.memo<OpenTimelineOwnProps>(
       resetSelectionState();
 
       // TODO: the query must re-execute to show the results of the deletion
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedItems, deleteTimelines]);
+    }, [selectedItems, deleteTimelines, resetSelectionState]);
 
     /** Invoked when the user selects (or de-selects) timelines */
     const onSelectionChange: OnSelectionChange = useCallback(
@@ -266,11 +270,6 @@ export const StatefulOpenTimelineComponent = React.memo<OpenTimelineOwnProps>(
       []
     );
 
-    /** Resets the selection state such that all timelines are unselected */
-    const resetSelectionState = useCallback(() => {
-      setSelectedItems([]);
-    }, []);
-
     const openTimeline: OnOpenTimeline = useCallback(
       ({ duplicate, timelineId, timelineType: timelineTypeToOpen }) => {
         if (isModal && closeModalTimeline != null) {
@@ -286,8 +285,7 @@ export const StatefulOpenTimelineComponent = React.memo<OpenTimelineOwnProps>(
           updateTimeline,
         });
       },
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [updateIsLoading, updateTimeline]
+      [updateIsLoading, updateTimeline, closeModalTimeline, isModal, onOpenTimeline]
     );
 
     useEffect(() => {

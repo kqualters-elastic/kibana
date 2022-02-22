@@ -234,10 +234,7 @@ export const useInitSourcerer = (
 
   useEffect(() => {
     onSignalIndexUpdated();
-    // because we only want onSignalIndexUpdated to run when signalIndexName updates,
-    // but we want to know about the updates from the dependencies of onSignalIndexUpdated
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signalIndexName]);
+  }, [signalIndexName, onSignalIndexUpdated]);
 
   // Related to the detection page
   useEffect(() => {
@@ -357,17 +354,15 @@ export const useSourcererDataView = (
     [legacyDataView, missingPatterns.length, selectedDataView]
   );
 
-  const indicesExist = useMemo(
-    () =>
-      loading || sourcererDataView.loading
-        ? true
-        : checkIfIndicesExist({
-            scopeId,
-            signalIndexName,
-            patternList: sourcererDataView.patternList,
-          }),
-    [loading, scopeId, signalIndexName, sourcererDataView.loading, sourcererDataView.patternList]
-  );
+  const indicesExist = useMemo(() => {
+    const checkedIfExist = checkIfIndicesExist({
+      scopeId,
+      signalIndexName,
+      patternList: sourcererDataView.patternList,
+    });
+    //console.log({ loading, dvl: sourcererDataView.loading, checkedIfExist });
+    return loading || sourcererDataView.loading ? true : checkedIfExist;
+  }, [loading, scopeId, signalIndexName, sourcererDataView.loading, sourcererDataView.patternList]);
 
   return useMemo(
     () => ({

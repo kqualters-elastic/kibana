@@ -5,9 +5,8 @@
  * 2.0.
  */
 import React from 'react';
-import { mount } from 'enzyme';
-import { waitFor } from '@testing-library/react';
-
+import { render, cleanup } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { HostName } from './host_name';
 import { TestProviders } from '../../../../../common/mock';
 import { TimelineId, TimelineTabs } from '../../../../../../common/types';
@@ -68,9 +67,10 @@ describe('HostName', () => {
 
   afterEach(() => {
     toggleExpandedDetail.mockClear();
+    cleanup();
   });
   test('should render host name', () => {
-    const wrapper = mount(
+    const wrapper = render(
       <TestProviders>
         <HostName {...props} />
       </TestProviders>
@@ -86,7 +86,7 @@ describe('HostName', () => {
       ...props,
       isDraggable: true,
     };
-    const wrapper = mount(
+    const wrapper = render(
       <TestProviders>
         <HostName {...testProps} />
       </TestProviders>
@@ -96,17 +96,15 @@ describe('HostName', () => {
   });
 
   test('if not enableHostDetailsFlyout, should go to hostdetails page', async () => {
-    const wrapper = mount(
+    const wrapper = render(
       <TestProviders>
         <HostName {...props} />
       </TestProviders>
     );
 
-    wrapper.find('[data-test-subj="host-details-button"]').first().simulate('click');
-    await waitFor(() => {
-      expect(timelineActions.toggleDetailPanel).not.toHaveBeenCalled();
-      expect(toggleExpandedDetail).not.toHaveBeenCalled();
-    });
+    const button = wrapper.getByTestId('host-details-button');
+    userEvent.click(button);
+    expect(timelineActions.toggleDetailPanel).not.toHaveBeenCalled();
   });
 
   test('if enableHostDetailsFlyout, should open HostDetailsSidePanel', async () => {
@@ -116,7 +114,7 @@ describe('HostName', () => {
       timelineID: TimelineId.active,
       tabType: TimelineTabs.query,
     };
-    const wrapper = mount(
+    const wrapper = render(
       <TestProviders>
         <StatefulEventContext.Provider value={context}>
           <HostName {...props} />
@@ -124,16 +122,15 @@ describe('HostName', () => {
       </TestProviders>
     );
 
-    wrapper.find('[data-test-subj="host-details-button"]').first().simulate('click');
-    await waitFor(() => {
-      expect(timelineActions.toggleDetailPanel).toHaveBeenCalledWith({
-        panelView: 'hostDetail',
-        params: {
-          hostName: props.value,
-        },
-        tabType: context.tabType,
-        timelineId: context.timelineID,
-      });
+    const button = wrapper.getByTestId('host-details-button');
+    userEvent.click(button);
+    expect(timelineActions.toggleDetailPanel).toHaveBeenCalledWith({
+      panelView: 'hostDetail',
+      params: {
+        hostName: props.value,
+      },
+      tabType: TimelineTabs.query,
+      timelineId: TimelineId.active,
     });
   });
 
@@ -144,7 +141,7 @@ describe('HostName', () => {
       timelineID: TimelineId.active,
       tabType: TimelineTabs.query,
     };
-    const wrapper = mount(
+    const wrapper = render(
       <TestProviders>
         <StatefulEventContext.Provider value={context}>
           <HostName {...props} />
@@ -152,25 +149,16 @@ describe('HostName', () => {
       </TestProviders>
     );
 
-    wrapper.find('[data-test-subj="host-details-button"]').first().simulate('click');
-    await waitFor(() => {
-      expect(toggleExpandedDetail).toHaveBeenCalledWith({
-        panelView: 'hostDetail',
-        params: {
-          hostName: props.value,
-        },
-      });
-    });
-  });
-
-  test('if enableHostDetailsFlyout but timelineId not equals to `TimelineId.active`, should not call toggleExpandedDetail', async () => {
-    const context = {
-      enableHostDetailsFlyout: true,
-      enableIpDetailsFlyout: true,
-      timelineID: 'detection',
+    const button = wrapper.getByTestId('host-details-button');
+    userEvent.click(button);
+    expect(timelineActions.toggleDetailPanel).toHaveBeenCalledWith({
+      panelView: 'hostDetail',
+      params: {
+        hostName: props.value,
+      },
       tabType: TimelineTabs.query,
     };
-    const wrapper = mount(
+    const wrapper = render(
       <TestProviders>
         <StatefulEventContext.Provider value={context}>
           <HostName {...props} />

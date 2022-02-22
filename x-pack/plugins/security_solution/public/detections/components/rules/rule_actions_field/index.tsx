@@ -109,8 +109,7 @@ export const RuleActionsField: React.FC<Props> = ({
       updatedActions[index] = deepMerge(updatedActions[index], { id });
       field.setValue(updatedActions);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [field.setValue, actions]
+    [actions, field]
   );
 
   const setAlertActionsProperty = useCallback(
@@ -131,8 +130,7 @@ export const RuleActionsField: React.FC<Props> = ({
       };
       field.setValue(updatedActions);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [field.setValue, actions]
+    [field, actions]
   );
 
   useEffect(() => {
@@ -141,8 +139,7 @@ export const RuleActionsField: React.FC<Props> = ({
       const supportedTypes = getSupportedActions(actionTypes, hasErrorOnCreationCaseAction);
       setSupportedActionTypes(supportedTypes);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasErrorOnCreationCaseAction]);
+  }, [hasErrorOnCreationCaseAction, http]);
 
   useEffect(() => {
     if (isSubmitting || !field.errors.length) {

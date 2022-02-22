@@ -155,8 +155,7 @@ export const ThreatMatchComponent = ({
     if (listItems.length > 0) {
       setUpdateEntries(listItems);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [listItems, setUpdateEntries]);
   return (
     <EuiFlexGroup gutterSize="s" direction="column">
       {entries.map((entryListItem, index) => {

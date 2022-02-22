@@ -89,8 +89,7 @@ export const PoliciesSelector = memo<PoliciesSelectorProps>(
         { name: GLOBAL_ENTRIES, id: 'global', checked: getCheckedValue('global') },
         { name: UNASSIGNED_ENTRIES, id: 'unassigned', checked: getCheckedValue('unassigned') },
       ]);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [policies]);
+    }, [policies, defaultExcludedPolicies, defaultIncludedPolicies]);
 
     const onButtonClick = useCallback(() => {
       setIsPopoverOpen((prevIsPopoverOpen) => !prevIsPopoverOpen);

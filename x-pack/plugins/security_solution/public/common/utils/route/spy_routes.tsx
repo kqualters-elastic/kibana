@@ -42,8 +42,7 @@ export const SpyRouteComponent = memo<
           search,
         });
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search]);
+    }, [search, dispatch, isInitializing, route.search]);
     useEffect(() => {
       if (pageName && !deepEqual(route.pathName, pathname)) {
         if (isInitializing && detailName == null) {
@@ -93,8 +92,20 @@ export const SpyRouteComponent = memo<
           });
         }
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pathname, search, pageName, detailName, tabName, flowTarget, state]);
+    }, [
+      pathname,
+      search,
+      pageName,
+      detailName,
+      tabName,
+      flowTarget,
+      state,
+      dispatch,
+      history,
+      isInitializing,
+      route.pathName,
+      route.state,
+    ]);
     return null;
   }
 );

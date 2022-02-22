@@ -27,8 +27,7 @@ export const EndpointPolicyCreateExtension = memo<PackagePolicyCreateExtensionCo
           name: '',
         },
       });
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [newPolicy, onChange]);
 
     return (
       <>

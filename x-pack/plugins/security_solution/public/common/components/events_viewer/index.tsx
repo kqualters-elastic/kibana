@@ -141,15 +141,14 @@ const StatefulEventsViewerComponent: React.FC<Props> = ({
         sort,
       });
     }
+    const currentEditorActionsRef = editorActionsRef.current;
     return () => {
       deleteEventQuery({ id, inputId: 'global' });
-      if (editorActionsRef.current) {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        editorActionsRef.current.closeEditor();
+      if (currentEditorActionsRef) {
+        currentEditorActionsRef.closeEditor();
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const globalFilters = useMemo(() => [...filters, ...(pageFilters ?? [])], [filters, pageFilters]);
   const trailingControlColumns: ControlColumnProps[] = EMPTY_CONTROL_COLUMNS;

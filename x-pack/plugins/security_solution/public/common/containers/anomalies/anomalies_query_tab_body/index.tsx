@@ -51,8 +51,7 @@ const AnomaliesQueryTabBodyComponent: React.FC<AnomaliesQueryTabBodyProps> = ({
         deleteQuery({ id: ID });
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [deleteQuery]);
 
   return (
     <>

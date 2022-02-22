@@ -53,8 +53,7 @@ const RulesTableFiltersComponent = ({
 
   useEffect(() => {
     reFetchTags();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rulesCustomInstalled, rulesInstalled]);
+  }, [rulesCustomInstalled, rulesInstalled, reFetchTags]);
 
   // Propagate filter changes to parent
   useEffect(() => {

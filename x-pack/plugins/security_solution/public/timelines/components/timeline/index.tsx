@@ -96,8 +96,7 @@ const StatefulTimelineComponent: React.FC<Props> = ({
         })
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dispatch, savedObjectId, timelineId, selectedDataViewIdSourcerer, selectedPatternsSourcerer]);
 
   const onSourcererChange = useCallback(() => {
     if (
@@ -131,8 +130,7 @@ const StatefulTimelineComponent: React.FC<Props> = ({
 
   useEffect(() => {
     onSourcererChange();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDataViewIdSourcerer, selectedPatternsSourcerer]);
+  }, [selectedDataViewIdSourcerer, selectedPatternsSourcerer, onSourcererChange]);
 
   const onSkipFocusBeforeEventsTable = useCallback(() => {
     const exitFullScreenButton = containerElement.current?.querySelector<HTMLButtonElement>(

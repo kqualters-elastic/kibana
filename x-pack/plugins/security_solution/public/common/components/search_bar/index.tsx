@@ -282,8 +282,7 @@ export const SearchBarComponent = memo<SiemSearchBarProps & PropsFromRedux>(
         isSubscribed = false;
         subscriptions.unsubscribe();
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [filterManager, getAppStateFromStorage, id, saveAppStateToStorage, setSearchBarFilter]);
 
     const indexPatterns = useMemo(() => [indexPattern], [indexPattern]);
 

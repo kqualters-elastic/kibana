@@ -343,8 +343,7 @@ const TGridStandaloneComponent: React.FC<TGridStandaloneProps> = ({
         queryFields,
       })
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const isFirstUpdate = useRef(true);
   useEffect(() => {

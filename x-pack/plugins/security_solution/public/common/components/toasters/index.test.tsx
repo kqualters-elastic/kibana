@@ -70,8 +70,7 @@ describe('Toaster', () => {
           if (toasts.length === 0) {
             dispatch({ type: 'addToaster', toast: mockToast });
           }
-          // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, []);
+        }, [dispatch, toasts.length]);
         return (
           <>
             <button

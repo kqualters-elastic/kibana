@@ -47,8 +47,7 @@ export const GroupsFilterPopoverComponent = ({
 
   useEffect(() => {
     onSelectedGroupsChanged(selectedGroups);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroups.sort().join()]);
+  }, [selectedGroups, onSelectedGroupsChanged]);
 
   return (
     <EuiPopover

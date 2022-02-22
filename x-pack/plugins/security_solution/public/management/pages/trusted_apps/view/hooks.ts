@@ -38,8 +38,7 @@ export function useTrustedAppsNavigateCallback(callback: NavigationCallback) {
   return useCallback(
     (...args) => history.push(getTrustedAppsListPath({ ...location, ...callback(...args) })),
     // TODO: needs more investigation, but if callback is in dependencies list memoization will never happen
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [history, location]
+    [history, location, callback]
   );
 }
 
@@ -48,6 +47,5 @@ export function useTrustedAppsStoreActionCallback(
 ) {
   const dispatch = useDispatch();
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useCallback((...args) => dispatch(callback(...args)), [dispatch]);
+  return useCallback((...args) => dispatch(callback(...args)), [dispatch, callback]);
 }

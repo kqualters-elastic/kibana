@@ -172,11 +172,11 @@ export const useEqlPreview = (): [
   );
 
   useEffect((): (() => void) => {
+    const currentUnsubRef = unsubscribeStream.current;
     return (): void => {
       didCancel.current = true;
       abortCtrl.current.abort();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      unsubscribeStream.current.complete();
+      currentUnsubRef.complete();
     };
   }, []);
 

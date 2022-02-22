@@ -18,6 +18,7 @@ import {
   SavedQueryTimeFilter,
 } from '../../../../../../../src/plugins/data/public';
 import { Storage } from '../../../../../../../src/plugins/kibana_utils/public';
+import { TimelineId } from '../../../../common/types/timeline';
 
 export interface QueryBarComponentProps {
   dataTestSubj?: string;
@@ -35,6 +36,7 @@ export interface QueryBarComponentProps {
   refreshInterval?: number;
   savedQuery?: SavedQuery;
   onSavedQuery: (savedQuery: SavedQuery | undefined) => void;
+  timelineId?: string;
 }
 
 export const QueryBar = memo<QueryBarComponentProps>(
@@ -54,6 +56,7 @@ export const QueryBar = memo<QueryBarComponentProps>(
     savedQuery,
     onSavedQuery,
     dataTestSubj,
+    timelineId,
   }) => {
     const onQuerySubmit = useCallback(
       (payload: { dateRange: TimeRange; query?: Query }) => {
@@ -77,10 +80,20 @@ export const QueryBar = memo<QueryBarComponentProps>(
       (savedQueryUpdated: SavedQuery) => {
         const { query: newQuery, filters: newFilters, timefilter } = savedQueryUpdated.attributes;
         onSubmitQuery(newQuery, timefilter);
+<<<<<<< Updated upstream
         filterManager.setFilters(newFilters || []);
+=======
+        if (filterManager) {
+          if (timelineId === TimelineId.active) {
+            filterManager.setFilters(newFilters || []);
+          } else {
+            filterManager.setAppFilters(newFilters || []);
+          }
+        }
+>>>>>>> Stashed changes
         onSavedQuery(savedQueryUpdated);
       },
-      [filterManager, onSubmitQuery, onSavedQuery]
+      [filterManager, onSubmitQuery, onSavedQuery, timelineId]
     );
 
     const onClearSavedQuery = useCallback(() => {
@@ -89,16 +102,36 @@ export const QueryBar = memo<QueryBarComponentProps>(
           query: '',
           language: savedQuery.attributes.query.language,
         });
+<<<<<<< Updated upstream
         filterManager.setFilters([]);
+=======
+        if (filterManager) {
+          if (timelineId === TimelineId.active) {
+            filterManager.setFilters([]);
+          } else {
+            filterManager.setAppFilters([]);
+          }
+        }
+>>>>>>> Stashed changes
         onSavedQuery(undefined);
       }
-    }, [filterManager, onSubmitQuery, onSavedQuery, savedQuery]);
+    }, [filterManager, onSubmitQuery, onSavedQuery, savedQuery, timelineId]);
 
     const onFiltersUpdated = useCallback(
       (newFilters: Filter[]) => {
+<<<<<<< Updated upstream
         filterManager.setFilters(newFilters);
+=======
+        if (filterManager) {
+          if (timelineId === TimelineId.active) {
+            filterManager.setFilters(newFilters);
+          } else {
+            filterManager.setAppFilters(newFilters);
+          }
+        }
+>>>>>>> Stashed changes
       },
-      [filterManager]
+      [filterManager, timelineId]
     );
 
     const CustomButton = <>{null}</>;

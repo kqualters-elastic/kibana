@@ -140,10 +140,9 @@ describe('RuleDetailsPageComponent', () => {
     (fillEmptySeverityMappings as jest.Mock).mockReturnValue([]);
   });
 
-  async function setup() {
+  async function Setup() {
     const useKibanaMock = useKibana as jest.Mocked<typeof useKibana>;
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     useKibanaMock().services.spaces = {
       ui: {
         // @ts-expect-error
@@ -154,7 +153,7 @@ describe('RuleDetailsPageComponent', () => {
   }
 
   it('renders correctly with no outcome property on rule', async () => {
-    await setup();
+    await Setup();
 
     const wrapper = mount(
       <TestProviders store={store}>
@@ -170,7 +169,7 @@ describe('RuleDetailsPageComponent', () => {
   });
 
   it('renders correctly with outcome === "exactMatch"', async () => {
-    await setup();
+    await Setup();
     (useRuleWithFallback as jest.Mock).mockReturnValue({
       error: null,
       loading: false,
@@ -193,7 +192,7 @@ describe('RuleDetailsPageComponent', () => {
   });
 
   it('renders correctly with outcome === "aliasMatch"', async () => {
-    await setup();
+    await Setup();
     (useRuleWithFallback as jest.Mock).mockReturnValue({
       error: null,
       loading: false,
@@ -215,7 +214,7 @@ describe('RuleDetailsPageComponent', () => {
   });
 
   it('renders correctly when outcome = conflict', async () => {
-    await setup();
+    await Setup();
     (useRuleWithFallback as jest.Mock).mockReturnValue({
       error: null,
       loading: false,
