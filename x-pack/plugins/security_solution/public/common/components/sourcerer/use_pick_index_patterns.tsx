@@ -66,7 +66,6 @@ export const useDataViewSelectOptions = ({
   kibanaDataViews,
 }: UseDataViewSelectOptionsProps): Array<EuiSuperSelectOption<string>> => {
   const onlyDetectionAlertOptions = useMemo(() => {
-    console.log('new memo 1');
     return [
       {
         inputDisplay: (
@@ -82,7 +81,6 @@ export const useDataViewSelectOptions = ({
     ];
   }, [defaultDataViewId]);
   const dataViewSpecificOptions = useMemo(() => {
-    console.log('new memo 2');
     return kibanaDataViews.map(({ title, id }) => ({
       inputDisplay:
         id === defaultDataViewId ? (
@@ -117,7 +115,6 @@ export const getPatternListWithoutSignals = (
 
 const usePatternListToOptions = (patternList: string | string[] | null) => {
   return useMemo(() => {
-    console.log('new joint');
     if (patternList === null) {
       return [];
     } else if (typeof patternList === 'string') {
@@ -152,6 +149,12 @@ export const usePickIndexPatterns = ({
     [signalIndexName, signalIndexOptions]
   );
   const selectedPatternOptions = usePatternListToOptions(selectedPatterns);
+  const [newOptions, setNewOptions] = useState<
+    Array<{
+      label: string;
+      value: string;
+    }>
+  >([]);
   const [mapOfDataViewsToPatterns, _] = useState(new Map<string, string[]>());
 
   const [fetchedView, setFetchedView] = useState<KibanaDataView | null>(null);
@@ -201,7 +204,6 @@ export const usePickIndexPatterns = ({
   );
 
   useEffect(() => {
-    console.log('my effect');
     kibanaDataViews.map((dataView) => {
       mapOfDataViewsToPatterns.set(
         dataView.id,
@@ -217,7 +219,6 @@ export const usePickIndexPatterns = ({
   }, [kibanaDataViews, defaultDataViewId, scopeId, signalIndexName, mapOfDataViewsToPatterns]);
 
   const selectedDataViewPatterns = useMemo(() => {
-    console.log('selectedDataViewPatterns');
     if (dataViewId !== null && mapOfDataViewsToPatterns.has(dataViewId)) {
       return mapOfDataViewsToPatterns.get(dataViewId) ?? [];
     } else {
@@ -228,7 +229,6 @@ export const usePickIndexPatterns = ({
   const selectedDataViewPatternOptions = usePatternListToOptions(selectedDataViewPatterns);
 
   const getDefaultSelectedOptionsByDataView = useMemo(() => {
-    console.log('getDefaultSelectedOptionsByDataView');
     return scopeId === SourcererScopeName.detections || isOnlyDetectionAlerts
       ? alertsOptions
       : selectedDataViewPatternOptions;
@@ -260,7 +260,6 @@ export const usePickIndexPatterns = ({
   ]);
 
   useEffect(() => {
-    console.log('setSelectedOptions');
     // setSelectedOptions(
     //   scopeId === SourcererScopeName.detections ? alertsOptions : selectedPatternOptions
     // );
@@ -268,7 +267,7 @@ export const usePickIndexPatterns = ({
 
   const onChangeCombo = useCallback((newSelectedOptions) => {
     console.log('onChangeCombo', newSelectedOptions);
-    // setSelectedOptions(newSelectedOptions);
+    setNewOptions(newSelectedOptions);
   }, []);
 
   const pickedDataViewPatterns = useMemo(() => {
@@ -288,7 +287,6 @@ export const usePickIndexPatterns = ({
 
   const setIndexPatternsByDataView = useCallback(
     async (id: string, isAlerts?: boolean) => {
-      console.log('setIndexPatternsByDataView');
       if (
         kibanaDataViews.some((kdv) => kdv.id === id && kdv.indexFields.length === 0) &&
         loadingIndexPatterns === false
@@ -356,8 +354,7 @@ export const usePickIndexPatterns = ({
     } else if (isOnlyDetectionAlerts) {
       return alertsOptions;
     } else if (fetchedView) {
-      console.log({fetchedView});
-      return selectedPatternOptions;
+      return pickedDataViewToOptions;
     } else {
       return selectedPatternOptions;
     }
@@ -367,10 +364,10 @@ export const usePickIndexPatterns = ({
     isOnlyDetectionAlerts,
     loadingIndexPatterns,
     fetchedView,
+    pickedDataViewToOptions,
   ]);
   useEffect(() => {
     return () => {
-      console.log('later nerd');
       abortCtrl.current.abort();
     };
   });
@@ -396,8 +393,8 @@ export const usePickIndexPatterns = ({
       loadingIndexPatterns,
       handleOutsideClick,
       isModified,
-      onChangeCombo: () => console.log('lol2'),
-      selectedOptions,
+      onChangeCombo,
+      selectedOptions: newOptions ?? selectedOptions,
       setIndexPatternsByDataView,
     };
   }, [
@@ -406,6 +403,8 @@ export const usePickIndexPatterns = ({
     handleOutsideClick,
     isModified,
     loadingIndexPatterns,
+    newOptions,
+    onChangeCombo,
     selectedOptions,
     setIndexPatternsByDataView,
   ]);
