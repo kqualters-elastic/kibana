@@ -80,9 +80,6 @@ export const QueryBar = memo<QueryBarComponentProps>(
       (savedQueryUpdated: SavedQuery) => {
         const { query: newQuery, filters: newFilters, timefilter } = savedQueryUpdated.attributes;
         onSubmitQuery(newQuery, timefilter);
-<<<<<<< Updated upstream
-        filterManager.setFilters(newFilters || []);
-=======
         if (filterManager) {
           if (timelineId === TimelineId.active) {
             filterManager.setFilters(newFilters || []);
@@ -90,7 +87,6 @@ export const QueryBar = memo<QueryBarComponentProps>(
             filterManager.setAppFilters(newFilters || []);
           }
         }
->>>>>>> Stashed changes
         onSavedQuery(savedQueryUpdated);
       },
       [filterManager, onSubmitQuery, onSavedQuery, timelineId]
@@ -102,9 +98,6 @@ export const QueryBar = memo<QueryBarComponentProps>(
           query: '',
           language: savedQuery.attributes.query.language,
         });
-<<<<<<< Updated upstream
-        filterManager.setFilters([]);
-=======
         if (filterManager) {
           if (timelineId === TimelineId.active) {
             filterManager.setFilters([]);
@@ -112,16 +105,12 @@ export const QueryBar = memo<QueryBarComponentProps>(
             filterManager.setAppFilters([]);
           }
         }
->>>>>>> Stashed changes
         onSavedQuery(undefined);
       }
     }, [filterManager, onSubmitQuery, onSavedQuery, savedQuery, timelineId]);
 
     const onFiltersUpdated = useCallback(
       (newFilters: Filter[]) => {
-<<<<<<< Updated upstream
-        filterManager.setFilters(newFilters);
-=======
         if (filterManager) {
           if (timelineId === TimelineId.active) {
             filterManager.setFilters(newFilters);
@@ -129,7 +118,6 @@ export const QueryBar = memo<QueryBarComponentProps>(
             filterManager.setAppFilters(newFilters);
           }
         }
->>>>>>> Stashed changes
       },
       [filterManager, timelineId]
     );
