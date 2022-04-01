@@ -64,6 +64,7 @@ import type { TimelineState } from '../../timelines/public';
 import { LazyEndpointCustomAssetsExtension } from './management/pages/policy/view/ingest_manager_integration/lazy_endpoint_custom_assets_extension';
 import { initDataView, SourcererModel, KibanaDataView } from './common/store/sourcerer/model';
 import { SecurityDataView } from './common/containers/sourcerer/api';
+import { sourcererMiddlewareFactory } from './common/store/sourcerer/middleware';
 
 export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, StartPlugins> {
   readonly kibanaVersion: string;
@@ -346,27 +347,37 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
       } catch {
         signal = { name: null };
       }
-
+      const sourcerMiddleware = sourcererMiddlewareFactory(coreStart);
       const configPatternList = coreStart.uiSettings.get(DEFAULT_INDEX_KEY);
       let defaultDataView: SourcererModel['defaultDataView'];
       let kibanaDataViews: SourcererModel['kibanaDataViews'];
-      try {
-        // check for/generate default Security Solution Kibana data view
-        const sourcererDataViews: SecurityDataView = await coreStart.http.fetch(SOURCERER_API_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            patternList: [...configPatternList, ...(signal.name != null ? [signal.name] : [])],
-          }),
-        });
-        defaultDataView = { ...initDataView, ...sourcererDataViews.defaultDataView };
-        kibanaDataViews = sourcererDataViews.kibanaDataViews.map((dataView: KibanaDataView) => ({
-          ...initDataView,
-          ...dataView,
-        }));
-      } catch (error) {
-        defaultDataView = { ...initDataView, error };
+      // try {
+      //   // check for/generate default Security Solution Kibana data view
+      //   const sourcererDataViews: SecurityDataView = await coreStart.http.fetch(SOURCERER_API_URL, {
+      //     method: 'POST',
+      //     body: JSON.stringify({
+      //       patternList: [...configPatternList, ...(signal.name != null ? [signal.name] : [])],
+      //     }),
+      //   });
+      //   console.log('first five');
+      //   await new Promise((resolve) => setTimeout(resolve, 5000));
+      //   console.log('second five');
+      //   await new Promise((resolve) => setTimeout(resolve, 5000));
+      //   console.log('third five');
+      //   await new Promise((resolve) => setTimeout(resolve, 5000));
+      //   console.log('fourth five');
+      //   await new Promise((resolve) => setTimeout(resolve, 5000));
+      //   console.log('five five');
+      //   await new Promise((resolve) => setTimeout(resolve, 5000));
+      //   defaultDataView = { ...initDataView, ...sourcererDataViews.defaultDataView };
+      //   kibanaDataViews = sourcererDataViews.kibanaDataViews.map((dataView: KibanaDataView) => ({
+      //     ...initDataView,
+      //     ...dataView,
+      //   }));
+      // } catch (error) {
+        defaultDataView = { ...initDataView };
         kibanaDataViews = [];
-      }
+      // }
       const { createStore, createInitialState } = await this.lazyApplicationDependencies();
 
       const appLibs: AppObservableLibs = { kibana: coreStart };
@@ -425,7 +436,7 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
         },
         libs$.pipe(pluck('kibana')),
         this.storage,
-        [...(subPlugins.management.store.middleware ?? [])]
+        [...(subPlugins.management.store.middleware ?? []), sourcerMiddleware]
       );
     }
     if (startPlugins.timelines) {

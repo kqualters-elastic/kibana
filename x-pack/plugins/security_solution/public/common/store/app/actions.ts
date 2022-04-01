@@ -26,3 +26,5 @@ export const addErrorHash = actionCreator<{
   title: string;
   message: string[];
 }>('ADD_ERROR_HASH');
+
+export const appInitialized = actionCreator('APP_INITIALIZED');

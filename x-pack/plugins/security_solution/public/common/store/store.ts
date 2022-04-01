@@ -21,7 +21,7 @@ import { createEpicMiddleware } from 'redux-observable';
 import { Observable } from 'rxjs';
 
 import { telemetryMiddleware } from '../lib/telemetry';
-import { appSelectors } from './app';
+import { appSelectors, appActions } from './app';
 import { timelineSelectors } from '../../timelines/store/timeline';
 import { inputsSelectors } from './inputs';
 import { SubPluginsInitReducer, createReducer } from './reducer';
@@ -71,7 +71,6 @@ export const createStore = (
       dependencies: middlewareDependencies,
     }
   );
-
   store = createReduxStore(
     createReducer(pluginsReducer),
     state as PreloadedState<State>,
@@ -81,6 +80,7 @@ export const createStore = (
   );
 
   epicMiddleware.run(createRootEpic<CombinedState<State>>());
+  store.dispatch(appActions.appInitialized());
 
   return store;
 };

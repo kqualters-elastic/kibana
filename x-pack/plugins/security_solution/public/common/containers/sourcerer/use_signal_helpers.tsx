@@ -53,11 +53,21 @@ export const useSignalHelpers = (): {
     const asyncSearch = async () => {
       abortCtrl.current = new AbortController();
       try {
+        // what the fuck is this
         const response = await postSourcererDataView({
           body: { patternList: defaultDataView.title.split(',') },
           signal: abortCtrl.current.signal,
         });
-
+        console.log('first five');
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        console.log('second five');
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        console.log('third five');
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        console.log('fourth five');
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        console.log('five five');
+        await new Promise((resolve) => setTimeout(resolve, 5000));
         if (
           signalIndexNameSourcerer !== null &&
           response.defaultDataView.patternList.includes(signalIndexNameSourcerer)

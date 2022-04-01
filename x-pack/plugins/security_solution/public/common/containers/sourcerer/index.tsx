@@ -184,6 +184,16 @@ export const useInitSourcerer = (
             body: { patternList: newPatternList },
             signal: abortCtrl.current.signal,
           });
+          console.log('first five');
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          console.log('second five');
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          console.log('third five');
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          console.log('fourth five');
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          console.log('five five');
+          await new Promise((resolve) => setTimeout(resolve, 5000));
 
           if (response.defaultDataView.patternList.includes(newSignalsIndex)) {
             // first time signals is defined and validated in the sourcerer
