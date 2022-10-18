@@ -52,6 +52,7 @@ export const withEndpointAuthz = <T>(
   > = async (context, request, response) => {
     if (enforceAuthz) {
       const endpointAuthz = (await context.securitySolution).endpointAuthz;
+      console.log(endpointAuthz);
       const permissionChecker = (permission: EndpointAuthzKeyList[0]) => endpointAuthz[permission];
 
       // has `all`?

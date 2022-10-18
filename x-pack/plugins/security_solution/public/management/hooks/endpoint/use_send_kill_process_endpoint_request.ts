@@ -13,7 +13,7 @@ import type {
   ResponseActionApiResponse,
 } from '../../../../common/endpoint/types';
 import { killProcess } from '../../../common/lib/process_actions';
-
+// KQ ONWEEK TODO use this
 /**
  * Create kill process requests
  * @param customOptions

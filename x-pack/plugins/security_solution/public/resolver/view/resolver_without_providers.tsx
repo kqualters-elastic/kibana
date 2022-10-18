@@ -139,10 +139,12 @@ export const ResolverWithoutProviders = React.memo(
                 if (nodeID === undefined) {
                   throw new Error('Tried to render a node without an ID');
                 }
+                console.log(treeNode.data);
                 return (
                   <ProcessEventDot
                     key={nodeID}
                     nodeID={nodeID}
+                    endpointID={treeNode.data['agent.id']}
                     position={position}
                     projectionMatrix={projectionMatrix}
                     node={treeNode}

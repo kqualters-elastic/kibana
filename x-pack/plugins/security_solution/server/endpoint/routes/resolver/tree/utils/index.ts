@@ -35,7 +35,12 @@ export function validIDs(ids: NodeID[]): NodeID[] {
  *  in the resolver graph.
  */
 export function resolverFields(schema: ResolverSchema): Array<{ field: string }> {
-  const filter = [{ field: '@timestamp' }, { field: schema.id }, { field: schema.parent }];
+  const filter = [
+    { field: '@timestamp' },
+    { field: schema.id },
+    { field: schema.parent },
+    { field: 'agent.id' },
+  ];
   if (schema.ancestry) {
     filter.push({ field: schema.ancestry });
   }

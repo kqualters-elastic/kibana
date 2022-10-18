@@ -5,12 +5,23 @@
  * 2.0.
  */
 
-import React, { useCallback, useMemo, useContext } from 'react';
+import React, { useCallback, useMemo, useContext, useState } from 'react';
 import styled from 'styled-components';
-import { htmlIdGenerator, EuiButton, EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
+import {
+  htmlIdGenerator,
+  EuiButton,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiButtonIcon,
+  EuiContextMenuPanel,
+  EuiContextMenuItem,
+  EuiPopover,
+} from '@elastic/eui';
 import { useSelector } from 'react-redux';
 import { FormattedMessage } from '@kbn/i18n-react';
 import { i18n } from '@kbn/i18n';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useKibana } from '@kbn/kibana-react-plugin/public';
 import { NodeSubMenu } from './styles';
 import { applyMatrix3 } from '../models/vector2';
 import type { Vector2, Matrix3, ResolverState } from '../types';
@@ -18,6 +29,7 @@ import type { ResolverNode } from '../../../common/endpoint/types';
 import { useResolverDispatch } from './use_resolver_dispatch';
 import { SideEffectContext } from './side_effect_context';
 import * as nodeModel from '../../../common/endpoint/models/node';
+import { KillOrSuspendProcessRequestSchema } from '../../../common/endpoint/schema/actions';
 import * as eventModel from '../../../common/endpoint/models/event';
 import * as nodeDataModel from '../models/node_data';
 import * as selectors from '../store/selectors';
@@ -125,6 +137,7 @@ const UnstyledProcessEventDot = React.memo(
     position,
     node,
     nodeID,
+    endpointID,
     projectionMatrix,
     timeAtRender,
   }: {
@@ -153,6 +166,7 @@ const UnstyledProcessEventDot = React.memo(
      * The time (unix epoch) at render.
      */
     timeAtRender: number;
+    endpointID: string[];
   }) => {
     const resolverComponentInstanceID = useSelector(selectors.resolverComponentInstanceID);
     // This should be unique to each instance of Resolver
@@ -167,6 +181,48 @@ const UnstyledProcessEventDot = React.memo(
     const [left, top] = applyMatrix3(position, projectionMatrix);
 
     const [xScale] = projectionMatrix;
+    const [isPopoverOpen, setPopover] = useState(false);
+    const {
+      services: { http },
+    } = useKibana();
+
+    const onButtonClick = () => {
+      setPopover(!isPopoverOpen);
+    };
+
+    const closePopover = () => {
+      setPopover(false);
+    };
+
+    const onKillProcess = useCallback(async () => {
+      // TODO launch it
+      setPopover(false);
+      if (http) {
+        await http.post('/api/endpoint/action/kill_process', {
+          body: JSON.stringify({ endpoint_ids: endpointID, parameters: { entity_id: nodeID } }),
+        });
+      }
+    }, [nodeID, http, endpointID]);
+
+    const onSuspendProcess = useCallback(async () => {
+      if (http) {
+        await http.post('/api/endpoint/action/suspend_process', {
+          body: JSON.stringify({ endpoint_ids: endpointID, parameters: { entity_id: nodeID } }),
+        });
+      }
+      setPopover(false);
+    }, [nodeID, http, endpointID]);
+
+    const responseActionItems = useMemo(() => {
+      return [
+        <EuiContextMenuItem key="indexClose" icon="indexClose" onClick={onKillProcess}>
+          {'Kill Process'}
+        </EuiContextMenuItem>,
+        <EuiContextMenuItem key="pause" icon="pause" onClick={onSuspendProcess}>
+          {'Suspend Process'}
+        </EuiContextMenuItem>,
+      ];
+    }, [onKillProcess, onSuspendProcess]);
 
     // Node (html id=) IDs
     const ariaActiveDescendant = useSelector(selectors.ariaActiveDescendant);
@@ -464,36 +520,63 @@ const UnstyledProcessEventDot = React.memo(
               zIndex: 45,
             }}
           >
-            <EuiButton
-              iconSide={isNodeLoading ? 'right' : 'left'}
-              isLoading={isNodeLoading}
-              color={labelButtonFill}
-              fill={isLabelFilled}
-              iconType={nodeState === 'error' ? 'refresh' : ''}
-              size="s"
-              style={{
-                maxHeight: `${Math.min(26 + xScale * 3, 32)}px`,
-                maxWidth: `${isShowingEventActions ? 400 : 210 * xScale}px`,
-              }}
-              tabIndex={-1}
-              title={processName}
-              data-test-subj="resolver:node:primary-button"
-              data-test-resolver-node-id={nodeID}
-            >
-              <StyledEuiButtonContent
-                isShowingIcon={nodeState === 'loading' || nodeState === 'error'}
-              >
-                <span className="euiButton__text" data-test-subj={'euiButton__text'}>
-                  {i18n.translate('xpack.securitySolution.resolver.node_button_name', {
-                    defaultMessage: `{nodeState, select, error {Reload {nodeName}} other {{nodeName}}}`,
-                    values: {
-                      nodeState,
-                      nodeName: processName,
-                    },
-                  })}
-                </span>
-              </StyledEuiButtonContent>
-            </EuiButton>
+            <EuiFlexGroup responsive={false} gutterSize="xs" alignItems="center">
+              <EuiFlexItem grow={false}>
+                <EuiButton
+                  iconSide={isNodeLoading ? 'right' : 'left'}
+                  isLoading={isNodeLoading}
+                  color={labelButtonFill}
+                  fill={isLabelFilled}
+                  iconType={nodeState === 'error' ? 'refresh' : ''}
+                  size="s"
+                  style={{
+                    maxHeight: `${Math.min(26 + xScale * 3, 32)}px`,
+                    maxWidth: `${isShowingEventActions ? 400 : 210 * xScale}px`,
+                  }}
+                  tabIndex={-1}
+                  title={processName}
+                  data-test-subj="resolver:node:primary-button"
+                  data-test-resolver-node-id={nodeID}
+                >
+                  <StyledEuiButtonContent
+                    isShowingIcon={nodeState === 'loading' || nodeState === 'error'}
+                  >
+                    <span className="euiButton__text" data-test-subj={'euiButton__text'}>
+                      {i18n.translate('xpack.securitySolution.resolver.node_button_name', {
+                        defaultMessage: `{nodeState, select, error {Reload {nodeName}} other {{nodeName}}}`,
+                        values: {
+                          nodeState,
+                          nodeName: processName,
+                        },
+                      })}
+                    </span>
+                  </StyledEuiButtonContent>
+                </EuiButton>
+              </EuiFlexItem>
+              {nodeState === 'running' && (
+                <EuiFlexItem grow={false}>
+                  <EuiPopover
+                    id={`${nodeHTMLID}-menu`}
+                    button={
+                      <EuiButtonIcon
+                        display="base"
+                        size="s"
+                        color={labelButtonFill}
+                        iconType="boxesVertical"
+                        aria-label="More"
+                        onClick={onButtonClick}
+                      />
+                    }
+                    isOpen={isPopoverOpen}
+                    closePopover={closePopover}
+                    panelPaddingSize="none"
+                    anchorPosition="downLeft"
+                  >
+                    <EuiContextMenuPanel size="s" items={responseActionItems} />
+                  </EuiPopover>
+                </EuiFlexItem>
+              )}
+            </EuiFlexGroup>
           </div>
           <EuiFlexGroup
             justifyContent="flexStart"
