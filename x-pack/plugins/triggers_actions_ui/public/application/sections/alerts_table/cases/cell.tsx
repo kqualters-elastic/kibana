@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import React, { memo } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { EuiLink, EuiSkeletonText } from '@elastic/eui';
 import { Tooltip as CaseTooltip } from '@kbn/cases-components';
 import type { CaseTooltipContentProps } from '@kbn/cases-components';
@@ -30,11 +30,22 @@ const CasesCellComponent: React.FC<CellComponentProps> = (props) => {
   const { isLoading, alert, cases } = props;
   const { navigateToCaseView } = useCaseViewNavigation();
 
-  const caseIds = alert[ALERT_CASE_IDS] ?? [];
+  const validCases = useMemo(() => {
+    const caseIds = alert[ALERT_CASE_IDS] ?? [];
+    return caseIds
+      .map((id) => {
+        console.log('lol');
+        return cases.get(id);
+      })
+      .filter((theCase): theCase is Case => theCase != null);
+  }, [cases, alert]);
 
-  const validCases = caseIds
-    .map((id) => cases.get(id))
-    .filter((theCase): theCase is Case => theCase != null);
+  const navigateToCase = useCallback(
+    (id) => {
+      navigateToCaseView({ caseId: id });
+    },
+    [navigateToCaseView]
+  );
 
   return (
     <EuiSkeletonText lines={1} isLoading={isLoading} size="s" data-test-subj="cases-cell-loading">
@@ -42,10 +53,7 @@ const CasesCellComponent: React.FC<CellComponentProps> = (props) => {
         ? validCases.map((theCase, index) => [
             index > 0 && index < validCases.length && ', ',
             <CaseTooltip loading={false} content={formatCase(theCase)} key={theCase.id}>
-              <EuiLink
-                onClick={() => navigateToCaseView({ caseId: theCase.id })}
-                data-test-subj="cases-cell-link"
-              >
+              <EuiLink onClick={() => navigateToCase(theCase.id)} data-test-subj="cases-cell-link">
                 {theCase.title}
               </EuiLink>
             </CaseTooltip>,

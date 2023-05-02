@@ -75,6 +75,20 @@ const useBulkActionsToMenuItemMapper = (
 ) => {
   const [{ isAllSelected, rowSelection }] = useContext(BulkActionsContext);
 
+  const bulkActionOnClick = useCallback(
+    (item) => {
+      const selectedAlertIds = selectedIdsToTimelineItemMapper(alerts, rowSelection);
+      item.onClick(
+        selectedAlertIds,
+        isAllSelected,
+        setIsBulkActionsLoading,
+        clearSelection,
+        refresh
+      );
+    },
+    [alerts, clearSelection, isAllSelected, refresh, rowSelection, setIsBulkActionsLoading]
+  );
+
   const bulkActionsItems = useMemo(
     () =>
       items.map((item) => {
@@ -84,22 +98,13 @@ const useBulkActionsToMenuItemMapper = (
             key={item.key}
             data-test-subj={item['data-test-subj']}
             disabled={isDisabled}
-            onClick={() => {
-              const selectedAlertIds = selectedIdsToTimelineItemMapper(alerts, rowSelection);
-              item.onClick(
-                selectedAlertIds,
-                isAllSelected,
-                setIsBulkActionsLoading,
-                clearSelection,
-                refresh
-              );
-            }}
+            onClick={() => bulkActionOnClick(item)}
           >
             {isDisabled && item.disabledLabel ? item.disabledLabel : item.label}
           </EuiContextMenuItem>
         );
       }),
-    [alerts, isAllSelected, items, rowSelection, setIsBulkActionsLoading, clearSelection, refresh]
+    [isAllSelected, items, bulkActionOnClick]
   );
 
   return bulkActionsItems;

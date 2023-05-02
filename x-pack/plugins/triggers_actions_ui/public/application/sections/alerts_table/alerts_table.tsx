@@ -27,7 +27,7 @@ import {
 } from './translations';
 
 import './alerts_table.scss';
-import { getToolbarVisibility } from './toolbar';
+import { useGetToolbarVisibility } from './toolbar';
 import { InspectButtonContainer } from './toolbar/components/inspect';
 import { SystemCellId } from './types';
 import { SystemCellFactory, systemCells } from './cells';
@@ -153,49 +153,28 @@ const AlertsTable: React.FunctionComponent<AlertsTableProps> = (props: AlertsTab
         onToggleColumn,
       })
     : undefined;
+  const { rowSelection } = bulkActionsState;
 
-  const toolbarVisibility = useCallback(() => {
-    const { rowSelection } = bulkActionsState;
-    return getToolbarVisibility({
-      bulkActions,
-      alertsCount,
-      rowSelection,
-      alerts: alertsData.alerts,
-      updatedAt,
-      isLoading,
-      columnIds: visibleColumns,
-      onToggleColumn,
-      onResetColumns,
-      browserFields,
-      controls: props.controls,
-      setIsBulkActionsLoading,
-      clearSelection,
-      refresh,
-      fieldBrowserOptions,
-      getInspectQuery,
-      showInspectButton,
-      toolbarVisiblityProp: props.toolbarVisibility,
-    });
-  }, [
-    bulkActionsState,
+  const toolbarVisibility = useGetToolbarVisibility({
     bulkActions,
     alertsCount,
-    alertsData.alerts,
+    rowSelection,
+    alerts: alertsData.alerts,
     updatedAt,
     isLoading,
-    visibleColumns,
+    columnIds: visibleColumns,
     onToggleColumn,
     onResetColumns,
     browserFields,
-    props.controls,
+    controls: props.controls,
     setIsBulkActionsLoading,
     clearSelection,
     refresh,
     fieldBrowserOptions,
     getInspectQuery,
     showInspectButton,
-    props.toolbarVisibility,
-  ])();
+    toolbarVisiblityProp: props.toolbarVisibility,
+  });
 
   const leadingControlColumns = useMemo(() => {
     const isActionButtonsColumnActive =

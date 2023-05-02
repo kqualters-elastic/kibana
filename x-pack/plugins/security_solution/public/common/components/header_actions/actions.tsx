@@ -151,7 +151,7 @@ const ActionsComponent: React.FC<ActionProps> = ({
   const sessionViewConfig = useMemo(() => {
     const { process, _id, _index, timestamp, kibana } = ecsData;
     const sessionEntityId = process?.entry_leader?.entity_id?.[0];
-    const sessionStartTime = process?.entry_leader?.start?.[0];
+    const sessionStartTime = timestamp;
     const processIndex = getSessionViewProcessIndex(kibana?.alert?.ancestors?.index?.[0] || _index);
 
     if (
@@ -229,7 +229,7 @@ const ActionsComponent: React.FC<ActionProps> = ({
     }
     onEventDetailsPanelOpened();
   }, [activeStep, incrementStep, isTourAnchor, isTourShown, onEventDetailsPanelOpened]);
-
+  console.log({sessionViewConfig, isEnterprisePlus});
   return (
     <ActionsContainer>
       {showCheckboxes && !tGridEnabled && (
