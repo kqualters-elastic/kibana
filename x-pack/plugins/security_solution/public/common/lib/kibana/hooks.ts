@@ -7,7 +7,7 @@
 
 import moment from 'moment-timezone';
 
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import { i18n } from '@kbn/i18n';
 
 import { camelCase, isArray, isObject } from 'lodash';
@@ -148,37 +148,28 @@ export const useCurrentUser = (): AuthenticatedElasticUser | null => {
 };
 
 export const useGetUserCasesPermissions = () => {
-  const [casesPermissions, setCasesPermissions] = useState<CasesPermissions>({
-    all: false,
-    create: false,
-    read: false,
-    update: false,
-    delete: false,
-    push: false,
-  });
+  // const [casesPermissions, setCasesPermissions] = useState<CasesPermissions>({
+  //   all: false,
+  //   create: false,
+  //   read: false,
+  //   update: false,
+  //   delete: false,
+  //   push: false,
+  // });
   const uiCapabilities = useKibana().services.application.capabilities;
-  const casesCapabilities = useKibana().services.cases.helpers.getUICapabilities(
-    uiCapabilities[CASES_FEATURE_ID]
-  );
+  const casesCapabilities = useKibana().services.cases.helpers.getUICapabilities;
 
-  useEffect(() => {
-    setCasesPermissions({
-      all: casesCapabilities.all,
-      create: casesCapabilities.create,
-      read: casesCapabilities.read,
-      update: casesCapabilities.update,
-      delete: casesCapabilities.delete,
-      push: casesCapabilities.push,
-    });
-  }, [
-    casesCapabilities.all,
-    casesCapabilities.create,
-    casesCapabilities.read,
-    casesCapabilities.update,
-    casesCapabilities.delete,
-    casesCapabilities.push,
-  ]);
-
+  const casesPermissions = useMemo(() => {
+    const permissions = casesCapabilities(uiCapabilities[CASES_FEATURE_ID]);
+    return {
+      all: permissions.all,
+      create: permissions.create,
+      read: permissions.read,
+      update: permissions.update,
+      delete: permissions.delete,
+      push: permissions.push,
+    };
+  }, [casesCapabilities, uiCapabilities]);
   return casesPermissions;
 };
 

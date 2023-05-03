@@ -105,8 +105,9 @@ export const getRenderCellValueHook = ({
       useShallowEqualSelector((state) => (getTable(state, tableId) ?? tableDefaults).viewMode) ??
       tableDefaults.viewMode;
 
-    const columnHeaders =
-      viewMode === VIEW_SELECTION.gridView ? getColumns(license) : eventRenderedViewColumns;
+    const columnHeaders = useMemo(() => {
+      return viewMode === VIEW_SELECTION.gridView ? getColumns(license) : eventRenderedViewColumns;
+    }, [license, viewMode]);
 
     const result = useCallback(
       ({

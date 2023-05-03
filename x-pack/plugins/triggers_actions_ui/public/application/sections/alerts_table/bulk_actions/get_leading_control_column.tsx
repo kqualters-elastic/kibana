@@ -12,16 +12,18 @@ import { BulkActionsHeader, BulkActionsRowCell } from './components';
 
 export type GetLeadingControlColumn = () => EuiDataGridControlColumn;
 
+const ControlColumnRowCellRender = (cveProps: EuiDataGridCellValueElementProps) => {
+  const { visibleRowIndex: rowIndex } = cveProps as EuiDataGridCellValueElementProps & {
+    visibleRowIndex: number;
+  };
+  return <BulkActionsRowCell rowIndex={rowIndex} />;
+};
+
 export const getLeadingControlColumn: GetLeadingControlColumn = (): EuiDataGridControlColumn => ({
   id: 'bulkActions',
   width: 30,
   headerCellRender: () => {
     return <BulkActionsHeader />;
   },
-  rowCellRender: (cveProps: EuiDataGridCellValueElementProps) => {
-    const { visibleRowIndex: rowIndex } = cveProps as EuiDataGridCellValueElementProps & {
-      visibleRowIndex: number;
-    };
-    return <BulkActionsRowCell rowIndex={rowIndex} />;
-  },
+  rowCellRender: ControlColumnRowCellRender,
 });

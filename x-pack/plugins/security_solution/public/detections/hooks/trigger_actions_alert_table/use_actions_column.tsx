@@ -33,16 +33,30 @@ export const getUseActionColumnHook =
       [ACTION_BUTTON_COUNT]
     );
 
+    const alertsDefaultModel = useMemo(() => {
+      return getAlertsDefaultModel(license);
+    }, [license]);
+
     const {
       dataTable: {
         columns,
         showCheckboxes,
         selectedEventIds,
         loadingEventIds,
-      } = getAlertsDefaultModel(license),
+      } = alertsDefaultModel,
     } = useSelector((state: State) => eventsViewerSelector(state, tableId));
 
     const columnHeaders = columns;
+
+    const setEventsLoading = useCallback((setIsActionLoading, clearSelection) => {
+      return ({ isLoading }: { isLoading: boolean }) => {
+        if (!isLoading) {
+          clearSelection();
+          return;
+        }
+        if (setIsActionLoading) setIsActionLoading(isLoading);
+      };
+    }, []);
 
     const renderCustomActionsRow = useCallback(
       ({
@@ -85,13 +99,7 @@ export const getUseActionColumnHook =
             tabType={'query'}
             tableId={tableId}
             width={0}
-            setEventsLoading={({ isLoading }) => {
-              if (!isLoading) {
-                clearSelection();
-                return;
-              }
-              if (setIsActionLoading) setIsActionLoading(isLoading);
-            }}
+            setEventsLoading={() => setEventsLoading(setIsActionLoading, clearSelection)}
             setEventsDeleted={() => {}}
             refetch={alertsTableRefresh}
           />
@@ -104,6 +112,7 @@ export const getUseActionColumnHook =
         leadingControlColumns,
         selectedEventIds,
         eventContext,
+        setEventsLoading,
       ]
     );
 

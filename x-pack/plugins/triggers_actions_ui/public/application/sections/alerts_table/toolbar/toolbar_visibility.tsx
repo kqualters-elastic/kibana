@@ -65,8 +65,8 @@ const useGetDefaultVisibility = ({
   showInspectButton: boolean;
 }): EuiDataGridToolBarVisibilityOptions => {
   console.log('called');
-  const hasBrowserFields = Object.keys(browserFields).length > 0;
   return useMemo(() => {
+    const hasBrowserFields = Object.keys(browserFields).length > 0;
     const additionalControls = {
       right: (
         <RightControl
@@ -101,7 +101,6 @@ const useGetDefaultVisibility = ({
       showSortSelector: true,
     };
   }, [
-    hasBrowserFields,
     alertsCount,
     updatedAt,
     columnIds,

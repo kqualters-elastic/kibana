@@ -124,8 +124,8 @@ export const AlertsTableComponent: FC<DetectionEngineAlertTableProps> = ({
   const { browserFields, indexPattern: indexPatterns } = useSourcererDataView(sourcererScope);
   const license = useLicense();
 
-  const getGlobalInputs = inputsSelectors.globalSelector();
-  const globalInputs = useSelector((state: State) => getGlobalInputs(state));
+  const getGlobalInput = useMemo(() => inputsSelectors.globalSelector(), []);
+  const globalInputs = useSelector((state: State) => getGlobalInput(state));
   const { query: globalQuery, filters: globalFilters } = globalInputs;
 
   const getTable = useMemo(() => dataTableSelectors.getTableByIdSelector(), []);
@@ -201,9 +201,15 @@ export const AlertsTableComponent: FC<DetectionEngineAlertTableProps> = ({
     return undefined;
   }, [isEventRenderedView]);
 
-  const dataTableStorage = getDataTablesInStorageByIds(storage, [TableId.alertsOnAlertsPage]);
-  const columnsFormStorage = dataTableStorage?.[TableId.alertsOnAlertsPage]?.columns ?? [];
-  const alertColumns = columnsFormStorage.length ? columnsFormStorage : getColumns(license);
+  const dataTableStorage = useMemo(() => {
+    return getDataTablesInStorageByIds(storage, [TableId.alertsOnAlertsPage]);
+  }, []);
+  const columnsFormStorage = useMemo(() => {
+    return dataTableStorage?.[TableId.alertsOnAlertsPage]?.columns ?? [];
+  }, [dataTableStorage]);
+  const alertColumns = useMemo(() => {
+    return columnsFormStorage.length ? columnsFormStorage : getColumns(license);
+  }, [columnsFormStorage, license]);
 
   const evenRenderedColumns = useMemo(
     () => getColumnHeaders(alertColumns, browserFields, true),

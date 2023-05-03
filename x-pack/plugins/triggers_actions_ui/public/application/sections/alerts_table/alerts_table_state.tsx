@@ -162,31 +162,34 @@ const AlertsTableStateWithQueryProvider = ({
   const persistentControls = alertsTableConfiguration?.usePersistentControls?.();
   const showInspectButton = alertsTableConfiguration?.showInspectButton ?? false;
 
-  const columnConfigByClient =
-    propColumns && !isEmpty(propColumns) ? propColumns : alertsTableConfiguration?.columns ?? [];
-
-  const columnsLocal =
-    localAlertsTableConfig &&
-    localAlertsTableConfig.columns &&
-    !isEmpty(localAlertsTableConfig?.columns)
+  const columnsLocal = useMemo(() => {
+    const columnConfigByClient =
+      propColumns && !isEmpty(propColumns) ? propColumns : alertsTableConfiguration?.columns ?? [];
+    return localAlertsTableConfig &&
+      localAlertsTableConfig.columns &&
+      !isEmpty(localAlertsTableConfig?.columns)
       ? localAlertsTableConfig?.columns ?? []
       : columnConfigByClient;
+  }, [localAlertsTableConfig, alertsTableConfiguration?.columns, propColumns]);
 
-  const getStorageConfig = () => ({
-    columns: columnsLocal,
-    sort:
-      localAlertsTableConfig &&
-      localAlertsTableConfig.sort &&
-      !isEmpty(localAlertsTableConfig?.sort)
-        ? localAlertsTableConfig?.sort ?? []
-        : alertsTableConfiguration?.sort ?? [],
-    visibleColumns:
-      localAlertsTableConfig &&
-      localAlertsTableConfig.visibleColumns &&
-      !isEmpty(localAlertsTableConfig?.visibleColumns)
-        ? localAlertsTableConfig?.visibleColumns ?? []
-        : columnsLocal.map((c) => c.id),
-  });
+  const getStorageConfig = useCallback(
+    () => ({
+      columns: columnsLocal,
+      sort:
+        localAlertsTableConfig &&
+        localAlertsTableConfig.sort &&
+        !isEmpty(localAlertsTableConfig?.sort)
+          ? localAlertsTableConfig?.sort ?? []
+          : alertsTableConfiguration?.sort ?? [],
+      visibleColumns:
+        localAlertsTableConfig &&
+        localAlertsTableConfig.visibleColumns &&
+        !isEmpty(localAlertsTableConfig?.visibleColumns)
+          ? localAlertsTableConfig?.visibleColumns ?? []
+          : columnsLocal.map((c) => c.id),
+    }),
+    [alertsTableConfiguration?.sort, columnsLocal, localAlertsTableConfig]
+  );
   const storageAlertsTable = useRef<AlertsTableStorage>(getStorageConfig());
 
   storageAlertsTable.current = getStorageConfig();
@@ -212,7 +215,7 @@ const AlertsTableStateWithQueryProvider = ({
     storageAlertsTable,
     storage,
     id,
-    defaultColumns: columnConfigByClient,
+    defaultColumns: columnsLocal,
     initialBrowserFields: propBrowserFields,
   });
 

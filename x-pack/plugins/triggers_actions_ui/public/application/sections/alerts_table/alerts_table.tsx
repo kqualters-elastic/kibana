@@ -59,6 +59,92 @@ const isSystemCell = (columnId: string): columnId is SystemCellId => {
   return systemCells.includes(columnId as SystemCellId);
 };
 
+const ExpandColumnRowCellRender = (
+  props: EuiDataGridCellValueElementProps &
+    Pick<
+      AlertsTableProps,
+      'alertsTableConfiguration' | 'query' | 'pageSize' | 'showExpandToDetails' | 'id'
+    > & {
+      alerts: FetchAlertData['alerts'];
+      visibleRowIndex: number;
+      activePage: number;
+      ecsAlertsData: FetchAlertData['ecsAlertsData'];
+      oldAlertsData: FetchAlertData['oldAlertsData'];
+      onPageChange: FetchAlertData['onPageChange'];
+      refresh: FetchAlertData['refresh'];
+    }
+) => {
+  const {
+    visibleRowIndex,
+    alerts,
+    activePage,
+    onPageChange,
+    ecsAlertsData,
+    oldAlertsData,
+    refresh,
+  } = props;
+
+  const { renderCustomActionsRow, getSetIsActionLoadingCallback } = useActionsColumn({
+    options: props.alertsTableConfiguration.useActionsColumn,
+  });
+  const { clearSelection } = useBulkActions({
+    alerts,
+    casesConfig: props.alertsTableConfiguration.cases,
+    query: props.query,
+    useBulkActionsConfig: props.alertsTableConfiguration.useBulkActions,
+    refresh,
+  });
+  const { setFlyoutAlertIndex } = usePagination({
+    onPageChange,
+    pageIndex: activePage,
+    pageSize: props.pageSize,
+  });
+
+  const handleFlyoutAlert = useCallback(
+    (alert) => {
+      const idx = alerts.findIndex((a) =>
+        (a as any)[ALERT_UUID].includes(alert.fields[ALERT_UUID])
+      );
+      setFlyoutAlertIndex(idx);
+    },
+    [alerts, setFlyoutAlertIndex]
+  );
+  return (
+    <EuiFlexGroup gutterSize="none" responsive={false}>
+      {props.showExpandToDetails && (
+        <EuiFlexItem grow={false}>
+          <EuiToolTip content={ALERTS_TABLE_CONTROL_COLUMNS_VIEW_DETAILS_LABEL}>
+            <EuiButtonIcon
+              size="s"
+              iconType="expand"
+              color="primary"
+              onClick={() => {
+                setFlyoutAlertIndex(visibleRowIndex);
+              }}
+              data-test-subj={`expandColumnCellOpenFlyoutButton-${visibleRowIndex}`}
+              aria-label={ALERTS_TABLE_CONTROL_COLUMNS_VIEW_DETAILS_LABEL}
+            />
+          </EuiToolTip>
+        </EuiFlexItem>
+      )}
+      {renderCustomActionsRow &&
+        ecsAlertsData[visibleRowIndex] &&
+        renderCustomActionsRow({
+          alert: alerts[visibleRowIndex],
+          ecsAlert: ecsAlertsData[visibleRowIndex],
+          nonEcsData: oldAlertsData[visibleRowIndex],
+          rowIndex: visibleRowIndex,
+          setFlyoutAlert: handleFlyoutAlert,
+          id: props.id,
+          cveProps: props,
+          setIsActionLoading: getSetIsActionLoadingCallback(visibleRowIndex),
+          refresh,
+          clearSelection,
+        })}
+    </EuiFlexGroup>
+  );
+};
+
 const AlertsTable: React.FunctionComponent<AlertsTableProps> = (props: AlertsTableProps) => {
   const dataGridRef = useRef<EuiDataGridRefProps>(null);
   const [activeRowClasses, setActiveRowClasses] = useState<
@@ -198,7 +284,6 @@ const AlertsTable: React.FunctionComponent<AlertsTableProps> = (props: AlertsTab
             const { visibleRowIndex } = cveProps as EuiDataGridCellValueElementProps & {
               visibleRowIndex: number;
             };
-
             return (
               <EuiFlexGroup gutterSize="none" responsive={false}>
                 {props.showExpandToDetails && (
@@ -245,21 +330,25 @@ const AlertsTable: React.FunctionComponent<AlertsTableProps> = (props: AlertsTab
 
     return controlColumns;
   }, [
-    actionsColumnWidth,
     alerts,
-    oldAlertsData,
+    clearSelection,
     ecsAlertsData,
-    getBulkActionsLeadingControlColumn,
+    getSetIsActionLoadingCallback,
     handleFlyoutAlert,
+    oldAlertsData,
+    refresh,
+    setFlyoutAlertIndex,
+    actionsColumnWidth,
+    getBulkActionsLeadingControlColumn,
     isBulkActionsColumnActive,
     props.id,
     props.leadingControlColumns,
     props.showExpandToDetails,
+    //props.alertsTableConfiguration,
+    //props.pageSize,
+    //props.query,
+    //props.useFetchAlertsData,
     renderCustomActionsRow,
-    setFlyoutAlertIndex,
-    getSetIsActionLoadingCallback,
-    refresh,
-    clearSelection,
   ]);
 
   useEffect(() => {
@@ -416,6 +505,23 @@ const AlertsTable: React.FunctionComponent<AlertsTableProps> = (props: AlertsTab
     return mergedGridStyle;
   }, [activeRowClasses, highlightedRowClasses, props.gridStyle]);
 
+  const paginationProps = useMemo(() => {
+    return {
+      ...pagination,
+      pageSizeOptions: props.pageSizeOptions,
+      onChangeItemsPerPage: onChangePageSize,
+      onChangePage: onChangePageIndex,
+    };
+  }, [onChangePageIndex, onChangePageSize, props.pageSizeOptions, pagination]);
+
+  const sortingProps = useMemo(() => {
+    return { columns: sortingColumns, onSort };
+  }, [onSort, sortingColumns]);
+
+  const columnVisibility = useMemo(() => {
+    return { visibleColumns, setVisibleColumns: onChangeVisibleColumns };
+  }, [visibleColumns, onChangeVisibleColumns]);
+  console.log({ alertsCount, flyoutAlertIndex, leadingControlColumns });
   return (
     <InspectButtonContainer>
       <section style={{ width: '100%' }} data-test-subj={props['data-test-subj']}>
@@ -438,20 +544,15 @@ const AlertsTable: React.FunctionComponent<AlertsTableProps> = (props: AlertsTab
             aria-label="Alerts table"
             data-test-subj="alertsTable"
             columns={columnsWithCellActions}
-            columnVisibility={{ visibleColumns, setVisibleColumns: onChangeVisibleColumns }}
+            columnVisibility={columnVisibility}
             trailingControlColumns={props.trailingControlColumns}
             leadingControlColumns={leadingControlColumns}
             rowCount={alertsCount}
             renderCellValue={handleRenderCellValue}
             gridStyle={actualGridStyle}
-            sorting={{ columns: sortingColumns, onSort }}
+            sorting={sortingProps}
             toolbarVisibility={toolbarVisibility}
-            pagination={{
-              ...pagination,
-              pageSizeOptions: props.pageSizeOptions,
-              onChangeItemsPerPage: onChangePageSize,
-              onChangePage: onChangePageIndex,
-            }}
+            pagination={paginationProps}
             rowHeightsOptions={props.rowHeightsOptions}
             ref={dataGridRef}
           />

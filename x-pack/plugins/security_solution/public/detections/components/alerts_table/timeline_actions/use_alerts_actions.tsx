@@ -32,8 +32,8 @@ export const useAlertsActions = ({
   refetch,
 }: Props) => {
   const dispatch = useDispatch();
-  const { hasIndexWrite } = useAlertsPrivileges();
-
+  //const { hasIndexWrite } = useAlertsPrivileges();
+  const hasIndexWrite = true;
   const onStatusUpdate = useCallback(() => {
     closePopover();
     if (refetch) {

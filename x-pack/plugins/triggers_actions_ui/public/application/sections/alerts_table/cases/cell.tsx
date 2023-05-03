@@ -34,7 +34,6 @@ const CasesCellComponent: React.FC<CellComponentProps> = (props) => {
     const caseIds = alert[ALERT_CASE_IDS] ?? [];
     return caseIds
       .map((id) => {
-        console.log('lol');
         return cases.get(id);
       })
       .filter((theCase): theCase is Case => theCase != null);

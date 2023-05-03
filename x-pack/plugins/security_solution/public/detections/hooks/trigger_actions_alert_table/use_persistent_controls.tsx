@@ -25,7 +25,7 @@ const { changeViewMode } = dataTableActions;
 export const getPersistentControlsHook = (tableId: TableId) => {
   const usePersistentControls = () => {
     const dispatch = useDispatch();
-    const getGroupSelector = groupSelectors.getGroupSelector();
+    const getGroupSelector = useMemo(() => groupSelectors.getGroupSelector(), []);
 
     const groupSelector = useSelector((state: State) => getGroupSelector(state));
 
