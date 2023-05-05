@@ -7,12 +7,11 @@
 
 import { EuiCheckbox, EuiLoadingSpinner } from '@elastic/eui';
 import React, { ChangeEvent, useCallback } from 'react';
-import { useContext } from 'react';
 import { BulkActionsVerbs } from '../../../../../types';
-import { BulkActionsContext } from '../context';
+import { useBulkActionContext } from '../context';
 
 const BulkActionsRowCellComponent = ({ rowIndex }: { rowIndex: number }) => {
-  const [{ rowSelection }, updateSelectedRows] = useContext(BulkActionsContext);
+  const { rowSelection, updateBulkActionsState: updateSelectedRows } = useBulkActionContext();
   const isChecked = rowSelection.has(rowIndex);
   const isLoading = isChecked && rowSelection.get(rowIndex)?.isLoading;
   const onChange = useCallback(

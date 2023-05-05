@@ -207,9 +207,12 @@ export const AlertsTableComponent: FC<DetectionEngineAlertTableProps> = ({
   const columnsFormStorage = useMemo(() => {
     return dataTableStorage?.[TableId.alertsOnAlertsPage]?.columns ?? [];
   }, [dataTableStorage]);
+  const columnsFromLicense = useMemo(() => {
+    return getColumns(license);
+  }, [license]);
   const alertColumns = useMemo(() => {
-    return columnsFormStorage.length ? columnsFormStorage : getColumns(license);
-  }, [columnsFormStorage, license]);
+    return columnsFormStorage.length ? columnsFormStorage : columnsFromLicense;
+  }, [columnsFormStorage, columnsFromLicense]);
 
   const evenRenderedColumns = useMemo(
     () => getColumnHeaders(alertColumns, browserFields, true),

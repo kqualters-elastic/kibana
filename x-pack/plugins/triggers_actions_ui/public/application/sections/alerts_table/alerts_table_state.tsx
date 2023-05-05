@@ -31,7 +31,7 @@ import type {
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useFetchAlerts } from './hooks/use_fetch_alerts';
 import { AlertsTable } from './alerts_table';
-import { BulkActionsContext } from './bulk_actions/context';
+import { BulkActionsContext, initialState, useBulkActionContext } from './bulk_actions/context';
 import { EmptyState } from './empty_state';
 import {
   Alert,
@@ -122,6 +122,36 @@ const AlertsTableState = (props: AlertsTableStateProps) => {
       <AlertsTableStateWithQueryProvider {...props} />
     </QueryClientProvider>
   );
+};
+
+const CasesContextWrapper = ({
+  alertsTableConfiguration,
+  children,
+}: {
+  alertsTableConfiguration: AlertsTableConfigurationRegistry;
+  children?: React.ReactNode | undefined;
+}) => {
+  const { cases: casesService } = useKibana<{ cases?: CasesService }>().services;
+
+  const casesPermissions = casesService?.helpers.canUseCases(
+    alertsTableConfiguration?.cases?.owner ?? []
+  );
+  const CasesContext = casesService?.ui.getCasesContext();
+  const isCasesContextAvailable = casesService && CasesContext;
+
+  if (isCasesContextAvailable) {
+    return (
+      <CasesContext
+        owner={alertsTableConfiguration.cases?.owner ?? []}
+        permissions={casesPermissions}
+        features={{ alerts: { sync: alertsTableConfiguration.cases?.syncAlerts ?? false } }}
+      >
+        {children}
+      </CasesContext>
+    );
+  } else {
+    return <>{children}</>;
+  }
 };
 
 const AlertsTableStateWithQueryProvider = ({
@@ -264,13 +294,6 @@ const AlertsTableStateWithQueryProvider = ({
     setPagination(_pagination);
   }, []);
 
-  const initialBulkActionsState = useReducer(bulkActionsReducer, {
-    rowSelection: new Map<number, RowSelectionState>(),
-    isAllSelected: false,
-    areAllVisibleRowsSelected: false,
-    rowCount: alerts.length,
-  });
-
   const onSortChange = useCallback(
     (_sort: EuiDataGridSorting['columns']) => {
       const newSort = _sort.map((sortItem) => {
@@ -325,14 +348,17 @@ const AlertsTableStateWithQueryProvider = ({
 
   const CasesContext = casesService?.ui.getCasesContext();
   const isCasesContextAvailable = casesService && CasesContext;
+  const casesProps = useMemo(() => {
+    return  {
+      data: cases ?? new Map(),
+      isLoading: isLoadingCases,
+    };
+  }, []);
 
   const tableProps: AlertsTableProps = useMemo(
     () => ({
       alertsTableConfiguration,
-      cases: {
-        data: cases ?? new Map(),
-        isLoading: isLoadingCases,
-      },
+      cases: casesProps,
       columns,
       bulkActions: [],
       deletedEventIds: [],
@@ -365,8 +391,7 @@ const AlertsTableStateWithQueryProvider = ({
     }),
     [
       alertsTableConfiguration,
-      cases,
-      isLoadingCases,
+      casesProps,
       columns,
       flyoutSize,
       pagination.pageSize,
@@ -392,6 +417,7 @@ const AlertsTableStateWithQueryProvider = ({
       shouldHighlightRow,
     ]
   );
+  const initialBulkActionsState = useReducer(bulkActionsReducer, initialState);
 
   return hasAlertsTableConfiguration ? (
     <>
@@ -407,23 +433,13 @@ const AlertsTableStateWithQueryProvider = ({
       {(isLoading || isBrowserFieldDataLoading) && (
         <EuiProgress size="xs" color="accent" data-test-subj="internalAlertsPageLoading" />
       )}
-      {alertsCount !== 0 && isCasesContextAvailable && (
-        <CasesContext
-          owner={alertsTableConfiguration.cases?.owner ?? []}
-          permissions={casesPermissions}
-          features={{ alerts: { sync: alertsTableConfiguration.cases?.syncAlerts ?? false } }}
-        >
+      {alertsCount !== 0 && (
+        <CasesContextWrapper alertsTableConfiguration={alertsTableConfiguration}>
           <AlertsTableWithBulkActionsContext
             tableProps={tableProps}
             initialBulkActionsState={initialBulkActionsState}
           />
-        </CasesContext>
-      )}
-      {alertsCount !== 0 && !isCasesContextAvailable && (
-        <AlertsTableWithBulkActionsContext
-          tableProps={tableProps}
-          initialBulkActionsState={initialBulkActionsState}
-        />
+        </CasesContextWrapper>
       )}
     </>
   ) : (

@@ -5,9 +5,9 @@
  * 2.0.
  */
 
-import { useContext } from 'react';
+import { useContext, useCallback } from 'react';
 import { UseActionsColumnRegistry, BulkActionsVerbs } from '../../../../types';
-import { BulkActionsContext } from '../bulk_actions/context';
+import { BulkActionsContext, useBulkActionContext } from '../bulk_actions/context';
 
 const DEFAULT_ACTIONS_COLUMNS_WIDTH = 75;
 
@@ -15,30 +15,40 @@ interface UseActionsColumnProps {
   options?: UseActionsColumnRegistry;
 }
 
-export const useActionsColumn = ({ options }: UseActionsColumnProps) => {
-  const [, updateBulkActionsState] = useContext(BulkActionsContext);
+const defaultUseUserActionsColum = {
+  renderCustomActionsRow: undefined,
+  width: undefined,
+};
 
-  const useUserActionsColumn = options
-    ? options
-    : () => ({
-        renderCustomActionsRow: undefined,
-        width: undefined,
-      });
+export const useActionsColumn = ({ options }: UseActionsColumnProps) => {
+  const { updateBulkActionsState } = useBulkActionContext();
+  const defaultUseUserActionCallback = useCallback(() => {
+    return defaultUseUserActionsColum;
+  }, []);
+  const useUserActionsColumn = options ? options : defaultUseUserActionCallback;
 
   const { renderCustomActionsRow, width: actionsColumnWidth = DEFAULT_ACTIONS_COLUMNS_WIDTH } =
     useUserActionsColumn();
 
-  // we save the rowIndex when creating the function to be used by the clients
-  // so they don't have to manage it
-  const getSetIsActionLoadingCallback =
-    (rowIndex: number) =>
-    (isLoading: boolean = true) => {
+  const setIsLoading = useCallback(
+    (rowIndex: number, rowisLoading: boolean = true) => {
       updateBulkActionsState({
         action: BulkActionsVerbs.updateRowLoadingState,
         rowIndex,
-        isLoading,
+        isLoading: rowisLoading,
       });
-    };
+    },
+    [updateBulkActionsState]
+  );
+
+  // we save the rowIndex when creating the function to be used by the clients
+  // so they don't have to manage it
+  const getSetIsActionLoadingCallback = useCallback(
+    (rowIndex: number) => {
+      return (isLoading: boolean) => setIsLoading(rowIndex, isLoading);
+    },
+    [setIsLoading]
+  );
 
   return {
     renderCustomActionsRow,

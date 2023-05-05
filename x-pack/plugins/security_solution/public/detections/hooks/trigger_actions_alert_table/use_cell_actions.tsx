@@ -89,7 +89,7 @@ export const getUseCellActionsHook = (tableId: TableId) => {
     }, [viewMode, browserFieldsByName, columns, finalData, dataGridRef]);
 
     const cellActions = useDataGridColumnsSecurityCellActions(cellActionProps);
-
+    console.log(cellActions);
     const getCellActions = useCallback(
       (_columnId: string, columnIndex: number) => {
         if (cellActions.length === 0) return [];

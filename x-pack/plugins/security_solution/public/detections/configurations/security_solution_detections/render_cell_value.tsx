@@ -109,7 +109,7 @@ export const getRenderCellValueHook = ({
       return viewMode === VIEW_SELECTION.gridView ? getColumns(license) : eventRenderedViewColumns;
     }, [license, viewMode]);
 
-    const result = useCallback(
+    return useCallback(
       ({
         columnId,
         colIndex,
@@ -179,7 +179,6 @@ export const getRenderCellValueHook = ({
       },
       [browserFieldsByName, browserFields, columnHeaders]
     );
-    return result;
   };
 
   return useRenderCellValue;

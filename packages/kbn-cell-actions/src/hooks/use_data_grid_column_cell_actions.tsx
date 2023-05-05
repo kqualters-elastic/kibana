@@ -59,11 +59,11 @@ export const useDataGridColumnsCellActions: UseDataGridColumnsCellActions = ({
   });
 
   const columnsCellActions = useMemo<EuiDataGridColumnCellAction[][]>(() => {
-    if (loading) {
-      return fields.map(() => [
-        () => <EuiLoadingSpinner size="s" data-test-subj="dataGridColumnCellAction-loading" />,
-      ]);
-    }
+    // if (loading) {
+    //   return fields.map(() => [
+    //     () => <EuiLoadingSpinner size="s" data-test-subj="dataGridColumnCellAction-loading" />,
+    //   ]);
+    // }
     if (!columnsActions) {
       return [];
     }
@@ -78,7 +78,7 @@ export const useDataGridColumnsCellActions: UseDataGridColumnsCellActions = ({
         })
       )
     );
-  }, [columnsActions, fields, loading, metadata, triggerId, dataGridRef]);
+  }, [columnsActions, fields, metadata, triggerId, dataGridRef]);
 
   return columnsCellActions;
 };

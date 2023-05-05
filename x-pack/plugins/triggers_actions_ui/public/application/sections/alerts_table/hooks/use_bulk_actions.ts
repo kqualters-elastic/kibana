@@ -16,7 +16,7 @@ import {
   BulkActionsVerbs,
   UseBulkActionsRegistry,
 } from '../../../../types';
-import { BulkActionsContext } from '../bulk_actions/context';
+import { BulkActionsContext, useBulkActionContext } from '../bulk_actions/context';
 import {
   getLeadingControlColumn as getBulkActionsLeadingControlColumn,
   GetLeadingControlColumn,
@@ -157,7 +157,21 @@ export function useBulkActions({
   refresh,
   useBulkActionsConfig = () => [],
 }: BulkActionsProps): UseBulkActions {
-  const [bulkActionsState, updateBulkActionsState] = useContext(BulkActionsContext);
+  const {
+    isAllSelected,
+    rowSelection,
+    areAllVisibleRowsSelected,
+    rowCount,
+    updateBulkActionsState,
+  } = useBulkActionContext();
+  const bulkActionsState = useMemo(() => {
+    return {
+      isAllSelected,
+      rowSelection,
+      areAllVisibleRowsSelected,
+      rowCount,
+    };
+  }, [isAllSelected, rowSelection, areAllVisibleRowsSelected, rowCount]);
   const configBulkActions = useBulkActionsConfig(query);
 
   const clearSelection = () => {

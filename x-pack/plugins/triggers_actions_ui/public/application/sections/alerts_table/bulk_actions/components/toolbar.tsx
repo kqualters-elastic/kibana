@@ -12,7 +12,7 @@ import { useUiSetting$ } from '@kbn/kibana-react-plugin/public';
 import { ALERT_CASE_IDS, ALERT_RULE_NAME, ALERT_RULE_UUID } from '@kbn/rule-data-utils';
 import { Alerts, BulkActionsConfig, BulkActionsVerbs, RowSelection } from '../../../../../types';
 import * as i18n from '../translations';
-import { BulkActionsContext } from '../context';
+import { BulkActionsContext, useBulkActionContext } from '../context';
 
 interface BulkActionsProps {
   totalItems: number;
@@ -73,7 +73,7 @@ const useBulkActionsToMenuItemMapper = (
   refresh: BulkActionsProps['refresh'],
   alerts: Alerts
 ) => {
-  const [{ isAllSelected, rowSelection }] = useContext(BulkActionsContext);
+  const { isAllSelected, rowSelection } = useBulkActionContext();
 
   const bulkActionOnClick = useCallback(
     (item) => {

@@ -42,7 +42,7 @@ export class RenderingService {
     whyDidYouRender(React, {
       trackAllPureComponents: true,
       trackExtraHooks: [[ReactRedux, 'useSelector']],
-      logOnDifferentValues: true,
+      //logOnDifferentValues: true,
       collapseGroups: true,
     });
     const chromeHeader = chrome.getHeaderComponent();
