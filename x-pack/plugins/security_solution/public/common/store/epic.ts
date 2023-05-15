@@ -7,6 +7,8 @@
 
 import type { Epic } from 'redux-observable';
 import { combineEpics } from 'redux-observable';
+import { of, catchError } from 'rxjs';
+
 import type { Action } from 'redux';
 
 import { createTimelineEpic } from '../../timelines/store/timeline/epic';
@@ -21,11 +23,12 @@ export const createRootEpic = <State>(): Epic<
   Action,
   State,
   TimelineEpicDependencies<State>
-> =>
-  combineEpics(
+> => {
+  return combineEpics(
     createTimelineEpic<State>(),
     createTimelineFavoriteEpic<State>(),
     createTimelineNoteEpic<State>(),
     createTimelinePinnedEventEpic<State>(),
     createDataTableLocalStorageEpic<State>()
   );
+};

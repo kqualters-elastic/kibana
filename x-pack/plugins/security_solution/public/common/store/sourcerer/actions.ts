@@ -5,27 +5,26 @@
  * 2.0.
  */
 
-import actionCreatorFactory from 'typescript-fsa';
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
+
 
 import type { SelectedDataView, SourcererDataView, SourcererScopeName } from './model';
 import type { SecurityDataView } from '../../containers/sourcerer/create_sourcerer_data_view';
 
-const actionCreator = actionCreatorFactory('x-pack/security_solution/local/sourcerer');
+export const setDataView = createAction<Partial<SourcererDataView>>('SET_DATA_VIEW');
 
-export const setDataView = actionCreator<Partial<SourcererDataView>>('SET_DATA_VIEW');
-
-export const setDataViewLoading = actionCreator<{
+export const setDataViewLoading = createAction<{
   id: string;
   loading: boolean;
 }>('SET_DATA_VIEW_LOADING');
 
-export const setSignalIndexName = actionCreator<{ signalIndexName: string }>(
+export const setSignalIndexName = createAction<{ signalIndexName: string }>(
   'SET_SIGNAL_INDEX_NAME'
 );
 
-export const setSourcererDataViews = actionCreator<SecurityDataView>('SET_SOURCERER_DATA_VIEWS');
+export const setSourcererDataViews = createAction<SecurityDataView>('SET_SOURCERER_DATA_VIEWS');
 
-export const setSourcererScopeLoading = actionCreator<{
+export const setSourcererScopeLoading = createAction<{
   id?: SourcererScopeName;
   loading: boolean;
 }>('SET_SOURCERER_SCOPE_LOADING');
@@ -36,4 +35,4 @@ export interface SelectedDataViewPayload {
   selectedPatterns: SelectedDataView['selectedPatterns'];
   shouldValidateSelectedPatterns?: boolean;
 }
-export const setSelectedDataView = actionCreator<SelectedDataViewPayload>('SET_SELECTED_DATA_VIEW');
+export const setSelectedDataView = createAction<SelectedDataViewPayload>('SET_SELECTED_DATA_VIEW');

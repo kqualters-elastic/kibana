@@ -214,7 +214,7 @@ export const createAppRootMockRenderer = (): AppContextTestRender => {
 
   const store = createStore(mockGlobalState, storeReducer, kibanaObservable, storage, [
     ...managementMiddlewareFactory(coreStart, depsStart),
-    middlewareSpy.actionSpyMiddleware,
+    // middlewareSpy.actionSpyMiddleware,
   ]);
 
   const queryClient = new QueryClient({

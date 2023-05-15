@@ -120,10 +120,8 @@ export const createInitialState = (
 /**
  * Factory for the Security app's redux reducer.
  */
-export const createReducer: (
-  pluginsReducer: SubPluginsInitReducer
-) => Reducer<State, AppAction | AnyAction> = (pluginsReducer: SubPluginsInitReducer) =>
-  combineReducers({
+export const createReducer = (pluginsReducer: SubPluginsInitReducer) => {
+  return {
     app: appReducer,
     dragAndDrop: dragAndDropReducer,
     inputs: inputsReducer,
@@ -132,4 +130,5 @@ export const createReducer: (
     dataTable: dataTableReducer,
     groups: groupsReducer,
     ...pluginsReducer,
-  });
+  };
+};

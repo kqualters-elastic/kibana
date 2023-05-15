@@ -106,6 +106,7 @@ export const useDataView = (): {
     }) => {
       const asyncSearch = async () => {
         try {
+          debugger;
           abortCtrl.current = {
             ...abortCtrl.current,
             [dataViewId]: new AbortController(),
@@ -113,7 +114,7 @@ export const useDataView = (): {
           setLoading({ id: dataViewId, loading: true });
 
           const dataView = await getSourcererDataView(dataViewId, data.dataViews, cleanCache);
-
+          debugger;
           if (needToBeInit && scopeId && !skipScopeUpdate) {
             dispatch(
               sourcererActions.setSelectedDataView({
@@ -125,6 +126,7 @@ export const useDataView = (): {
           }
           dispatch(sourcererActions.setDataView({ ...dataView, loading: false }));
         } catch (exc) {
+          debugger;
           addError(exc?.message, {
             title: i18n.ERROR_INDEX_FIELDS_SEARCH,
           });

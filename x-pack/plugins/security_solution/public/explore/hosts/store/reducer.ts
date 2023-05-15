@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { reducerWithInitialState } from 'typescript-fsa-reducers';
+import { createReducer } from '@reduxjs/toolkit';
 import { Direction, HostsFields, RiskScoreFields } from '../../../../common/search_strategy';
 
 import { DEFAULT_TABLE_ACTIVE_PAGE, DEFAULT_TABLE_LIMIT } from '../../../common/store/constants';
@@ -21,10 +21,6 @@ import {
   updateHostsAnomaliesJobIdFilter,
   updateHostsAnomaliesInterval,
 } from './actions';
-import {
-  setHostPageQueriesActivePageToZero,
-  setHostDetailsQueriesActivePageToZero,
-} from './helpers';
 import type { HostsModel } from './model';
 import { HostsTableType } from './model';
 
@@ -111,117 +107,51 @@ export const initialHostsState: HostsState = {
   },
 };
 
-export const hostsReducer = reducerWithInitialState(initialHostsState)
-  .case(setHostTablesActivePageToZero, (state) => ({
-    ...state,
-    page: {
-      ...state.page,
-      queries: setHostPageQueriesActivePageToZero(state),
-    },
-    details: {
-      ...state.details,
-      queries: setHostDetailsQueriesActivePageToZero(state),
-    },
-  }))
-  .case(setHostDetailsTablesActivePageToZero, (state) => ({
-    ...state,
-    details: {
-      ...state.details,
-      queries: setHostDetailsQueriesActivePageToZero(state),
-    },
-  }))
-  .case(updateTableActivePage, (state, { activePage, hostsType, tableType }) => ({
-    ...state,
-    [hostsType]: {
-      ...state[hostsType],
-      queries: {
-        ...state[hostsType].queries,
-        [tableType]: {
-          ...state[hostsType].queries[tableType],
-          activePage,
-        },
-      },
-    },
-  }))
-  .case(updateTableLimit, (state, { limit, hostsType, tableType }) => ({
-    ...state,
-    [hostsType]: {
-      ...state[hostsType],
-      queries: {
-        ...state[hostsType].queries,
-        [tableType]: {
-          ...state[hostsType].queries[tableType],
-          limit,
-        },
-      },
-    },
-  }))
-  .case(updateHostsSort, (state, { sort, hostsType }) => ({
-    ...state,
-    [hostsType]: {
-      ...state[hostsType],
-      queries: {
-        ...state[hostsType].queries,
-        [HostsTableType.hosts]: {
-          ...state[hostsType].queries[HostsTableType.hosts],
-          direction: sort.direction,
-          sortField: sort.field,
-          activePage: DEFAULT_TABLE_ACTIVE_PAGE,
-        },
-      },
-    },
-  }))
-  .case(updateHostRiskScoreSort, (state, { sort, hostsType }) => ({
-    ...state,
-    [hostsType]: {
-      ...state[hostsType],
-      queries: {
-        ...state[hostsType].queries,
-        [HostsTableType.risk]: {
-          ...state[hostsType].queries[HostsTableType.risk],
-          sort,
-        },
-      },
-    },
-  }))
-  .case(updateHostRiskScoreSeverityFilter, (state, { severitySelection, hostsType }) => ({
-    ...state,
-    [hostsType]: {
-      ...state[hostsType],
-      queries: {
-        ...state[hostsType].queries,
-        [HostsTableType.risk]: {
-          ...state[hostsType].queries[HostsTableType.risk],
-          severitySelection,
-          activePage: DEFAULT_TABLE_ACTIVE_PAGE,
-        },
-      },
-    },
-  }))
-  .case(updateHostsAnomaliesJobIdFilter, (state, { jobIds, hostsType }) => ({
-    ...state,
-    [hostsType]: {
-      ...state[hostsType],
-      queries: {
-        ...state[hostsType].queries,
-        [HostsTableType.anomalies]: {
-          ...state[hostsType].queries[HostsTableType.anomalies],
-          jobIdSelection: jobIds,
-        },
-      },
-    },
-  }))
-  .case(updateHostsAnomaliesInterval, (state, { interval, hostsType }) => ({
-    ...state,
-    [hostsType]: {
-      ...state[hostsType],
-      queries: {
-        ...state[hostsType].queries,
-        [HostsTableType.anomalies]: {
-          ...state[hostsType].queries[HostsTableType.anomalies],
-          intervalSelection: interval,
-        },
-      },
-    },
-  }))
-  .build();
+export const hostsReducer = createReducer(initialHostsState, (builder) =>
+  builder
+    .addCase(setHostTablesActivePageToZero, (state) => {
+      state.page.queries[HostsTableType.authentications].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.page.queries[HostsTableType.hosts].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.page.queries[HostsTableType.events].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.page.queries[HostsTableType.uncommonProcesses].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[HostsTableType.authentications].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[HostsTableType.hosts].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[HostsTableType.events].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[HostsTableType.uncommonProcesses].activePage =
+        DEFAULT_TABLE_ACTIVE_PAGE;
+    })
+    .addCase(setHostDetailsTablesActivePageToZero, (state) => {
+      state.details.queries[HostsTableType.authentications].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[HostsTableType.hosts].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[HostsTableType.events].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[HostsTableType.uncommonProcesses].activePage =
+        DEFAULT_TABLE_ACTIVE_PAGE;
+    })
+    .addCase(updateTableActivePage, (state, { payload: { activePage, hostsType, tableType } }) => {
+      state[hostsType].queries[tableType].activePage = activePage;
+    })
+    .addCase(updateTableLimit, (state, { payload: { limit, hostsType, tableType } }) => {
+      state[hostsType].queries[tableType].limit = limit;
+    })
+    .addCase(updateHostsSort, (state, { payload: { sort, hostsType } }) => {
+      state[hostsType].queries[HostsTableType.hosts].direction = sort.direction;
+      state[hostsType].queries[HostsTableType.hosts].sortField = sort.field;
+      state[hostsType].queries[HostsTableType.hosts].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+    })
+    .addCase(updateHostRiskScoreSort, (state, { payload: { sort, hostsType } }) => {
+      state[hostsType].queries[HostsTableType.risk].sort = sort;
+    })
+    .addCase(
+      updateHostRiskScoreSeverityFilter,
+      (state, { payload: { severitySelection, hostsType } }) => {
+        state[hostsType].queries[HostsTableType.risk].severitySelection = severitySelection;
+        state[hostsType].queries[HostsTableType.risk].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      }
+    )
+    .addCase(updateHostsAnomaliesJobIdFilter, (state, { payload: { jobIds, hostsType } }) => {
+      state[hostsType].queries[HostsTableType.anomalies].jobIdSelection = jobIds;
+    })
+    .addCase(updateHostsAnomaliesInterval, (state, { payload: { interval, hostsType } }) => {
+      state[hostsType].queries[HostsTableType.anomalies].intervalSelection = interval;
+    })
+);

@@ -7,42 +7,33 @@
 
 import type { RisonValue } from '@kbn/rison';
 import deepEqual from 'fast-deep-equal';
-import { reducerWithInitialState } from 'typescript-fsa-reducers';
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
 import { registerUrlParam, updateUrlParam, deregisterUrlParam } from './actions';
 
 export type GlobalUrlParam = Record<string, RisonValue | null>;
 
 export const initialGlobalUrlParam: GlobalUrlParam = {};
 
-export const globalUrlParamReducer = reducerWithInitialState(initialGlobalUrlParam)
-  .case(registerUrlParam, (state, { key, initialValue }) => {
-    // It doesn't allow the query param to be used twice
-    if (state[key] !== undefined) {
-      // eslint-disable-next-line no-console
-      console.error(`Url param key '${key}' is already being used.`);
-      return state;
-    }
-
-    return {
-      ...state,
-      [key]: initialValue,
-    };
-  })
-  .case(deregisterUrlParam, (state, { key }) => {
-    const nextState = { ...state };
-
-    delete nextState[key];
-
-    return nextState;
-  })
-  .case(updateUrlParam, (state, { key, value }) => {
-    if (state[key] === undefined || deepEqual(state[key], value)) {
-      return state;
-    }
-
-    return {
-      ...state,
-      [key]: value,
-    };
-  })
-  .build();
+export const globalUrlParamReducer = createReducer(initialGlobalUrlParam, (builder) =>
+  builder
+    .addCase(registerUrlParam, (state, { payload: { key, initialValue } }) => {
+      // It doesn't allow the query param to be used twice
+      let currentKey = state[key];
+      if (currentKey !== undefined) {
+        // eslint-disable-next-line no-console
+        console.error(`Url param key '${key}' is already being used.`);
+      } else {
+        currentKey = initialValue;
+      }
+    })
+    .addCase(deregisterUrlParam, (state, { payload: { key } }) => {
+      delete state[key];
+    })
+    .addCase(updateUrlParam, (state, { payload: { key, value } }) => {
+      if (state[key] === undefined || deepEqual(state[key], value)) {
+        // return state;
+      } else {
+        state[key] = value;
+      }
+    })
+);

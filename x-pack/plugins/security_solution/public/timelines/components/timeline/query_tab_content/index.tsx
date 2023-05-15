@@ -254,17 +254,17 @@ export const QueryTabContentComponent: React.FC<Props> = ({
     isEmpty(kqlQuery.query) &&
     combinedQueries?.filterQuery === undefined;
 
-  const canQueryTimeline = useMemo(
-    () =>
-      combinedQueries != null &&
-      loadingSourcerer != null &&
-      !loadingSourcerer &&
-      !isEmpty(start) &&
-      !isEmpty(end) &&
-      combinedQueries?.filterQuery !== undefined,
-    [combinedQueries, end, loadingSourcerer, start]
-  );
-
+  // const canQueryTimeline = useMemo(
+  //   () =>
+  //     combinedQueries != null &&
+  //     loadingSourcerer != null &&
+  //     !loadingSourcerer &&
+  //     !isEmpty(start) &&
+  //     !isEmpty(end) &&
+  //     combinedQueries?.filterQuery !== undefined,
+  //   [combinedQueries, end, loadingSourcerer, start]
+  // );
+  const canQueryTimeline = true;
   const getTimelineQueryFields = () => {
     const columnsHeader = isEmpty(columns) ? defaultHeaders : columns;
     const columnFields = columnsHeader.map((c) => c.id);

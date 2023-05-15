@@ -5,14 +5,17 @@
  * 2.0.
  */
 
-import actionCreatorFactory from 'typescript-fsa';
+import {
+  createAction,
+  createReducer,
+  AnyAction,
+  PayloadAction,
+} from '@reduxjs/toolkit';
 
 import type { DataProvider } from '../../../timelines/components/timeline/data_providers/data_provider';
 
-const actionCreator = actionCreatorFactory('x-pack/security_solution/local/drag_and_drop');
+export const registerProvider = createAction<{ provider: DataProvider }>('REGISTER_PROVIDER');
 
-export const registerProvider = actionCreator<{ provider: DataProvider }>('REGISTER_PROVIDER');
+export const unRegisterProvider = createAction<{ id: string }>('UNREGISTER_PROVIDER');
 
-export const unRegisterProvider = actionCreator<{ id: string }>('UNREGISTER_PROVIDER');
-
-export const noProviderFound = actionCreator<{ id: string }>('NO_PROVIDER_FOUND');
+export const noProviderFound = createAction<{ id: string }>('NO_PROVIDER_FOUND');

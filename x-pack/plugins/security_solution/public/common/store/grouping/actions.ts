@@ -5,11 +5,14 @@
  * 2.0.
  */
 
-import actionCreatorFactory from 'typescript-fsa';
+import {
+  createAction,
+  createReducer,
+  AnyAction,
+  PayloadAction,
+} from '@reduxjs/toolkit';
 import type React from 'react';
 
-const actionCreator = actionCreatorFactory('x-pack/security_solution/groups');
-
-export const updateGroupSelector = actionCreator<{
+export const updateGroupSelector = createAction<{
   groupSelector: React.ReactElement | null;
 }>('UPDATE_GROUP_SELECTOR');

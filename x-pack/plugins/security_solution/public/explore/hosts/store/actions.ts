@@ -5,52 +5,51 @@
  * 2.0.
  */
 
-import actionCreatorFactory from 'typescript-fsa';
+import { createAction } from '@reduxjs/toolkit';
 import type { RiskScoreSortField, RiskSeverity } from '../../../../common/search_strategy';
 import type { HostsSortField } from '../../../../common/search_strategy/security_solution/hosts';
 
 import type { HostsTableType, HostsType } from './model';
-const actionCreator = actionCreatorFactory('x-pack/security_solution/local/hosts');
 
-export const updateTableActivePage = actionCreator<{
+export const updateTableActivePage = createAction<{
   activePage: number;
   hostsType: HostsType;
-  tableType: HostsTableType;
+  tableType: Exclude<HostsTableType, 'anomalies'>;
 }>('UPDATE_HOST_TABLE_ACTIVE_PAGE');
 
-export const setHostTablesActivePageToZero = actionCreator('SET_HOST_TABLES_ACTIVE_PAGE_TO_ZERO');
+export const setHostTablesActivePageToZero = createAction('SET_HOST_TABLES_ACTIVE_PAGE_TO_ZERO');
 
-export const setHostDetailsTablesActivePageToZero = actionCreator(
+export const setHostDetailsTablesActivePageToZero = createAction(
   'SET_HOST_DETAILS_TABLES_ACTIVE_PAGE_TO_ZERO'
 );
 
-export const updateTableLimit = actionCreator<{
+export const updateTableLimit = createAction<{
   hostsType: HostsType;
   limit: number;
-  tableType: HostsTableType;
+  tableType: Exclude<HostsTableType, 'anomalies'>;
 }>('UPDATE_HOST_TABLE_LIMIT');
 
-export const updateHostsSort = actionCreator<{
+export const updateHostsSort = createAction<{
   sort: HostsSortField;
   hostsType: HostsType;
 }>('UPDATE_HOSTS_SORT');
 
-export const updateHostRiskScoreSort = actionCreator<{
+export const updateHostRiskScoreSort = createAction<{
   sort: RiskScoreSortField;
   hostsType: HostsType;
 }>('UPDATE_HOST_RISK_SCORE_SORT');
 
-export const updateHostRiskScoreSeverityFilter = actionCreator<{
+export const updateHostRiskScoreSeverityFilter = createAction<{
   severitySelection: RiskSeverity[];
   hostsType: HostsType;
 }>('UPDATE_HOST_RISK_SCORE_SEVERITY');
 
-export const updateHostsAnomaliesJobIdFilter = actionCreator<{
+export const updateHostsAnomaliesJobIdFilter = createAction<{
   jobIds: string[];
   hostsType: HostsType;
 }>('UPDATE_HOSTS_ANOMALIES_JOB_ID_FILTER');
 
-export const updateHostsAnomaliesInterval = actionCreator<{
+export const updateHostsAnomaliesInterval = createAction<{
   interval: string;
   hostsType: HostsType;
 }>('UPDATE_HOSTS_ANOMALIES_INTERVAL');

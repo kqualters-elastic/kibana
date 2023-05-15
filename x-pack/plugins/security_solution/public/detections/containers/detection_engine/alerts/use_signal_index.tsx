@@ -117,5 +117,11 @@ export const useSignalIndex = (): ReturnSignalIndex => {
     };
   }, [addError, hasIndexRead]);
 
+  useEffect(() => {
+    return () => {
+      console.log('unmount');
+    };
+  });
+
   return { loading, ...signalIndex };
 };

@@ -5,32 +5,30 @@
  * 2.0.
  */
 
-import actionCreatorFactory from 'typescript-fsa';
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
 import type { networkModel } from '.';
 import type { NetworkType } from './model';
 
-const actionCreator = actionCreatorFactory('x-pack/security_solution/local/network');
-
-export const updateNetworkTable = actionCreator<{
+export const updateNetworkTable = createAction<{
   networkType: networkModel.NetworkType;
   tableType: networkModel.NetworkTableType | networkModel.NetworkDetailsTableType;
   updates: networkModel.TableUpdates;
 }>('UPDATE_NETWORK_TABLE');
 
-export const setNetworkDetailsTablesActivePageToZero = actionCreator(
+export const setNetworkDetailsTablesActivePageToZero = createAction(
   'SET_IP_DETAILS_TABLES_ACTIVE_PAGE_TO_ZERO'
 );
 
-export const setNetworkTablesActivePageToZero = actionCreator(
+export const setNetworkTablesActivePageToZero = createAction(
   'SET_NETWORK_TABLES_ACTIVE_PAGE_TO_ZERO'
 );
 
-export const updateNetworkAnomaliesJobIdFilter = actionCreator<{
+export const updateNetworkAnomaliesJobIdFilter = createAction<{
   jobIds: string[];
   networkType: NetworkType;
 }>('UPDATE_NETWORK_ANOMALIES_JOB_ID_FILTER');
 
-export const updateNetworkAnomaliesInterval = actionCreator<{
+export const updateNetworkAnomaliesInterval = createAction<{
   interval: string;
   networkType: NetworkType;
 }>('UPDATE_NETWORK_ANOMALIES_INTERVAL');

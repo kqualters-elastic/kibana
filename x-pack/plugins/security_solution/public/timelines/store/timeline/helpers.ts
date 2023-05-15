@@ -8,7 +8,7 @@
 import { getOr, omit, uniq, isEmpty, isEqualWith, cloneDeep, union } from 'lodash/fp';
 
 import { v4 as uuidv4 } from 'uuid';
-
+import type { WriteableDraft } from '@reduxjs/toolkit';
 import type { Filter } from '@kbn/es-query';
 
 import type { SessionViewConfig, ExpandedDetailTimeline } from '../../../../common/types';
@@ -52,28 +52,6 @@ import type { ResolveTimelineConfig } from '../../components/open_timeline/types
 import { getDisplayValue } from '../../components/timeline/data_providers/helpers';
 export const isNotNull = <T>(value: T | null): value is T => value !== null;
 
-interface AddTimelineNoteParams {
-  id: string;
-  noteId: string;
-  timelineById: TimelineById;
-}
-
-export const addTimelineNote = ({
-  id,
-  noteId,
-  timelineById,
-}: AddTimelineNoteParams): TimelineById => {
-  const timeline = timelineById[id];
-
-  return {
-    ...timelineById,
-    [id]: {
-      ...timeline,
-      noteIds: [...timeline.noteIds, noteId],
-    },
-  };
-};
-
 interface AddTimelineNoteToEventParams {
   id: string;
   noteId: string;
@@ -86,20 +64,11 @@ export const addTimelineNoteToEvent = ({
   noteId,
   eventId,
   timelineById,
-}: AddTimelineNoteToEventParams): TimelineById => {
+}: AddTimelineNoteToEventParams) => {
   const timeline = timelineById[id];
   const existingNoteIds = getOr([], `eventIdToNoteIds.${eventId}`, timeline);
 
-  return {
-    ...timelineById,
-    [id]: {
-      ...timeline,
-      eventIdToNoteIds: {
-        ...timeline.eventIdToNoteIds,
-        ...{ [eventId]: uniq([...existingNoteIds, noteId]) },
-      },
-    },
-  };
+  return uniq([...existingNoteIds, noteId]);
 };
 
 interface AddTimelineParams {
@@ -166,7 +135,7 @@ export const addNewTimeline = ({
   timelineType,
   dateRange: maybeDateRange,
   ...timelineProps
-}: AddNewTimelineParams): TimelineById => {
+}: AddNewTimelineParams) => {
   const timeline = timelineById[id];
   const { from: startDateRange, to: endDateRange } = normalizeTimeRange({ from: '', to: '' });
   const dateRange = maybeDateRange ?? { start: startDateRange, end: endDateRange };
@@ -178,20 +147,16 @@ export const addNewTimeline = ({
         }
       : {};
   return {
-    ...timelineById,
-    [id]: {
-      id,
-      ...(timeline ? timeline : {}),
-      ...timelineDefaults,
-      ...timelineProps,
-      dateRange,
-      savedObjectId: null,
-      version: null,
-      isSaving: false,
-      isLoading: false,
-      timelineType,
-      ...templateTimelineInfo,
-    },
+    ...(timeline ? timeline : {}),
+    ...timelineDefaults,
+    ...timelineProps,
+    dateRange,
+    savedObjectId: null,
+    version: null,
+    isSaving: false,
+    isLoading: false,
+    timelineType,
+    ...templateTimelineInfo,
   };
 };
 
@@ -457,7 +422,7 @@ interface ApplyDeltaToTimelineColumnWidth {
   id: string;
   columnId: string;
   delta: number;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const applyDeltaToTimelineColumnWidth = ({
@@ -711,7 +676,7 @@ export const updateTimelineRange = ({
 interface UpdateTimelineSortParams {
   id: string;
   sort: Sort[];
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const updateTimelineSort = ({
@@ -760,7 +725,7 @@ interface UpdateTimelineProviderEnabledParams {
   id: string;
   providerId: string;
   enabled: boolean;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
   andProviderId?: string;
 }
 
@@ -917,7 +882,7 @@ interface UpdateTimelineProviderEditPropertiesParams {
   id: string;
   operator: QueryOperator;
   providerId: string;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
   value: string | number | Array<string | number>;
 }
 
@@ -963,7 +928,7 @@ interface UpdateTimelineProviderTypeParams {
   id: string;
   providerId: string;
   type: DataProviderType;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 const updateTypeAndProvider = (
@@ -1025,7 +990,7 @@ export const updateTimelineProviderType = ({
   providerId,
   type,
   timelineById,
-}: UpdateTimelineProviderTypeParams): TimelineById => {
+}: UpdateTimelineProviderTypeParams): WriteableDraft<TimelineById> => {
   const timeline = timelineById[id];
 
   if (timeline.timelineType !== TimelineType.template && type === DataProviderType.template) {
@@ -1047,7 +1012,7 @@ export const updateTimelineProviderType = ({
 interface UpdateTimelineItemsPerPageParams {
   id: string;
   itemsPerPage: number;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const updateTimelineItemsPerPage = ({
@@ -1068,7 +1033,7 @@ export const updateTimelineItemsPerPage = ({
 interface UpdateTimelinePerPageOptionsParams {
   id: string;
   itemsPerPageOptions: number[];
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const updateTimelinePerPageOptions = ({
@@ -1126,7 +1091,7 @@ const removeProvider = (providerId: string, timeline: TimelineModel) => {
 interface RemoveTimelineProviderParams {
   id: string;
   providerId: string;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
   andProviderId?: string;
 }
 
@@ -1152,7 +1117,7 @@ export const removeTimelineProvider = ({
 interface UnPinTimelineEventParams {
   id: string;
   eventId: string;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const unPinTimelineEvent = ({
@@ -1173,7 +1138,7 @@ export const unPinTimelineEvent = ({
 interface UpdateSavedQueryParams {
   id: string;
   savedQueryId: string | null;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const updateSavedQuery = ({
@@ -1213,14 +1178,14 @@ export const updateFilters = ({ id, filters, timelineById }: UpdateFiltersParams
 interface UpdateExcludedRowRenderersIds {
   id: string;
   excludedRowRendererIds: RowRendererId[];
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const updateExcludedRowRenderersIds = ({
   id,
   excludedRowRendererIds,
   timelineById,
-}: UpdateExcludedRowRenderersIds): TimelineById => {
+}: UpdateExcludedRowRenderersIds) => {
   const timeline = timelineById[id];
 
   return {
@@ -1240,7 +1205,7 @@ export const updateTimelineDetailsPanel = (action: ToggleDetailPanel): ExpandedD
   const newExpandDetails = {
     params: expandedDetails.params ? { ...expandedDetails.params } : {},
     panelView: expandedDetails.panelView,
-  } as ExpandedDetailTimeline;
+  };
   return {
     [expandedTabType]: panelViewOptions.has(expandedDetails.panelView ?? '')
       ? newExpandDetails
@@ -1252,7 +1217,7 @@ interface SetLoadingTableEventsParams {
   id: string;
   eventIds: string[];
   isLoading: boolean;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const setLoadingTableEvents = ({
@@ -1265,7 +1230,9 @@ export const setLoadingTableEvents = ({
 
   const loadingEventIds = isLoading
     ? union(timeline.loadingEventIds, eventIds)
-    : timeline.loadingEventIds.filter((currentEventId) => !eventIds.includes(currentEventId));
+    : timeline.loadingEventIds.filter(
+        (currentEventId: string) => !eventIds.includes(currentEventId)
+      );
 
   return {
     ...timelineById,
@@ -1279,7 +1246,7 @@ export const setLoadingTableEvents = ({
 interface RemoveTableColumnParams {
   id: string;
   columnId: string;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const removeTableColumn = ({
@@ -1342,7 +1309,7 @@ export const upsertTableColumn = ({
 interface UpdateTableColumnsParams {
   id: string;
   columns: ColumnHeaderOptions[];
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const updateTableColumns = ({
@@ -1363,7 +1330,7 @@ export const updateTableColumns = ({
 interface UpdateTableSortParams {
   id: string;
   sort: SortColumnTimeline[];
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const updateTableSort = ({
@@ -1386,7 +1353,7 @@ interface SetSelectedTableEventsParams {
   eventIds: Record<string, TimelineNonEcsData[]>;
   isSelectAllChecked: boolean;
   isSelected: boolean;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const setSelectedTableEvents = ({
@@ -1416,7 +1383,7 @@ interface SetDeletedTableEventsParams {
   id: string;
   eventIds: string[];
   isDeleted: boolean;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const setDeletedTableEvents = ({
@@ -1453,7 +1420,7 @@ export const setDeletedTableEvents = ({
 
 interface InitializeTimelineParams {
   id: string;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
   timelineSettingsProps: Partial<TimelineModelSettings>;
 }
 
@@ -1461,34 +1428,28 @@ export const setInitializeTimelineSettings = ({
   id,
   timelineById,
   timelineSettingsProps,
-}: InitializeTimelineParams): TimelineById => {
+}: InitializeTimelineParams): WriteableDraft<TimelineById> => {
   const timeline = timelineById[id];
 
-  return !timeline?.initialized
-    ? {
-        ...timelineById,
-        [id]: {
-          ...timelineDefaults,
-          ...getTimelineManageDefaults(id),
-          ...timeline,
-          ...timelineSettingsProps,
-          ...(!timeline ||
-          (isEmpty(timeline.columns) && !isEmpty(timelineSettingsProps.defaultColumns))
-            ? { columns: timelineSettingsProps.defaultColumns }
-            : {}),
-          sort: timelineSettingsProps.sort ?? timelineDefaults.sort,
-          loadingEventIds: timelineDefaults.loadingEventIds,
-          initialized: true,
-        },
-      }
-    : timelineById;
+  return {
+    ...timelineDefaults,
+    ...getTimelineManageDefaults(id),
+    ...timeline,
+    ...timelineSettingsProps,
+    ...(!timeline || (isEmpty(timeline.columns) && !isEmpty(timelineSettingsProps.defaultColumns))
+      ? { columns: timelineSettingsProps.defaultColumns }
+      : {}),
+    sort: timelineSettingsProps.sort ?? timelineDefaults.sort,
+    loadingEventIds: timelineDefaults.loadingEventIds,
+    initialized: true,
+  };
 };
 
 interface ApplyDeltaToTableColumnWidth {
   id: string;
   columnId: string;
   delta: number;
-  timelineById: TimelineById;
+  timelineById: WriteableDraft<TimelineById>;
 }
 
 export const applyDeltaToTableColumnWidth = ({
@@ -1496,7 +1457,7 @@ export const applyDeltaToTableColumnWidth = ({
   columnId,
   delta,
   timelineById,
-}: ApplyDeltaToTableColumnWidth): TimelineById => {
+}: ApplyDeltaToTableColumnWidth) => {
   const timeline = timelineById[id];
 
   const columnIndex = timeline.columns.findIndex((c) => c.id === columnId);

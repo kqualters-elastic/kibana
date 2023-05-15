@@ -5,7 +5,8 @@
  * 2.0.
  */
 
-import type { Store, Dispatch, Action, Middleware, CombinedState } from 'redux';
+import type { Store, Dispatch, Middleware, CombinedState } from 'redux';
+import type { Action, EnhancedStore } from '@reduxjs/toolkit';
 
 import type { CoreStart } from '@kbn/core/public';
 import type { DataTableState } from '@kbn/securitysolution-data-table';
@@ -40,7 +41,7 @@ export type State = HostsPluginState &
 /**
  * The Redux store type for the Security app.
  */
-export type SecurityAppStore = Store<State, Action>;
+export type SecurityAppStore = EnhancedStore<State, Action>;
 
 /**
  * like redux's `MiddlewareAPI` but `getState` returns an `Immutable` version of

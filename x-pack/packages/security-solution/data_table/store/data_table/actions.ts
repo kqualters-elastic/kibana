@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import actionCreatorFactory from 'typescript-fsa';
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
 import { TimelineNonEcsData } from '@kbn/timelines-plugin/common';
 import type { ExpandedDetailType } from '../../common/types/detail_panel';
 import type {
@@ -16,132 +16,130 @@ import type {
 } from '../../common/types';
 import type { InitialyzeDataTableSettings, DataTablePersistInput } from './types';
 
-const actionCreator = actionCreatorFactory('x-pack/security_solution/data-table');
+export const createDataTable = createAction<DataTablePersistInput>('TABLE_CREATE_DATA_TABLE');
 
-export const createDataTable = actionCreator<DataTablePersistInput>('CREATE_DATA_TABLE');
-
-export const upsertColumn = actionCreator<{
+export const upsertColumn = createAction<{
   column: ColumnHeaderOptions;
   id: string;
   index: number;
-}>('UPSERT_COLUMN');
+}>('TABLE_UPSERT_COLUMN');
 
-export const applyDeltaToColumnWidth = actionCreator<{
+export const applyDeltaToColumnWidth = createAction<{
   id: string;
   columnId: string;
   delta: number;
-}>('APPLY_DELTA_TO_COLUMN_WIDTH');
+}>('TABLE_APPLY_DELTA_TO_COLUMN_WIDTH');
 
-export const updateColumnOrder = actionCreator<{
+export const updateColumnOrder = createAction<{
   columnIds: string[];
   id: string;
-}>('UPDATE_COLUMN_ORDER');
+}>('TABLE_UPDATE_COLUMN_ORDER');
 
-export const updateColumnWidth = actionCreator<{
+export const updateColumnWidth = createAction<{
   columnId: string;
   id: string;
   width: number;
-}>('UPDATE_COLUMN_WIDTH');
+}>('TABLE_UPDATE_COLUMN_WIDTH');
 
 export type TableToggleDetailPanel = ExpandedDetailType & {
   tabType?: string;
   id: string;
 };
 
-export const toggleDetailPanel = actionCreator<TableToggleDetailPanel>('TOGGLE_DETAIL_PANEL');
+export const toggleDetailPanel = createAction<TableToggleDetailPanel>('TABLE_TOGGLE_DETAIL_PANEL');
 
-export const removeColumn = actionCreator<{
+export const removeColumn = createAction<{
   id: string;
   columnId: string;
-}>('REMOVE_COLUMN');
+}>('TABLE_REMOVE_COLUMN');
 
-export const updateIsLoading = actionCreator<{
+export const updateIsLoading = createAction<{
   id: string;
   isLoading: boolean;
-}>('UPDATE_LOADING');
+}>('TABLE_UPDATE_LOADING');
 
-export const updateColumns = actionCreator<{
+export const updateColumns = createAction<{
   id: string;
   columns: ColumnHeaderOptions[];
-}>('UPDATE_COLUMNS');
+}>('TABLE_UPDATE_COLUMNS');
 
-export const updateItemsPerPage = actionCreator<{ id: string; itemsPerPage: number }>(
-  'UPDATE_ITEMS_PER_PAGE'
+export const updateItemsPerPage = createAction<{ id: string; itemsPerPage: number }>(
+  'TABLE_UPDATE_ITEMS_PER_PAGE'
 );
 
-export const updateItemsPerPageOptions = actionCreator<{
+export const updateItemsPerPageOptions = createAction<{
   id: string;
   itemsPerPageOptions: number[];
-}>('UPDATE_ITEMS_PER_PAGE_OPTIONS');
+}>('TABLE_UPDATE_ITEMS_PER_PAGE_OPTIONS');
 
-export const updateSort = actionCreator<{ id: string; sort: SortColumnTable[] }>('UPDATE_SORT');
+export const updateSort = createAction<{ id: string; sort: SortColumnTable[] }>('TABLE_UPDATE_SORT');
 
-export const setSelected = actionCreator<{
+export const setSelected = createAction<{
   id: string;
   eventIds: Readonly<Record<string, TimelineNonEcsData[]>>;
   isSelected: boolean;
   isSelectAllChecked: boolean;
-}>('SET_DATA_TABLE_SELECTED');
+}>('TABLE_SET_DATA_TABLE_SELECTED');
 
-export const clearSelected = actionCreator<{
+export const clearSelected = createAction<{
   id: string;
-}>('CLEAR_DATA_TABLE_SELECTED');
+}>('TABLE_CLEAR_DATA_TABLE_SELECTED');
 
-export const setEventsLoading = actionCreator<{
+export const setEventsLoading = createAction<{
   id: string;
   eventIds: string[];
   isLoading: boolean;
-}>('SET_DATA_TABLE_EVENTS_LOADING');
+}>('TABLE_SET_DATA_TABLE_EVENTS_LOADING');
 
-export const clearEventsLoading = actionCreator<{
+export const clearEventsLoading = createAction<{
   id: string;
-}>('CLEAR_DATA_TABLE_EVENTS_LOADING');
+}>('TABLE_CLEAR_DATA_TABLE_EVENTS_LOADING');
 
-export const setEventsDeleted = actionCreator<{
+export const setEventsDeleted = createAction<{
   id: string;
   eventIds: string[];
   isDeleted: boolean;
-}>('SET_DATA_TABLE_EVENTS_DELETED');
+}>('TABLE_SET_DATA_TABLE_EVENTS_DELETED');
 
-export const clearEventsDeleted = actionCreator<{
+export const clearEventsDeleted = createAction<{
   id: string;
-}>('CLEAR_DATA_TABLE_EVENTS_DELETED');
+}>('TABLE_CLEAR_DATA_TABLE_EVENTS_DELETED');
 
 export const initializeDataTableSettings =
-  actionCreator<InitialyzeDataTableSettings>('INITIALIZE_DATA_TABLE');
+  createAction<InitialyzeDataTableSettings>('TABLE_INITIALIZE_DATA_TABLE');
 
-export const setDataTableSelectAll = actionCreator<{ id: string; selectAll: boolean }>(
-  'SET_DATA_TABLE_SELECT_ALL'
+export const setDataTableSelectAll = createAction<{ id: string; selectAll: boolean }>(
+  'TABLE_SET_DATA_TABLE_SELECT_ALL'
 );
 
-export const updateGraphEventId = actionCreator<{ id: string; graphEventId: string }>(
-  'UPDATE_DATA_TABLE_GRAPH_EVENT_ID'
+export const updateGraphEventId = createAction<{ id: string; graphEventId: string }>(
+  'TABLE_UPDATE_DATA_TABLE_GRAPH_EVENT_ID'
 );
 
-export const updateSessionViewConfig = actionCreator<{
+export const updateSessionViewConfig = createAction<{
   id: string;
   sessionViewConfig: SessionViewConfig | null;
-}>('UPDATE_DATA_TABLE_SESSION_VIEW_CONFIG');
+}>('TABLE_UPDATE_DATA_TABLE_SESSION_VIEW_CONFIG');
 
-export const setTableUpdatedAt = actionCreator<{ id: string; updated: number }>(
-  'SET_TABLE_UPDATED_AT'
+export const setTableUpdatedAt = createAction<{ id: string; updated: number }>(
+  'TABLE_SET_TABLE_UPDATED_AT'
 );
 
-export const updateTotalCount = actionCreator<{ id: string; totalCount: number }>(
-  'UPDATE_TOTAL_COUNT'
+export const updateTotalCount = createAction<{ id: string; totalCount: number }>(
+  'TABLE_UPDATE_TOTAL_COUNT'
 );
 
-export const changeViewMode = actionCreator<{
+export const changeViewMode = createAction<{
   id: string;
   viewMode: ViewSelection;
-}>('CHANGE_ALERT_TABLE_VIEW_MODE');
+}>('TABLE_CHANGE_ALERT_TABLE_VIEW_MODE');
 
-export const updateShowBuildingBlockAlertsFilter = actionCreator<{
+export const updateShowBuildingBlockAlertsFilter = createAction<{
   id: string;
   showBuildingBlockAlerts: boolean;
-}>('UPDATE_BUILDING_BLOCK_ALERTS_FILTER');
+}>('TABLE_UPDATE_BUILDING_BLOCK_ALERTS_FILTER');
 
-export const updateShowThreatIndicatorAlertsFilter = actionCreator<{
+export const updateShowThreatIndicatorAlertsFilter = createAction<{
   id: string;
   showOnlyThreatIndicatorAlerts: boolean;
-}>('UPDATE_SHOW_THREAT_INDICATOR_ALERTS_FILTER');
+}>('TABLE_UPDATE_SHOW_THREAT_INDICATOR_ALERTS_FILTER');

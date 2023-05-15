@@ -6,8 +6,6 @@
  */
 
 import type {
-  Action,
-  Store,
   Middleware,
   Dispatch,
   PreloadedState,
@@ -15,7 +13,9 @@ import type {
   AnyAction,
   Reducer,
 } from 'redux';
-import { applyMiddleware, compose, createStore as createReduxStore } from 'redux';
+import { compose, createStore as createReduxStore } from 'redux';
+import { configureStore } from '@reduxjs/toolkit';
+import type { Action, EnhancedStore } from '@reduxjs/toolkit';
 
 import { createEpicMiddleware } from 'redux-observable';
 import type { Observable } from 'rxjs';
@@ -40,15 +40,20 @@ import { inputsSelectors } from './inputs';
 import type { SubPluginsInitReducer } from './reducer';
 import { createInitialState, createReducer } from './reducer';
 import { createRootEpic } from './epic';
-import type { AppAction } from './actions';
 import type { Immutable } from '../../../common/endpoint/types';
 import type { State } from './types';
 import type { TimelineEpicDependencies, TimelineState } from '../../timelines/store/timeline/types';
 import type { KibanaDataView, SourcererModel } from './sourcerer/model';
 import { initDataView } from './sourcerer/model';
-import type { AppObservableLibs, StartedSubPlugins, StartPlugins } from '../../types';
+import type {
+  AppObservableLibs,
+  StartedSubPlugins,
+  StartPlugin,
+  SecurityAppStores,
+} from '../../types';
 import type { ExperimentalFeatures } from '../../../common/experimental_features';
 import { createSourcererDataView } from '../containers/sourcerer/create_sourcerer_data_view';
+import { noteApi } from '../../timelines/store/timeline/api/note';
 
 type ComposeType = typeof compose;
 declare global {
@@ -143,7 +148,7 @@ export const createStoreFactory = async (
     {
       ...subPlugins.explore.store.initialState,
       ...timelineInitialState,
-      ...subPlugins.management.store.initialState,
+      // ...subPlugins.management.store.initialState,
     },
     {
       defaultDataView,
@@ -158,14 +163,15 @@ export const createStoreFactory = async (
   const rootReducer = {
     ...subPlugins.explore.store.reducer,
     timeline: timelineReducer,
-    ...subPlugins.management.store.reducer,
+    [noteApi.reducerPath]: noteApi.reducer,
+    // ...subPlugins.management.store.reducer,
   };
 
   return createStore(initialState, rootReducer, libs$.pipe(pluck('kibana')), storage, [
-    ...(subPlugins.management.store.middleware ?? []),
+    // ...(subPlugins.management.store.middleware ?? []),
+    noteApi.middleware,
   ]);
 };
-
 /**
  * Factory for Security App's redux store.
  */
@@ -175,7 +181,7 @@ export const createStore = (
   kibana: Observable<CoreStart>,
   storage: Storage,
   additionalMiddleware?: Array<Middleware<{}, State, Dispatch<AppAction | Immutable<AppAction>>>>
-): Store<State, Action> => {
+) => {
   const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
   const middlewareDependencies: TimelineEpicDependencies<State> = {
@@ -194,13 +200,20 @@ export const createStore = (
     }
   );
 
-  store = createReduxStore(
-    createReducer(pluginsReducer),
-    state as PreloadedState<State>,
-    composeEnhancers(
-      applyMiddleware(epicMiddleware, telemetryMiddleware, ...(additionalMiddleware ?? []))
-    )
-  );
+  const rootReducer = createReducer(pluginsReducer);
+
+  store = configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: false,
+        immutableCheck: false,
+      })
+      .concat(epicMiddleware),
+    // .concat(telemetryMiddleware)
+    // .concat(...(additionalMiddleware ?? [])),
+    preloadedState: state,
+  });
 
   epicMiddleware.run(createRootEpic<CombinedState<State>>());
 
@@ -208,3 +221,7 @@ export const createStore = (
 };
 
 export const getStore = (): Store<State, Action> | null => store;
+
+export type RootState = ReturnType<typeof store.getState>;
+
+export type AppDispatch = typeof store.dispatch;

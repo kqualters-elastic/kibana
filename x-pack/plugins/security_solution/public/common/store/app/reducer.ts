@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { reducerWithInitialState } from 'typescript-fsa-reducers';
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
 
 import type { Note } from '../../lib/note';
 
@@ -31,51 +31,45 @@ export const updateNotesById = ({ note, notesById }: UpdateNotesByIdParams): Not
   [note.id]: note,
 });
 
-export const appReducer = reducerWithInitialState(initialAppState)
-  .case(addNotes, (state, { notes }) => ({
-    ...state,
-    notesById: notes.reduce<NotesById>((acc, note: Note) => ({ ...acc, [note.id]: note }), {}),
-  }))
-  .case(deleteNote, (state, { id }) => ({
-    ...state,
-    notesById: Object.fromEntries(
-      Object.entries(state.notesById).filter(([_, note]) => {
-        return note.id !== id && note.saveObjectId !== id;
-      })
-    ),
-  }))
-  .case(updateNote, (state, { note }) => ({
-    ...state,
-    notesById: updateNotesById({ note, notesById: state.notesById }),
-  }))
-  .case(addError, (state, { id, title, message }) => ({
-    ...state,
-    errors: state.errors.concat({ id, title, message }),
-  }))
-  .case(removeError, (state, { id }) => ({
-    ...state,
-    errors: state.errors.filter((error) => error.id !== id),
-  }))
-  .case(addErrorHash, (state, { id, hash, title, message }) => {
-    const errorIdx = state.errors.findIndex((e) => e.id === id);
-    const errorObj = state.errors.find((e) => e.id === id) || { id, title, message };
-    if (errorIdx === -1) {
-      return {
-        ...state,
-        errors: state.errors.concat({
+export const appReducer = createReducer(initialAppState, (builder) =>
+  builder
+    .addCase(addNotes, (state, { payload: { notes } }) => {
+      state.notesById = notes.reduce<NotesById>(
+        (acc, note: Note) => ({ ...acc, [note.id]: note }),
+        {}
+      );
+    })
+    .addCase(deleteNote, (state, { payload: { id } }) => {
+      state.notesById = Object.fromEntries(
+        Object.entries(state.notesById).filter(([_, note]) => {
+          return note.id !== id && note.saveObjectId !== id;
+        })
+      );
+    })
+    .addCase(updateNote, (state, { payload: { note } }) => {
+      state.notesById[note.id] = note;
+    })
+    .addCase(addError, (state, { payload: { id, title, message } }) => {
+      state.errors = state.errors.concat({ id, title, message });
+    })
+    .addCase(removeError, (state, { payload: { id } }) => {
+      state.errors = state.errors.filter((error) => error.id !== id);
+    })
+    .addCase(addErrorHash, (state, { payload: { id, hash, title, message } }) => {
+      const errorIdx = state.errors.findIndex((e) => e.id === id);
+      const errorObj = state.errors.find((e) => e.id === id) || { id, title, message };
+      if (errorIdx === -1) {
+        state.errors = state.errors.concat({
           ...errorObj,
           hash,
           displayError: !state.errors.some((e) => e.hash === hash),
-        }),
-      };
-    }
-    return {
-      ...state,
-      errors: [
-        ...state.errors.slice(0, errorIdx),
-        { ...errorObj, hash, displayError: !state.errors.some((e) => e.hash === hash) },
-        ...state.errors.slice(errorIdx + 1),
-      ],
-    };
-  })
-  .build();
+        });
+      } else {
+        state.errors = [
+          ...state.errors.slice(0, errorIdx),
+          { ...errorObj, hash, displayError: !state.errors.some((e) => e.hash === hash) },
+          ...state.errors.slice(errorIdx + 1),
+        ];
+      }
+    })
+);

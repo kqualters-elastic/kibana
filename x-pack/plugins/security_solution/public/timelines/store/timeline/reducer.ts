@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { reducerWithInitialState } from 'typescript-fsa-reducers';
+import { createReducer } from '@reduxjs/toolkit';
 
 import {
   addNote,
@@ -115,419 +115,378 @@ export const initialTimelineState: TimelineState = {
 };
 
 /** The reducer for all timeline actions  */
-export const timelineReducer = reducerWithInitialState(initialTimelineState)
-  .case(addTimeline, (state, { id, timeline, resolveTimelineConfig }) => ({
-    ...state,
-    timelineById: addTimelineToStore({
-      id,
-      timeline,
-      resolveTimelineConfig,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(createTimeline, (state, { id, timelineType = TimelineType.default, ...timelineProps }) => {
-    return {
-      ...state,
-      timelineById: addNewTimeline({
+export const timelineReducer = createReducer(initialTimelineState, (builder) =>
+  builder
+    .addCase(addTimeline, (state, { payload: { id, timeline, resolveTimelineConfig } }) => {
+      const newTimeline = addTimelineToStore({
         id,
+        timeline,
+        resolveTimelineConfig,
+        timelineById: draft.timelineById,
+      });
+      state.timelineById[id] = newTimeline;
+    })
+    .addCase(
+      createTimeline,
+      (state, { payload: { id, timelineType = TimelineType.default, ...timelineProps } }) => {
+        const newTimeline = addNewTimeline({
+          id,
+          timelineType,
+          timelineById: state.timelineById,
+          ...timelineProps,
+        });
+        state.timelineById[id] = newTimeline;
+      }
+    )
+    .addCase(addNote, (state, { payload: { id, noteId } }) => {
+      state.timelineById[id].noteIds.push(noteId);
+    })
+    .addCase(addNoteToEvent, (state, { payload: { id, noteId, eventId } }) => {
+      state.timelineById[id].existingNoteIds = addTimelineNoteToEvent({
+        id,
+        noteId,
+        eventId,
         timelineById: state.timelineById,
-        timelineType,
-        ...timelineProps,
-      }),
-    };
-  })
-  .case(addNote, (state, { id, noteId }) => ({
-    ...state,
-    timelineById: addTimelineNote({ id, noteId, timelineById: state.timelineById }),
-  }))
-  .case(addNoteToEvent, (state, { id, noteId, eventId }) => ({
-    ...state,
-    timelineById: addTimelineNoteToEvent({ id, noteId, eventId, timelineById: state.timelineById }),
-  }))
-  .case(addProvider, (state, { id, providers }) => ({
-    ...state,
-    timelineById: addTimelineProviders({ id, providers, timelineById: state.timelineById }),
-  }))
-  .case(applyKqlFilterQuery, (state, { id, filterQuery }) => ({
-    ...state,
-    timelineById: applyKqlFilterQueryDraft({
-      id,
-      filterQuery,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(showTimeline, (state, { id, show }) => ({
-    ...state,
-    timelineById: updateTimelineShowTimeline({ id, show, timelineById: state.timelineById }),
-  }))
-  .case(updateGraphEventId, (state, { id, graphEventId }) => ({
-    ...state,
-    timelineById: updateTimelineGraphEventId({
-      id,
-      graphEventId,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(updateSessionViewConfig, (state, { id, sessionViewConfig }) => ({
-    ...state,
-    timelineById: updateTimelineSessionViewConfig({
-      id,
-      sessionViewConfig,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(pinEvent, (state, { id, eventId }) => ({
-    ...state,
-    timelineById: pinTimelineEvent({ id, eventId, timelineById: state.timelineById }),
-  }))
-  .case(removeProvider, (state, { id, providerId, andProviderId }) => ({
-    ...state,
-    timelineById: removeTimelineProvider({
-      id,
-      providerId,
-      timelineById: state.timelineById,
-      andProviderId,
-    }),
-  }))
-  .case(startTimelineSaving, (state, { id }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        isSaving: true,
-      },
-    },
-  }))
-  .case(endTimelineSaving, (state, { id }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        isSaving: false,
-      },
-    },
-  }))
-  .case(setExcludedRowRendererIds, (state, { id, excludedRowRendererIds }) => ({
-    ...state,
-    timelineById: updateExcludedRowRenderersIds({
-      id,
-      excludedRowRendererIds,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(updateTimeline, (state, { id, timeline }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: timeline,
-    },
-  }))
-  .case(unPinEvent, (state, { id, eventId }) => ({
-    ...state,
-    timelineById: unPinTimelineEvent({ id, eventId, timelineById: state.timelineById }),
-  }))
-  .case(updateIsFavorite, (state, { id, isFavorite }) => ({
-    ...state,
-    timelineById: updateTimelineIsFavorite({ id, isFavorite, timelineById: state.timelineById }),
-  }))
-  .case(updateKqlMode, (state, { id, kqlMode }) => ({
-    ...state,
-    timelineById: updateTimelineKqlMode({ id, kqlMode, timelineById: state.timelineById }),
-  }))
-  .case(updateTitleAndDescription, (state, { id, title, description }) => ({
-    ...state,
-    timelineById: updateTimelineTitleAndDescription({
-      id,
-      title,
-      description,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(updateProviders, (state, { id, providers }) => ({
-    ...state,
-    timelineById: updateTimelineProviders({ id, providers, timelineById: state.timelineById }),
-  }))
-  .case(updateRange, (state, { id, start, end }) => ({
-    ...state,
-    timelineById: updateTimelineRange({ id, start, end, timelineById: state.timelineById }),
-  }))
-  .case(updateDataProviderEnabled, (state, { id, enabled, providerId, andProviderId }) => ({
-    ...state,
-    timelineById: updateTimelineProviderEnabled({
-      id,
-      enabled,
-      providerId,
-      timelineById: state.timelineById,
-      andProviderId,
-    }),
-  }))
-  .case(updateDataProviderExcluded, (state, { id, excluded, providerId, andProviderId }) => ({
-    ...state,
-    timelineById: updateTimelineProviderExcluded({
-      id,
-      excluded,
-      providerId,
-      timelineById: state.timelineById,
-      andProviderId,
-    }),
-  }))
-
-  .case(
-    dataProviderEdited,
-    (state, { andProviderId, excluded, field, id, operator, providerId, value }) => ({
-      ...state,
-      timelineById: updateTimelineProviderProperties({
-        andProviderId,
-        excluded,
-        field,
+      });
+    })
+    .addCase(addProvider, (state, { payload: { id, providers } }) => {
+      state.timelineById[id] = addTimelineProviders({
         id,
-        operator,
+        providers,
+        timelineById: state.timelineById,
+      });
+    })
+    .addCase(applyKqlFilterQuery, (state, { payload: { id, filterQuery } }) => {
+      const newTimelines = applyKqlFilterQueryDraft({
+        id,
+        filterQuery,
+        timelineById: state.timelineById,
+      });
+      state.timelineById = newTimelines;
+    })
+    .addCase(showTimeline, (state, { payload: { id, show } }) => {
+      const currentTimeline = state.timelineById[id];
+      if (currentTimeline) {
+        currentTimeline.show = show;
+      }
+    })
+    .addCase(updateGraphEventId, (state, { payload: { id, graphEventId } }) => {
+      const newTimeline = updateTimelineGraphEventId({
+        id,
+        graphEventId,
+        timelineById: state.timelineById,
+      });
+      state.timelineById[id] = newTimeline;
+    })
+    .addCase(updateSessionViewConfig, (state, { payload: { id, sessionViewConfig } }) => {
+      const newTimelines = updateTimelineSessionViewConfig({
+        id,
+        sessionViewConfig,
+        timelineById: state.timelineById,
+      });
+      state.timelineById = newTimelines;
+    })
+    .addCase(pinEvent, (state, { payload: { id, eventId } }) => {
+      // here
+      state.timelineById = pinTimelineEvent({ id, eventId, timelineById: state.timelineById });
+    })
+    .addCase(removeProvider, (state, { payload: { id, providerId, andProviderId } }) => {
+      const newTimelines = removeTimelineProvider({
+        id,
         providerId,
         timelineById: state.timelineById,
-        value,
-      }),
+        andProviderId,
+      });
+      state.timelineById = newTimelines;
     })
-  )
-  .case(updateDataProviderType, (state, { id, type, providerId, andProviderId }) => ({
-    ...state,
-    timelineById: updateTimelineProviderType({
-      id,
-      type,
-      providerId,
-      timelineById: state.timelineById,
-      andProviderId,
-    }),
-  }))
-  .case(updateAutoSaveMsg, (state, { timelineId, newTimelineModel }) => ({
-    ...state,
-    autoSavedWarningMsg: {
-      timelineId,
-      newTimelineModel,
-    },
-  }))
-  .case(showCallOutUnauthorizedMsg, (state) => ({
-    ...state,
-    showCallOutUnauthorizedMsg: true,
-  }))
-  .case(setSavedQueryId, (state, { id, savedQueryId }) => ({
-    ...state,
-    timelineById: updateSavedQuery({
-      id,
-      savedQueryId,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(setFilters, (state, { id, filters }) => ({
-    ...state,
-    timelineById: updateFilters({
-      id,
-      filters,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(setInsertTimeline, (state, insertTimeline) => ({
-    ...state,
-    insertTimeline,
-  }))
-  .case(updateDataView, (state, { id, dataViewId, indexNames }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        dataViewId,
-        indexNames,
-      },
-    },
-  }))
-  .case(setActiveTabTimeline, (state, { id, activeTab, scrollToTop }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        activeTab,
-        prevActiveTab: state.timelineById[id].activeTab,
-        scrollToTop: scrollToTop
-          ? {
-              timestamp: Math.floor(Date.now() / 1000), // convert to seconds to avoid unnecessary rerenders for multiple clicks
-            }
-          : undefined,
-      },
-    },
-  }))
-  .case(toggleModalSaveTimeline, (state, { id, showModalSaveTimeline }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        showSaveModal: showModalSaveTimeline,
-      },
-    },
-  }))
-  .case(updateEqlOptions, (state, { id, field, value }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        eqlOptions: {
-          ...(state.timelineById[id].eqlOptions ?? {}),
-          [field]: value,
-        },
-      },
-    },
-  }))
-  .case(setTimelineUpdatedAt, (state, { id, updated }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        updated,
-      },
-    },
-  }))
-  .case(toggleDetailPanel, (state, action) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [action.id]: {
-        ...state.timelineById[action.id],
-        expandedDetail: {
-          ...state.timelineById[action.id].expandedDetail,
-          ...updateTimelineDetailsPanel(action),
-        },
-      },
-    },
-  }))
-  .case(setEventsLoading, (state, { id, eventIds, isLoading }) => ({
-    ...state,
-    timelineById: setLoadingTableEvents({
-      id,
-      eventIds,
-      timelineById: state.timelineById,
-      isLoading,
-    }),
-  }))
-  .case(removeColumn, (state, { id, columnId }) => ({
-    ...state,
-    timelineById: removeTableColumn({
-      id,
-      columnId,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(upsertColumn, (state, { column, id, index }) => ({
-    ...state,
-    timelineById: upsertTableColumn({ column, id, index, timelineById: state.timelineById }),
-  }))
-  .case(updateColumns, (state, { id, columns }) => ({
-    ...state,
-    timelineById: updateTableColumns({
-      id,
-      columns,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(updateIsLoading, (state, { id, isLoading }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
+    .addCase(startTimelineSaving, (state, { payload: { id } }) => {
+      const currentTimeline = state.timelineById[id];
+      if (currentTimeline) {
+        currentTimeline.isSaving = true;
+      }
+    })
+    .addCase(endTimelineSaving, (state, { payload: { id } }) => {
+      const currentTimeline = state.timelineById[id];
+      if (currentTimeline) {
+        currentTimeline.isSaving = false;
+      }
+    })
+    .addCase(setExcludedRowRendererIds, (state, { payload: { id, excludedRowRendererIds } }) => {
+      const newTimelines = updateExcludedRowRenderersIds({
+        id,
+        excludedRowRendererIds,
+        timelineById: state.timelineById,
+      });
+      state.timelineById = newTimelines;
+    })
+    .addCase(updateTimeline, (state, { payload: { id, timeline } }) => {
+      state.timelineById[id] = timeline;
+    })
+    .addCase(unPinEvent, (state, { payload: { id, eventId } }) => {
+      state.timelineById = unPinTimelineEvent({ id, eventId, timelineById: state.timelineById });
+    })
+    .addCase(updateIsFavorite, (state, { payload: { id, isFavorite } }) => {
+      state.timelineById = updateTimelineIsFavorite({
+        id,
+        isFavorite,
+        timelineById: state.timelineById,
+      });
+    })
+    .addCase(updateKqlMode, (state, { payload: { id, kqlMode } }) => {
+      state.timelineById = updateTimelineKqlMode({ id, kqlMode, timelineById: state.timelineById });
+    })
+    .addCase(updateTitleAndDescription, (state, { payload: { id, title, description } }) => {
+      const newTimelines = updateTimelineTitleAndDescription({
+        id,
+        title,
+        description,
+        timelineById: state.timelineById,
+      });
+      state.timelineById = newTimelines;
+    })
+    .addCase(updateProviders, (state, { payload: { id, providers } }) => {
+      state.timelineById = updateTimelineProviders({
+        id,
+        providers,
+        timelineById: state.timelineById,
+      });
+    })
+    .addCase(updateRange, (state, { payload: { id, start, end } }) => {
+      state.timelineById = updateTimelineRange({
+        id,
+        start,
+        end,
+        timelineById: state.timelineById,
+      });
+    })
+    .addCase(
+      updateDataProviderEnabled,
+      (state, { payload: { id, enabled, providerId, andProviderId } }) => {
+        const newTimelines = updateTimelineProviderEnabled({
+          id,
+          enabled,
+          providerId,
+          timelineById: state.timelineById,
+          andProviderId,
+        });
+        state.timelineById = newTimelines;
+      }
+    )
+    .addCase(
+      updateDataProviderExcluded,
+      (state, { payload: { id, excluded, providerId, andProviderId } }) => {
+        const newTimelines = updateTimelineProviderExcluded({
+          id,
+          excluded,
+          providerId,
+          timelineById: state.timelineById,
+          andProviderId,
+        });
+        state.timelineById = newTimelines;
+      }
+    )
+    .addCase(
+      dataProviderEdited,
+      (state, { payload: { andProviderId, excluded, field, id, operator, providerId, value } }) => {
+        const newTimelines = updateTimelineProviderProperties({
+          andProviderId,
+          excluded,
+          field,
+          id,
+          operator,
+          providerId,
+          timelineById: state.timelineById,
+          value,
+        });
+        state.timelineById = newTimelines;
+      }
+    )
+    .addCase(
+      updateDataProviderType,
+      (state, { payload: { id, type, providerId, andProviderId } }) => {
+        const newTimelines = updateTimelineProviderType({
+          id,
+          type,
+          providerId,
+          timelineById: state.timelineById,
+          andProviderId,
+        });
+        state.timelineById = newTimelines;
+      }
+    )
+    .addCase(updateAutoSaveMsg, (state, { payload: { timelineId, newTimelineModel } }) => {
+      state.autoSavedWarningMsg = {
+        timelineId,
+        newTimelineModel,
+      };
+    })
+    .addCase(showCallOutUnauthorizedMsg, (state) => {
+      state.showCallOutUnauthorizedMsg = true;
+    })
+    .addCase(setSavedQueryId, (state, { payload: { id, savedQueryId } }) => {
+      const newTimelines = updateSavedQuery({
+        id,
+        savedQueryId,
+        timelineById: state.timelineById,
+      });
+      state.timelineById = newTimelines;
+    })
+    .addCase(setFilters, (state, { payload: { id, filters } }) => {
+      const newTimeline = updateFilters({
+        id,
+        filters,
+        timelineById: state.timelineById,
+      });
+      state.timelineById = newTimeline;
+    })
+    .addCase(
+      setInsertTimeline,
+      (state, { payload: { graphEventId, timelineId, timelineSavedObjectId, timelineTitle } }) => {
+        const timeline = state.timelineById[timelineId];
+        if (timeline) {
+          timeline.savedObjectId = timelineSavedObjectId;
+          timeline.title = timelineTitle;
+        }
+      }
+    )
+    .addCase(updateDataView, (state, { payload: { id, dataViewId, indexNames } }) => {
+      state.timelineById[id].dataViewId = dataViewId;
+      state.timelineById[id].indexNames = indexNames;
+    })
+    .addCase(setActiveTabTimeline, (state, { payload: { id, activeTab, scrollToTop } }) => {
+      const currentTimeline = state.timelineById[id];
+      currentTimeline.prevActiveTab = currentTimeline.activeTab;
+      currentTimeline.activeTab = activeTab;
+      if (scrollToTop) {
+        currentTimeline.scrollToTop.timestamp = Math.floor(Date.now() / 1000);
+      }
+    })
+    .addCase(toggleModalSaveTimeline, (state, { payload: { id, showModalSaveTimeline } }) => {
+      state.timelineById[id].showSaveModal = showModalSaveTimeline;
+    })
+    .addCase(updateEqlOptions, (state, { payload: { id, field, value } }) => {
+      let currentEqlOptions = state.timelineById[id].eqlOptions;
+      currentEqlOptions = {
+        ...currentEqlOptions,
+        [field]: value,
+      };
+    })
+    .addCase(setTimelineUpdatedAt, (state, { payload: { id, updated } }) => {
+      state.timelineById[id].updated = updated;
+    })
+    .addCase(toggleDetailPanel, (state, { payload: { tabType, id, ...expandedDetails } }) => {
+      state.timelineById[id].expandedDetail = updateTimelineDetailsPanel({
+        tabType,
+        id,
+        expandedDetails,
+      });
+    })
+    .addCase(setEventsLoading, (state, { payload: { id, eventIds, isLoading } }) => {
+      state.timelineById = setLoadingTableEvents({
+        id,
+        eventIds,
+        timelineById: state.timelineById,
         isLoading,
-      },
-    },
-  }))
-  .case(updateSort, (state, { id, sort }) => ({
-    ...state,
-    timelineById: updateTableSort({ id, sort, timelineById: state.timelineById }),
-  }))
-  .case(setSelected, (state, { id, eventIds, isSelected, isSelectAllChecked }) => ({
-    ...state,
-    timelineById: setSelectedTableEvents({
-      id,
-      eventIds,
-      timelineById: state.timelineById,
-      isSelected,
-      isSelectAllChecked,
-    }),
-  }))
-  .case(clearSelected, (state, { id }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        selectedEventIds: {},
-        isSelectAllChecked: false,
-      },
-    },
-  }))
-  .case(setEventsDeleted, (state, { id, eventIds, isDeleted }) => ({
-    ...state,
-    timelineById: setDeletedTableEvents({
-      id,
-      eventIds,
-      timelineById: state.timelineById,
-      isDeleted,
-    }),
-  }))
-  .case(initializeTimelineSettings, (state, { id, ...timelineSettingsProps }) => ({
-    ...state,
-    timelineById: setInitializeTimelineSettings({
-      id,
-      timelineById: state.timelineById,
-      timelineSettingsProps,
-    }),
-  }))
-  .case(updateItemsPerPage, (state, { id, itemsPerPage }) => ({
-    ...state,
-    timelineById: updateTimelineItemsPerPage({
-      id,
-      itemsPerPage,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(updateItemsPerPageOptions, (state, { id, itemsPerPageOptions }) => ({
-    ...state,
-    timelineById: updateTimelinePerPageOptions({
-      id,
-      itemsPerPageOptions,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(applyDeltaToColumnWidth, (state, { id, columnId, delta }) => ({
-    ...state,
-    timelineById: applyDeltaToTableColumnWidth({
-      id,
-      columnId,
-      delta,
-      timelineById: state.timelineById,
-    }),
-  }))
-  .case(clearEventsDeleted, (state, { id }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        deletedEventIds: [],
-      },
-    },
-  }))
-  .case(clearEventsLoading, (state, { id }) => ({
-    ...state,
-    timelineById: {
-      ...state.timelineById,
-      [id]: {
-        ...state.timelineById[id],
-        loadingEventIds: [],
-      },
-    },
-  }))
-  .build();
+      });
+    })
+    .addCase(removeColumn, (state, { payload: { id, columnId } }) => {
+      state.timelineById = removeTableColumn({
+        id,
+        columnId,
+        timelineById: state.timelineById,
+      });
+    })
+    .addCase(upsertColumn, (state, { payload: { column, id, index } }) => {
+      state.timelineById = upsertTableColumn({
+        column,
+        id,
+        index,
+        timelineById: state.timelineById,
+      });
+    })
+    .addCase(updateColumns, (state, { payload: { id, columns } }) => {
+      state.timelineById = updateTableColumns({
+        id,
+        columns,
+        timelineById: state.timelineById,
+      });
+    })
+    .addCase(updateIsLoading, (state, { payload: { id, isLoading } }) => {
+      const currentTimeline = state.timelineById[id];
+      if (currentTimeline) {
+        currentTimeline.isLoading = isLoading;
+      }
+    })
+    .addCase(updateSort, (state, { payload: { id, sort } }) => {
+      state.timelineById = updateTableSort({ id, sort, timelineById: state.timelineById });
+    })
+    .addCase(
+      setSelected,
+      (state, { payload: { id, eventIds, isSelected, isSelectAllChecked } }) => {
+        const newTimeline = setSelectedTableEvents({
+          id,
+          eventIds,
+          timelineById: state.timelineById,
+          isSelected,
+          isSelectAllChecked,
+        });
+        state.timelineById[id] = newTimeline;
+      }
+    )
+    .addCase(clearSelected, (state, { payload: { id } }) => {
+      state.timelineById[id].selectedEventIds = {};
+      state.timelineById[id].isSelectAllChecked = false;
+    })
+    .addCase(setEventsDeleted, (state, { payload: { id, eventIds, isDeleted } }) => {
+      const newTimeline = setDeletedTableEvents({
+        id,
+        eventIds,
+        timelineById: state.timelineById,
+        isDeleted,
+      });
+      state.timelineById[id] = newTimeline;
+    })
+    .addCase(initializeTimelineSettings, (state, { payload: { id, ...timelineSettingsProps } }) => {
+      if (state.timelineById[id].initialized === false) {
+        const newTimeline = setInitializeTimelineSettings({
+          id,
+          timelineById: state.timelineById,
+          timelineSettingsProps,
+        });
+        state.timelineById[id] = newTimeline;
+      }
+    })
+    .addCase(updateItemsPerPage, (state, { payload: { id, itemsPerPage } }) => {
+      const newTimeline = updateTimelineItemsPerPage({
+        id,
+        itemsPerPage,
+        timelineById: state.timelineById,
+      });
+      state.timelineById[id] = newTimeline;
+    })
+    .addCase(updateItemsPerPageOptions, (state, { payload: { id, itemsPerPageOptions } }) => {
+      const newTimeline = updateTimelinePerPageOptions({
+        id,
+        itemsPerPageOptions,
+        timelineById: state.timelineById,
+      });
+      state.timelineById[id] = newTimeline;
+    })
+    .addCase(applyDeltaToColumnWidth, (state, { payload: { id, columnId, delta } }) => {
+      const newTimeline = applyDeltaToTableColumnWidth({
+        id,
+        columnId,
+        delta,
+        timelineById: state.timelineById,
+      });
+      state.timelineById[id] = newTimeline;
+    })
+    .addCase(clearEventsDeleted, (state, { payload: { id } }) => {
+      const currentTimeline = state.timelineById[id];
+      currentTimeline.deletedEventIds = [];
+    })
+    .addCase(clearEventsLoading, (state, { payload: { id } }) => {
+      const currentTimeline = state.timelineById[id];
+      currentTimeline.loadingEventIds = [];
+    })
+);

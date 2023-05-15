@@ -9,10 +9,3 @@ import type { UsersModel, UsersQueries } from './model';
 import { UsersTableType } from './model';
 import { DEFAULT_TABLE_ACTIVE_PAGE } from '../../../common/store/constants';
 
-export const setUsersPageQueriesActivePageToZero = (state: UsersModel): UsersQueries => ({
-  ...state.page.queries,
-  [UsersTableType.allUsers]: {
-    ...state.page.queries[UsersTableType.allUsers],
-    activePage: DEFAULT_TABLE_ACTIVE_PAGE,
-  },
-});

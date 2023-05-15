@@ -15,7 +15,7 @@ import {
   isObject,
   toString as fpToString,
 } from 'lodash/fp';
-import type { Action } from 'redux';
+import type { Action } from '@reduxjs/toolkit';
 import type { Epic } from 'redux-observable';
 import { from, empty, merge } from 'rxjs';
 import type { Filter, MatchAllFilter } from '@kbn/es-query';
@@ -154,6 +154,7 @@ export const createTimelineEpic =
       action$.pipe(
         withLatestFrom(timeline$),
         filter(([action, timeline]) => {
+          console.log(action, timeline);
           const timelineId: string = get('payload.id', action);
           const timelineObj: TimelineModel = timeline[timelineId];
           if (action.type === addError.type) {
@@ -236,6 +237,7 @@ export const createTimelineEpic =
             ).pipe(
               withLatestFrom(timeline$, allTimelineQuery$, kibana$),
               mergeMap(([result, recentTimeline, allTimelineQuery, kibana]) => {
+                console.log({result, recentTimeline, allTimelineQuery, kibana});
                 const error = result as TimelineErrorResponse;
                 if (error.status_code != null && error.status_code === 405) {
                   kibana.notifications.toasts.addDanger({
@@ -351,83 +353,90 @@ const timelineInput: TimelineInput = {
 export const convertTimelineAsInput = (
   timeline: TimelineModel,
   timelineTimeRange: inputsModel.TimeRange
-): TimelineInput =>
-  Object.keys(timelineInput).reduce<TimelineInput>((acc, key) => {
-    if (has(key, timeline)) {
-      if (key === 'kqlQuery') {
-        return set(`${key}.filterQuery`, get(`${key}.filterQuery`, timeline), acc);
-      } else if (key === 'dateRange') {
-        return set(`${key}`, { start: timelineTimeRange.from, end: timelineTimeRange.to }, acc);
-      } else if (key === 'columns' && get(key, timeline) != null) {
-        return set(
-          key,
-          get(key, timeline).map((col: ColumnHeaderOptions) =>
-            omit(['initialWidth', 'width', '__typename', 'esTypes'], col)
-          ),
-          acc
-        );
-      } else if (key === 'filters' && get(key, timeline) != null) {
-        const filters = get(key, timeline);
-        return set(
-          key,
-          filters != null
-            ? filters.map((myFilter: Filter) => {
-                const basicFilter = omit(['$state'], myFilter);
-                return {
-                  ...basicFilter,
-                  meta: {
-                    ...basicFilter.meta,
-                    field:
-                      (isMatchAllFilter(basicFilter) ||
-                        isPhraseFilter(basicFilter) ||
-                        isPhrasesFilter(basicFilter) ||
-                        isRangeFilter(basicFilter)) &&
-                      basicFilter.meta.field != null
-                        ? convertToString(basicFilter.meta.field)
-                        : null,
-                    value:
-                      basicFilter.meta.value != null
-                        ? convertToString(basicFilter.meta.value)
-                        : null,
-                    params:
-                      basicFilter.meta.params != null
-                        ? convertToString(basicFilter.meta.params)
-                        : null,
-                  },
-                  ...(isMatchAllFilter(basicFilter)
-                    ? {
-                        query: {
-                          match_all: convertToString(
-                            (basicFilter as MatchAllFilter).query.match_all
-                          ),
-                        },
-                      }
-                    : { match_all: null }),
-                  ...(isExistsFilter(basicFilter) && basicFilter.query.exists != null
-                    ? { query: { exists: convertToString(basicFilter.query.exists) } }
-                    : { exists: null }),
-                  ...((isQueryStringFilter(basicFilter) || get('query', basicFilter) != null) &&
-                  basicFilter.query != null
-                    ? { query: convertToString(basicFilter.query) }
-                    : { query: null }),
-                  ...(isRangeFilter(basicFilter) && basicFilter.query.range != null
-                    ? { query: { range: convertToString(basicFilter.query.range) } }
-                    : { range: null }),
-                  ...(isScriptedRangeFilter(basicFilter) &&
-                  basicFilter.query.script !=
-                    null /* TODO remove it when PR50713 is merged || esFilters.isPhraseFilter(basicFilter) */
-                    ? { query: { script: convertToString(basicFilter.query.script) } }
-                    : { script: null }),
-                };
-              })
-            : [],
-          acc
-        );
+): TimelineInput => {
+  try {
+    const converted = Object.keys(timelineInput).reduce<TimelineInput>((acc, key) => {
+      if (has(key, timeline)) {
+        if (key === 'kqlQuery') {
+          return set(`${key}.filterQuery`, get(`${key}.filterQuery`, timeline), acc);
+        } else if (key === 'dateRange') {
+          return set(`${key}`, { start: timelineTimeRange.from, end: timelineTimeRange.to }, acc);
+        } else if (key === 'columns' && get(key, timeline) != null) {
+          return set(
+            key,
+            get(key, timeline).map((col: ColumnHeaderOptions) =>
+              omit(['initialWidth', 'width', '__typename', 'esTypes'], col)
+            ),
+            acc
+          );
+        } else if (key === 'filters' && get(key, timeline) != null) {
+          const filters = get(key, timeline);
+          return set(
+            key,
+            filters != null
+              ? filters.map((myFilter: Filter) => {
+                  const basicFilter = omit(['$state'], myFilter);
+                  return {
+                    ...basicFilter,
+                    meta: {
+                      ...basicFilter.meta,
+                      field:
+                        (isMatchAllFilter(basicFilter) ||
+                          isPhraseFilter(basicFilter) ||
+                          isPhrasesFilter(basicFilter) ||
+                          isRangeFilter(basicFilter)) &&
+                        basicFilter.meta.field != null
+                          ? convertToString(basicFilter.meta.field)
+                          : null,
+                      value:
+                        basicFilter.meta.value != null
+                          ? convertToString(basicFilter.meta.value)
+                          : null,
+                      params:
+                        basicFilter.meta.params != null
+                          ? convertToString(basicFilter.meta.params)
+                          : null,
+                    },
+                    ...(isMatchAllFilter(basicFilter)
+                      ? {
+                          query: {
+                            match_all: convertToString(
+                              (basicFilter as MatchAllFilter).query.match_all
+                            ),
+                          },
+                        }
+                      : { match_all: null }),
+                    ...(isExistsFilter(basicFilter) && basicFilter.query.exists != null
+                      ? { query: { exists: convertToString(basicFilter.query.exists) } }
+                      : { exists: null }),
+                    ...((isQueryStringFilter(basicFilter) || get('query', basicFilter) != null) &&
+                    basicFilter.query != null
+                      ? { query: convertToString(basicFilter.query) }
+                      : { query: null }),
+                    ...(isRangeFilter(basicFilter) && basicFilter.query.range != null
+                      ? { query: { range: convertToString(basicFilter.query.range) } }
+                      : { range: null }),
+                    ...(isScriptedRangeFilter(basicFilter) &&
+                    basicFilter.query.script !=
+                      null /* TODO remove it when PR50713 is merged || esFilters.isPhraseFilter(basicFilter) */
+                      ? { query: { script: convertToString(basicFilter.query.script) } }
+                      : { script: null }),
+                  };
+                })
+              : [],
+            acc
+          );
+        }
+        return set(key, get(key, timeline), acc);
       }
-      return set(key, get(key, timeline), acc);
-    }
-    return acc;
-  }, timelineInput);
+      return acc;
+    }, timelineInput);
+    return converted;
+  } catch (error) {
+    console.log(error);
+    debugger;
+  }
+};
 
 const omitTypename = (key: string, value: keyof TimelineModel) =>
   key === '__typename' ? undefined : value;

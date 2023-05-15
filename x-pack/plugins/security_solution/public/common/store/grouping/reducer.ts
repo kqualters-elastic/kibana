@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { reducerWithInitialState } from 'typescript-fsa-reducers';
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
 import { updateGroupSelector } from './actions';
 import type { GroupModel } from './types';
 
@@ -13,10 +13,9 @@ export const initialGroupingState: GroupModel = {
   groupSelector: null,
 };
 
-export const groupsReducer = reducerWithInitialState(initialGroupingState).case(
-  updateGroupSelector,
-  (state, { groupSelector }) => ({
+export const groupsReducer = createReducer(initialGroupingState, (builder) =>
+  builder.addCase(updateGroupSelector, (state, { payload: { groupSelector } }) => ({
     ...state,
     groupSelector,
-  })
+  }))
 );

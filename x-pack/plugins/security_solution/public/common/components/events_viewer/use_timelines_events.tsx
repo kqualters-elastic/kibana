@@ -227,7 +227,6 @@ export const useTimelineEventsHandler = ({
       if (request == null || skip) {
         return;
       }
-
       const asyncSearch = async () => {
         prevTimelineRequest.current = request;
         abortCtrl.current = new AbortController();
@@ -288,7 +287,6 @@ export const useTimelineEventsHandler = ({
             });
         }
       };
-
       searchSubscription$.current.unsubscribe();
       abortCtrl.current.abort();
       asyncSearch();

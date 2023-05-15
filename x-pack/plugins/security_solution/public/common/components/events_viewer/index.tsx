@@ -268,15 +268,16 @@ const StatefulEventsViewerComponent: React.FC<EventsViewerProps & PropsFromRedux
     [esQueryConfig, browserFields, globalFilters, start, indexPattern, query, end]
   );
 
-  const canQueryTimeline = useMemo(
-    () =>
+  const canQueryTimeline = useMemo(() => {
+    console.log({ filterQuery, isLoadingIndexPattern, start, end });
+    return (
       filterQuery != null &&
       isLoadingIndexPattern != null &&
       !isLoadingIndexPattern &&
       !isEmpty(start) &&
-      !isEmpty(end),
-    [isLoadingIndexPattern, filterQuery, start, end]
-  );
+      !isEmpty(end)
+    );
+  }, [isLoadingIndexPattern, filterQuery, start, end]);
 
   const fields = useMemo(
     () => [...columnHeaders.map((c: { id: string }) => c.id), ...(queryFields ?? [])],

@@ -6,7 +6,7 @@
  */
 
 import { omit } from 'lodash/fp';
-import { reducerWithInitialState } from 'typescript-fsa-reducers';
+import { createReducer } from '@reduxjs/toolkit';
 
 import type { DataProvider } from '../../../timelines/components/timeline/data_providers/data_provider';
 
@@ -40,13 +40,12 @@ export const unRegisterProviderHandler = ({
   dataProviders,
 }: UnRegisterProviderHandlerParams): IdToDataProvider => omit(id, dataProviders);
 
-export const dragAndDropReducer = reducerWithInitialState(initialDragAndDropState)
-  .case(registerProvider, (state, { provider }) => ({
-    ...state,
-    dataProviders: registerProviderHandler({ provider, dataProviders: state.dataProviders }),
-  }))
-  .case(unRegisterProvider, (state, { id }) => ({
-    ...state,
-    dataProviders: unRegisterProviderHandler({ id, dataProviders: state.dataProviders }),
-  }))
-  .build();
+export const dragAndDropReducer = createReducer(initialDragAndDropState, (builder) => {
+  builder
+    .addCase(registerProvider, (state, { payload: { provider } }) => {
+      state.dataProviders[provider.id] = provider;
+    })
+    .addCase(unRegisterProvider, (state, { payload: { id } }) => {
+      state.dataProviders = unRegisterProviderHandler({ id, dataProviders: state.dataProviders });
+    });
+});

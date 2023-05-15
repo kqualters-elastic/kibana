@@ -144,6 +144,7 @@ export const useFetchIndex = (
 
   const indexFieldsSearch = useCallback(
     (iNames) => {
+      debugger;
       const asyncSearch = async () => {
         try {
           setState({ ...state, loading: true });
@@ -190,8 +191,7 @@ export const useFetchIndex = (
     return () => {
       abortCtrl.current.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [indexNames, previousIndexesName]);
+  }, [indexNames, previousIndexesName, indexFieldsSearch]);
 
   return [state.loading, state];
 };

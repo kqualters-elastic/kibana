@@ -6,16 +6,12 @@
  */
 
 import type { RisonValue } from '@kbn/rison';
-import actionCreatorFactory from 'typescript-fsa';
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
 
-const actionCreator = actionCreatorFactory('x-pack/security_solution/local/global_url_param');
-
-export const registerUrlParam = actionCreator<{ key: string; initialValue: RisonValue | null }>(
+export const registerUrlParam = createAction<{ key: string; initialValue: string }>(
   'REGISTER_URL_PARAM'
 );
 
-export const deregisterUrlParam = actionCreator<{ key: string }>('DEREGISTER_URL_PARAM');
+export const deregisterUrlParam = createAction<{ key: string }>('DEREGISTER_URL_PARAM');
 
-export const updateUrlParam = actionCreator<{ key: string; value: RisonValue | null }>(
-  'UPDATE_URL_PARAM'
-);
+export const updateUrlParam = createAction<{ key: string; value: string }>('UPDATE_URL_PARAM');

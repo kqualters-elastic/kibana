@@ -6,8 +6,7 @@
  */
 
 import { get } from 'lodash/fp';
-import { reducerWithInitialState } from 'typescript-fsa-reducers';
-
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
 import { InputsModelId } from './constants';
 import { getIntervalSettings, getTimeRangeSettings } from '../../utils/default_date_settings';
 import {
@@ -30,17 +29,18 @@ import {
   addLinkTo,
   toggleSocTrendsLinkTo,
 } from './actions';
-import {
-  setIsInspected,
-  toggleLockTimeline,
-  updateInputTimerange,
-  upsertQuery,
-  addInputLink,
-  removeInputLink,
-  deleteOneQuery as helperDeleteOneQuery,
-  updateInputFullScreen,
-  toggleLockSocTrends,
-} from './helpers';
+// import {
+//   setIsInspected,
+//   toggleLockTimeline,
+//   updateInputTimerange,
+//   upsertQuery,
+//   addInputLink,
+//   removeInputLink,
+//   deleteOneQuery as helperDeleteOneQuery,
+//   updateInputFullScreen,
+//   toggleLockSocTrends,
+// } from './helpers';
+import { getFutureTimeRange, getPreviousTimeRange } from '../../utils/get_time_range';
 import type { InputsModel, TimeRange } from './model';
 
 export type InputsState = InputsModel;
@@ -141,126 +141,151 @@ export const createInitialInputsState = (socTrendsEnabled: boolean): InputsState
   };
 };
 
-export const inputsReducer = reducerWithInitialState(initialInputsState)
-  .case(setTimelineRangeDatePicker, (state, { from, to }) => {
-    return {
-      ...state,
-      global: {
-        ...state.global,
-        // needs to be emptied, but socTrends should remain if defined
-        linkTo: state.global.linkTo.filter((i) => i !== InputsModelId.timeline),
-      },
-      timeline: {
-        ...state.timeline,
-        timerange: {
+const getTimeRange = (timerange: TimeRange, inputId: InputsModelId, linkToId: InputsModelId) => {
+  if (
+    (inputId === InputsModelId.global || inputId === InputsModelId.timeline) &&
+    linkToId === InputsModelId.socTrends
+  ) {
+    return getPreviousTimeRange(timerange);
+  }
+  if (
+    inputId === InputsModelId.socTrends &&
+    (linkToId === InputsModelId.global || linkToId === InputsModelId.timeline)
+  ) {
+    return getFutureTimeRange(timerange);
+  }
+  return timerange;
+};
+
+export const inputsReducer = createReducer(initialInputsState, (builder) =>
+  builder
+    .addCase(setTimelineRangeDatePicker, (state, { payload: { from, to } }) => {
+      state.global.linkTo = state.global.linkTo.filter((i) => i !== InputsModelId.timeline);
+      state.timeline.timerange = {
+        kind: 'absolute',
+        fromStr: undefined,
+        toStr: undefined,
+        from,
+        to,
+      };
+      state.timeline.linkTo = [];
+    })
+    .addCase(
+      setAbsoluteRangeDatePicker,
+      (state, { payload: { id, from, to, fromStr = undefined, toStr = undefined } }) => {
+        const timerange: TimeRange = {
           kind: 'absolute',
-          fromStr: undefined,
-          toStr: undefined,
+          fromStr,
+          toStr,
           from,
           to,
-        },
-        linkTo: [],
-      },
-    };
-  })
-  .case(
-    setAbsoluteRangeDatePicker,
-    (state, { id, from, to, fromStr = undefined, toStr = undefined }) => {
+        };
+        const input = state[id];
+        if (input) {
+          input.timerange = getTimeRange(timerange, id, id);
+          input.linkTo.map((link) => {
+            const linked = state[link];
+            if (linked) {
+              linked.timerange = getTimeRange(timerange, id, link);
+            }
+            return link;
+          });
+        }
+      }
+    )
+    .addCase(setRelativeRangeDatePicker, (state, { payload: { id, fromStr, from, to, toStr } }) => {
       const timerange: TimeRange = {
-        kind: 'absolute',
+        kind: 'relative',
         fromStr,
         toStr,
         from,
         to,
       };
-      return updateInputTimerange(id, timerange, state);
-    }
-  )
-  .case(setRelativeRangeDatePicker, (state, { id, fromStr, from, to, toStr }) => {
-    const timerange: TimeRange = {
-      kind: 'relative',
-      fromStr,
-      toStr,
-      from,
-      to,
-    };
-    return updateInputTimerange(id, timerange, state);
-  })
-  .case(setFullScreen, (state, { id, fullScreen }) => {
-    return updateInputFullScreen(id, fullScreen, state);
-  })
-  .case(deleteAllQuery, (state, { id }) => ({
-    ...state,
-    [id]: {
-      ...get(id, state),
-      queries: state.global.queries.slice(state.global.queries.length),
-    },
-  }))
-  .case(setQuery, (state, { inputId, id, inspect, loading, refetch, searchSessionId }) =>
-    upsertQuery({ inputId, id, inspect, loading, refetch, state, searchSessionId })
-  )
-  .case(deleteOneQuery, (state, { inputId, id }) => helperDeleteOneQuery({ inputId, id, state }))
-  .case(setDuration, (state, { id, duration }) => ({
-    ...state,
-    [id]: {
-      ...get(id, state),
-      policy: {
-        ...get(`${id}.policy`, state),
-        duration,
-      },
-    },
-  }))
-  .case(startAutoReload, (state, { id }) => ({
-    ...state,
-    [id]: {
-      ...get(id, state),
-      policy: {
-        ...get(`${id}.policy`, state),
-        kind: 'interval',
-      },
-    },
-  }))
-  .case(stopAutoReload, (state, { id }) => ({
-    ...state,
-    [id]: {
-      ...get(id, state),
-      policy: {
-        ...get(`${id}.policy`, state),
-        kind: 'manual',
-      },
-    },
-  }))
-  .case(toggleTimelineLinkTo, (state) => toggleLockTimeline(state))
-  .case(toggleSocTrendsLinkTo, (state) => toggleLockSocTrends(state))
-  .case(
-    setInspectionParameter,
-    (state, { id, inputId, isInspected, selectedInspectIndex, searchSessionId }) =>
-      setIsInspected({ id, inputId, isInspected, selectedInspectIndex, state, searchSessionId })
-  )
-  .case(removeLinkTo, (state, linkToIds) => removeInputLink(linkToIds, state))
-  .case(addLinkTo, (state, linkToIds) => addInputLink(linkToIds, state))
-  .case(setFilterQuery, (state, { id, query, language }) => ({
-    ...state,
-    [id]: {
-      ...get(id, state),
-      query: {
-        query,
-        language,
-      },
-    },
-  }))
-  .case(setSavedQuery, (state, { id, savedQuery }) => ({
-    ...state,
-    [id]: {
-      ...get(id, state),
-      savedQuery,
-    },
-  }))
-  .case(setSearchBarFilter, (state, { id, filters }) => ({
-    ...state,
-    [id]: {
-      ...get(id, state),
-      filters,
-    },
-  }))
-  .build();
+      // obviously not needed separate actions
+      const input = state[id];
+      if (input) {
+        input.timerange = getTimeRange(timerange, id, id);
+        input.linkTo.map((link) => {
+          const linked = state[link];
+          if (linked) {
+            linked.timerange = getTimeRange(timerange, id, link);
+          }
+          return link;
+        });
+      }
+    })
+    .addCase(setFullScreen, (state, { payload: { id, fullScreen } }) => {
+      if (id === InputsModelId.global) {
+        state.global.fullScreen = fullScreen;
+      } else if (id === InputsModelId.timeline) {
+        state.timeline.fullScreen = fullScreen;
+      }
+    })
+    .addCase(deleteAllQuery, (state, { payload: { id } }) => {
+      const inputToClear = state[id];
+      if (inputToClear) {
+        inputToClear.queries = [];
+      }
+    })
+    // .addCase(
+    //   setQuery,
+    //   (state, { payload: { inputId, id, inspect, loading, refetch, searchSessionId } }) =>
+    //     upsertQuery({ inputId, id, inspect, loading, refetch, state, searchSessionId })
+    // )
+    .addCase(deleteOneQuery, (state, { payload: { inputId, id } }) => {
+      const queryIndex = state[inputId].queries.findIndex((q) => q.id === id);
+      const input = state[inputId];
+      if (queryIndex > -1) {
+        input.queries = [
+          ...input.queries.slice(0, queryIndex),
+          ...input.queries.slice(queryIndex + 1),
+        ];
+      }
+    })
+    .addCase(setDuration, (state, { payload: { id, duration } }) => {
+      const input = state[id];
+      if (input) {
+        input.policy.duration = duration;
+      }
+    })
+    .addCase(startAutoReload, (state, { payload: { id } }) => {
+      const input = state[id];
+      if (input) {
+        input.policy.kind = 'interval';
+      }
+    })
+    .addCase(stopAutoReload, (state, { payload: { id } }) => {
+      const input = state[id];
+      if (input) {
+        input.policy.kind = 'manual';
+      }
+    })
+    // .addCase(toggleTimelineLinkTo, (state) => toggleLockTimeline(state))
+    // .addCase(toggleSocTrendsLinkTo, (state) => toggleLockSocTrends(state))
+    // .addCase(
+    //   setInspectionParameter,
+    //   (state, { payload: { id, inputId, isInspected, selectedInspectIndex, searchSessionId } }) =>
+    //     setIsInspected({ id, inputId, isInspected, selectedInspectIndex, state, searchSessionId })
+    // )
+    // .addCase(removeLinkTo, (state, { payload: linkToIds }) => removeInputLink(linkToIds, state))
+    // .addCase(addLinkTo, (state, { payload: linkToIds }) => addInputLink(linkToIds, state))
+    .addCase(setFilterQuery, (state, { payload: { id, query, language } }) => {
+      const input = state[id];
+      if (input) {
+        input.query.query = query;
+        input.query.language = language;
+      }
+    })
+    .addCase(setSavedQuery, (state, { payload: { id, savedQuery } }) => {
+      const input = state[id];
+      if (input) {
+        input.savedQuery = savedQuery;
+      }
+    })
+    .addCase(setSearchBarFilter, (state, { payload: { id, filters } }) => {
+      const input = state[id];
+      if (input) {
+        input.filters = filters;
+      }
+    })
+);

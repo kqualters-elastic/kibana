@@ -334,7 +334,7 @@ const FilterGroupComponent = (props: PropsWithChildren<FilterGroupProps>) => {
       return {
         initialInput,
         settings: {
-          fieldFilterPredicate: (f) => f.type !== 'number',
+          //fieldFilterPredicate: (f) => f.type !== 'number',
           showAddButton: false,
           staticDataViewId: dataViewId ?? '',
           editorConfig: {

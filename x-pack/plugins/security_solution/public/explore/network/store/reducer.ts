@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { reducerWithInitialState } from 'typescript-fsa-reducers';
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
 import { set } from '@kbn/safer-lodash-set/fp';
 import { get } from 'lodash/fp';
 import {
@@ -25,10 +25,6 @@ import {
   updateNetworkAnomaliesJobIdFilter,
   updateNetworkAnomaliesInterval,
 } from './actions';
-import {
-  setNetworkDetailsQueriesActivePageToZero,
-  setNetworkPageQueriesActivePageToZero,
-} from './helpers';
 import type { NetworkModel } from './model';
 import { NetworkType, NetworkDetailsTableType, NetworkTableType } from './model';
 
@@ -169,50 +165,49 @@ export const initialNetworkState: NetworkState = {
   },
 };
 
-export const networkReducer = reducerWithInitialState(initialNetworkState)
-  .case(updateNetworkTable, (state, { networkType, tableType, updates }) => ({
-    ...state,
-    [networkType]: {
-      ...state[networkType],
-      queries: {
-        ...state[networkType].queries,
-        [tableType]: {
-          ...get([networkType, 'queries', tableType], state),
-          ...updates,
-        },
-      },
-    },
-  }))
-  .case(setNetworkTablesActivePageToZero, (state) => ({
-    ...state,
-    page: {
-      ...state.page,
-      queries: setNetworkPageQueriesActivePageToZero(state),
-    },
-    details: {
-      ...state.details,
-      queries: setNetworkDetailsQueriesActivePageToZero(state),
-    },
-  }))
-  .case(setNetworkDetailsTablesActivePageToZero, (state) => ({
-    ...state,
-    details: {
-      ...state.details,
-      queries: setNetworkDetailsQueriesActivePageToZero(state),
-    },
-  }))
-  .case(updateNetworkAnomaliesJobIdFilter, (state, { jobIds, networkType }) => {
-    if (networkType === NetworkType.page) {
-      return set('page.queries.anomalies.jobIdSelection', jobIds, state);
-    } else {
-      return set('details.queries.anomalies.jobIdSelection', jobIds, state);
-    }
-  })
-  .case(updateNetworkAnomaliesInterval, (state, { interval, networkType }) => {
-    if (networkType === NetworkType.page) {
-      return set('page.queries.anomalies.intervalSelection', interval, state);
-    } else {
-      return set('details.queries.anomalies.intervalSelection', interval, state);
-    }
-  })
-  .build();
+export const networkReducer = createReducer(initialNetworkState, (builder) =>
+  builder
+    .addCase(updateNetworkTable, (state, { payload: { networkType, tableType, updates } }) => {
+      state[networkType].queries[tableType] = {
+        ...state[networkType].queries[tableType],
+        ...updates,
+      };
+    })
+    .addCase(setNetworkTablesActivePageToZero, (state) => {
+      state.page.queries[NetworkTableType.topCountriesSource].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.page.queries[NetworkTableType.topCountriesDestination].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.page.queries[NetworkTableType.topNFlowSource].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.page.queries[NetworkTableType.topNFlowDestination].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.page.queries[NetworkTableType.dns].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.page.queries[NetworkTableType.tls].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.page.queries[NetworkTableType.http].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.topCountriesSource].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.topCountriesDestination].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.topNFlowSource].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.topNFlowDestination].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.tls].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.http].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+    })
+    .addCase(setNetworkDetailsTablesActivePageToZero, (state) => {
+      state.details.queries[NetworkTableType.topCountriesSource].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.topCountriesDestination].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.topNFlowSource].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.topNFlowDestination].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.tls].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+      state.details.queries[NetworkTableType.http].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+    })
+    .addCase(updateNetworkAnomaliesJobIdFilter, (state, { payload: { jobIds, networkType } }) => {
+      if (networkType === NetworkType.page) {
+        state.page.queries[NetworkTableType.anomalies].jobIdSelection = jobIds;
+      } else {
+        state.details.queries[NetworkTableType.anomalies].jobIdSelection = jobIds;
+      }
+    })
+    .addCase(updateNetworkAnomaliesInterval, (state, { payload: { interval, networkType } }) => {
+      if (networkType === NetworkType.page) {
+        state.page.queries[NetworkTableType.anomalies].intervalSelection = interval;
+      } else {
+        state.details.queries[NetworkTableType.anomalies].intervalSelection = interval;
+      }
+    })
+);

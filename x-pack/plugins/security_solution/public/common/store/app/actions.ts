@@ -5,25 +5,23 @@
  * 2.0.
  */
 
-import actionCreatorFactory from 'typescript-fsa';
+import { createAction } from '@reduxjs/toolkit';
 
 import type { Note } from '../../lib/note';
 
-const actionCreator = actionCreatorFactory('x-pack/security_solution/local/app');
+export const updateNote = createAction<{ note: Note }>('UPDATE_NOTE');
 
-export const updateNote = actionCreator<{ note: Note }>('UPDATE_NOTE');
+export const addNotes = createAction<{ notes: Note[] }>('APP_ADD_NOTE');
 
-export const addNotes = actionCreator<{ notes: Note[] }>('ADD_NOTE');
+export const deleteNote = createAction<{ id: string }>('DELETE_NOTE');
 
-export const deleteNote = actionCreator<{ id: string }>('DELETE_NOTE');
-
-export const addError = actionCreator<{ id: string; title: string; message: string[] }>(
+export const addError = createAction<{ id: string; title: string; message: string[] }>(
   'ADD_ERRORS'
 );
 
-export const removeError = actionCreator<{ id: string }>('REMOVE_ERRORS');
+export const removeError = createAction<{ id: string }>('REMOVE_ERRORS');
 
-export const addErrorHash = actionCreator<{
+export const addErrorHash = createAction<{
   id: string;
   hash: string;
   title: string;

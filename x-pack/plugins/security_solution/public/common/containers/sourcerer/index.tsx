@@ -240,7 +240,7 @@ export const useInitSourcerer = (
     (newSignalsIndex: string) => {
       const asyncSearch = async (newPatternList: string[]) => {
         abortCtrl.current = new AbortController();
-
+        debugger;
         dispatch(sourcererActions.setSourcererScopeLoading({ loading: true }));
 
         try {
@@ -376,6 +376,7 @@ export const useSourcererDataView = (
     sourcererScope: { missingPatterns, selectedPatterns: scopeSelectedPatterns, loading },
   }: sourcererSelectors.SourcererScopeSelector = useDeepEqualSelector((state) => {
     const sourcererScope = getScopeSelector(state, scopeId);
+    console.log(getSourcererDataViewSelector(state, sourcererScope.selectedDataViewId));
     return {
       ...getDataViewsSelector(state),
       selectedDataView: getSourcererDataViewSelector(state, sourcererScope.selectedDataViewId),
@@ -387,8 +388,8 @@ export const useSourcererDataView = (
     [scopeSelectedPatterns]
   );
 
-  const [legacyPatterns, setLegacyPatterns] = useState<string[]>([]);
-
+  //const [legacyPatterns, setLegacyPatterns] = useState<string[]>([]);
+  const legacyPatterns = useMemo(() => [], []);
   const [indexPatternsLoading, fetchIndexReturn] = useFetchIndex(legacyPatterns);
 
   const legacyDataView: Omit<SourcererDataView, 'id'> & { id: string | null } = useMemo(
@@ -408,12 +409,12 @@ export const useSourcererDataView = (
   );
 
   useEffect(() => {
-    if (selectedDataView == null || missingPatterns.length > 0) {
-      // old way of fetching indices, legacy timeline
-      setLegacyPatterns(selectedPatterns);
-    } else {
-      setLegacyPatterns([]);
-    }
+    // if (selectedDataView == null || missingPatterns.length > 0) {
+    //   // old way of fetching indices, legacy timeline
+    //   setLegacyPatterns(selectedPatterns);
+    // } else {
+    //   setLegacyPatterns([]);
+    // }
   }, [missingPatterns, selectedDataView, selectedPatterns]);
 
   const sourcererDataView = useMemo(

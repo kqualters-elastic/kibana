@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { reducerWithInitialState } from 'typescript-fsa-reducers';
+import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
 import { set } from '@kbn/safer-lodash-set/fp';
 import { DEFAULT_TABLE_ACTIVE_PAGE, DEFAULT_TABLE_LIMIT } from '../../../common/store/constants';
 
@@ -20,7 +20,7 @@ import {
 } from './actions';
 import { setUsersPageQueriesActivePageToZero } from './helpers';
 import type { UsersModel } from './model';
-import { UsersTableType } from './model';
+import { UsersTableType, UsersType } from './model';
 import { Direction } from '../../../../common/search_strategy/common';
 import { RiskScoreFields } from '../../../../common/search_strategy';
 import { UsersFields } from '../../../../common/search_strategy/security_solution/users/common';
@@ -75,80 +75,47 @@ export const initialUsersState: UsersState = {
   },
 };
 
-export const usersReducer = reducerWithInitialState(initialUsersState)
-  .case(setUsersTablesActivePageToZero, (state) => ({
-    ...state,
-    page: {
-      ...state.page,
-      queries: setUsersPageQueriesActivePageToZero(state),
-    },
-  }))
-  .case(updateTableActivePage, (state, { activePage, tableType }) => ({
-    ...state,
-    page: {
-      ...state.page,
-      queries: {
-        ...state.page.queries,
-        [tableType]: {
-          ...state.page.queries[tableType],
-          activePage,
+export const usersReducer = createReducer(initialUsersState, (builder) =>
+  builder
+    .addCase(setUsersTablesActivePageToZero, (state) => {
+      state.page.queries[UsersTableType.allUsers].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+    })
+    .addCase(updateTableActivePage, (state, { payload: { activePage, tableType } }) => {
+      state.page.queries[tableType].activePage = activePage;
+    })
+    .addCase(updateTableLimit, (state, { payload: { limit, tableType } }) => {
+      state.page.queries[tableType].limit = limit;
+    })
+    .addCase(updateTableSorting, (state, { payload: { sort, tableType } }) => {
+      state.page.queries[tableType].sort = sort;
+      state.page.queries[tableType].activePage = DEFAULT_TABLE_ACTIVE_PAGE;
+    })
+    .addCase(updateUserRiskScoreSeverityFilter, (state, { payload: { severitySelection } }) => ({
+      ...state,
+      page: {
+        ...state.page,
+        queries: {
+          ...state.page.queries,
+          [UsersTableType.risk]: {
+            ...state.page.queries[UsersTableType.risk],
+            severitySelection,
+            activePage: DEFAULT_TABLE_ACTIVE_PAGE,
+          },
         },
       },
-    },
-  }))
-  .case(updateTableLimit, (state, { limit, tableType }) => ({
-    ...state,
-    page: {
-      ...state.page,
-      queries: {
-        ...state.page.queries,
-        [tableType]: {
-          ...state.page.queries[tableType],
-          limit,
-        },
-      },
-    },
-  }))
-  .case(updateTableSorting, (state, { sort, tableType }) => ({
-    ...state,
-    page: {
-      ...state.page,
-      queries: {
-        ...state.page.queries,
-        [tableType]: {
-          ...state.page.queries[tableType],
-          sort,
-          activePage: DEFAULT_TABLE_ACTIVE_PAGE,
-        },
-      },
-    },
-  }))
-  .case(updateUserRiskScoreSeverityFilter, (state, { severitySelection }) => ({
-    ...state,
-    page: {
-      ...state.page,
-      queries: {
-        ...state.page.queries,
-        [UsersTableType.risk]: {
-          ...state.page.queries[UsersTableType.risk],
-          severitySelection,
-          activePage: DEFAULT_TABLE_ACTIVE_PAGE,
-        },
-      },
-    },
-  }))
-  .case(updateUsersAnomaliesJobIdFilter, (state, { jobIds, usersType }) => {
-    if (usersType === 'page') {
-      return set('page.queries.anomalies.jobIdSelection', jobIds, state);
-    } else {
-      return set('details.queries.anomalies.jobIdSelection', jobIds, state);
-    }
-  })
-  .case(updateUsersAnomaliesInterval, (state, { interval, usersType }) => {
-    if (usersType === 'page') {
-      return set('page.queries.anomalies.intervalSelection', interval, state);
-    } else {
-      return set('details.queries.anomalies.intervalSelection', interval, state);
-    }
-  })
-  .build();
+    }))
+    .addCase(updateUsersAnomaliesJobIdFilter, (state, { payload: { jobIds, usersType } }) => {
+      if (usersType === UsersType.page) {
+        state.page.queries[UsersTableType.anomalies].jobIdSelection = jobIds;
+      } else {
+        state.details.queries[UsersTableType.anomalies].jobIdSelection = jobIds;
+      }
+    })
+    .addCase(updateUsersAnomaliesInterval, (state, { payload: { interval, usersType } }) => {
+      if (usersType === UsersType.page) {
+        state.page.queries[UsersTableType.anomalies].intervalSelection = interval;
+      } else {
+        state.details.queries[UsersTableType.anomalies].intervalSelection = interval;
+      }
+    })
+);
