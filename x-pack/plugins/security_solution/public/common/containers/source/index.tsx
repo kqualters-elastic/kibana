@@ -7,10 +7,10 @@
 
 import { isEmpty, isEqual, keyBy, pick } from 'lodash/fp';
 import memoizeOne from 'memoize-one';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import type { DataViewBase } from '@kbn/es-query';
 import type { BrowserField, BrowserFields, IndexField } from '@kbn/timelines-plugin/common';
-import type { DataView, IIndexPatternFieldList } from '@kbn/data-views-plugin/common';
+import type { DataView, IIndexPatternFieldList, DataViewSpec } from '@kbn/data-views-plugin/common';
 import { getCategory } from '@kbn/triggers-actions-ui-plugin/public';
 
 import { useKibana } from '../../lib/kibana';
@@ -115,7 +115,7 @@ interface FetchIndexReturn {
   indexes: string[];
   indexExists: boolean;
   indexPatterns: DataViewBase;
-  dataView: DataView | undefined;
+  dataView: DataViewSpec | undefined;
 }
 
 /**
@@ -131,56 +131,60 @@ export const useFetchIndex = (
   const { data } = useKibana().services;
   const abortCtrl = useRef(new AbortController());
   const previousIndexesName = useRef<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const [state, setState] = useState<FetchIndexReturn & { loading: boolean }>({
+  const [state, setState] = useState<FetchIndexReturn>({
     browserFields: DEFAULT_BROWSER_FIELDS,
     indexes: indexNames,
     indexExists: true,
     indexPatterns: DEFAULT_INDEX_PATTERNS,
     dataView: undefined,
-    loading: false,
   });
   const { addError } = useAppToasts();
 
+  const asyncSearch = useCallback(
+    async (iNames) => {
+      try {
+        setLoading(true);
+        abortCtrl.current = new AbortController();
+        const dv = await data.dataViews.create({ title: iNames.join(','), allowNoIndex: true });
+        const dataView = dv.toSpec();
+        const { browserFields } = getDataViewStateFromIndexFields(
+          iNames,
+          dataView.fields,
+          includeUnmapped
+        );
+
+        previousIndexesName.current = dv.getIndexPattern().split(',');
+
+        setState({
+          dataView,
+          browserFields,
+          indexes: dv.getIndexPattern().split(','),
+          indexExists: dv.getIndexPattern().split(',').length > 0,
+          indexPatterns: getIndexFields(dv.getIndexPattern(), dv.fields, includeUnmapped),
+        });
+        setLoading(false);
+      } catch (exc) {
+        setLoading(false);
+        setState({
+          browserFields: DEFAULT_BROWSER_FIELDS,
+          indexes: indexNames,
+          indexExists: true,
+          indexPatterns: DEFAULT_INDEX_PATTERNS,
+          dataView: undefined,
+        });
+        addError(exc?.message, { title: i18n.ERROR_INDEX_FIELDS_SEARCH });
+      }
+    },
+    [addError, data.dataViews, includeUnmapped, indexNames]
+  );
+
   const indexFieldsSearch = useCallback(
     (iNames) => {
-      const asyncSearch = async () => {
-        try {
-          setState({ ...state, loading: true });
-          abortCtrl.current = new AbortController();
-          const dv = await data.dataViews.create({ title: iNames.join(','), allowNoIndex: true });
-          const { browserFields } = getDataViewStateFromIndexFields(
-            iNames,
-            dv.fields,
-            includeUnmapped
-          );
-
-          previousIndexesName.current = dv.getIndexPattern().split(',');
-
-          setState({
-            loading: false,
-            dataView: dv,
-            browserFields,
-            indexes: dv.getIndexPattern().split(','),
-            indexExists: dv.getIndexPattern().split(',').length > 0,
-            indexPatterns: getIndexFields(dv.getIndexPattern(), dv.fields, includeUnmapped),
-          });
-        } catch (exc) {
-          setState({
-            browserFields: DEFAULT_BROWSER_FIELDS,
-            indexes: indexNames,
-            indexExists: true,
-            indexPatterns: DEFAULT_INDEX_PATTERNS,
-            dataView: undefined,
-            loading: false,
-          });
-          addError(exc?.message, { title: i18n.ERROR_INDEX_FIELDS_SEARCH });
-        }
-      };
-
-      asyncSearch();
+      asyncSearch(iNames);
     },
-    [addError, data.dataViews, includeUnmapped, indexNames, state]
+    [asyncSearch]
   );
 
   useEffect(() => {
@@ -190,8 +194,7 @@ export const useFetchIndex = (
     return () => {
       abortCtrl.current.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [indexNames, previousIndexesName]);
+  }, [indexNames, indexFieldsSearch]);
 
-  return [state.loading, state];
+  return useMemo(() => [loading, state], [loading, state]);
 };

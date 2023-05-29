@@ -17,6 +17,6 @@ export const groupsReducer = reducerWithInitialState(initialGroupingState).case(
   updateGroupSelector,
   (state, { groupSelector }) => ({
     ...state,
-    groupSelector,
+    //groupSelector,
   })
 );

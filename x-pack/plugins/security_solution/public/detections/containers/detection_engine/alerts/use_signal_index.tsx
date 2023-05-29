@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { isSecurityAppError } from '@kbn/securitysolution-t-grid';
 
 import { useAppToasts } from '../../../../common/hooks/use_app_toasts';
@@ -29,93 +29,151 @@ export interface ReturnSignalIndex {
  *
  */
 export const useSignalIndex = (): ReturnSignalIndex => {
+  console.log('useSignalIndex');
+  debugger;
   const [loading, setLoading] = useState(true);
-  const [signalIndex, setSignalIndex] = useState<Omit<ReturnSignalIndex, 'loading'>>({
+  const isSubscribed = useRef(true);
+  const abortCtrl = useRef(new AbortController());
+  const [signalIndexState, setSignalIndex] = useState<
+    Omit<ReturnSignalIndex, 'loading' | 'createDeSignalIndex'>
+  >({
     signalIndexExists: null,
     signalIndexName: null,
     signalIndexMappingOutdated: null,
-    createDeSignalIndex: null,
   });
   const { addError } = useAppToasts();
   const { hasIndexRead } = useAlertsPrivileges();
+  // eslint-disable-next-line complexity
+  const createIndex = useCallback(async () => {
+    let isFetchingData = false;
+    const abortCtrolRef = abortCtrl.current;
 
-  useEffect(() => {
-    let isSubscribed = true;
-    const abortCtrl = new AbortController();
+    try {
+      setLoading(true);
+      await createSignalIndex({ signal: abortCtrolRef.signal });
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const signal = await getSignalIndex({ signal: abortCtrl.signal });
+      if (isSubscribed.current) {
+        isFetchingData = true;
+        try {
+          setLoading(true);
+          const signal = await getSignalIndex({ signal: abortCtrolRef.signal });
 
-        if (isSubscribed && signal != null) {
-          setSignalIndex({
-            signalIndexExists: true,
-            signalIndexName: signal.name,
-            signalIndexMappingOutdated: signal.index_mapping_outdated,
-            createDeSignalIndex: createIndex,
-          });
-        }
-      } catch (error) {
-        if (isSubscribed) {
-          setSignalIndex({
-            signalIndexExists: false,
-            signalIndexName: null,
-            signalIndexMappingOutdated: null,
-            createDeSignalIndex: createIndex,
-          });
-          if (isSecurityAppError(error) && error.body.status_code !== 404) {
-            addError(error, { title: i18n.SIGNAL_GET_NAME_FAILURE });
+          if (isSubscribed.current && signal != null) {
+            setSignalIndex({
+              signalIndexExists: true,
+              signalIndexName: signal.name,
+              signalIndexMappingOutdated: signal.index_mapping_outdated,
+            });
           }
-        }
-      }
-      if (isSubscribed) {
-        setLoading(false);
-      }
-    };
-
-    const createIndex = async () => {
-      let isFetchingData = false;
-      try {
-        setLoading(true);
-        await createSignalIndex({ signal: abortCtrl.signal });
-
-        if (isSubscribed) {
-          isFetchingData = true;
-          fetchData();
-        }
-      } catch (error) {
-        if (isSubscribed) {
-          if (isSecurityAppError(error) && error.body.status_code === 409) {
-            fetchData();
-          } else {
+        } catch (error) {
+          if (isSubscribed.current) {
             setSignalIndex({
               signalIndexExists: false,
               signalIndexName: null,
               signalIndexMappingOutdated: null,
-              createDeSignalIndex: createIndex,
             });
-            addError(error, { title: i18n.SIGNAL_POST_FAILURE });
+            if (isSecurityAppError(error) && error.body.status_code !== 404) {
+              addError(error, { title: i18n.SIGNAL_GET_NAME_FAILURE });
+            }
           }
         }
+        if (isSubscribed.current) {
+          setLoading(false);
+        }
       }
-      if (isSubscribed && !isFetchingData) {
-        setLoading(false);
-      }
-    };
+    } catch (error) {
+      if (isSubscribed.current) {
+        if (isSecurityAppError(error) && error.body.status_code === 409) {
+          try {
+            setLoading(true);
+            const signalIndex = await getSignalIndex({ signal: abortCtrolRef.signal });
 
-    if (hasIndexRead) {
-      fetchData();
-    } else {
-      // Skip data fetching as the current user doesn't have enough priviliges.
-      // Attempt to get the signal index will result in 500 error.
+            if (isSubscribed && signalIndex != null) {
+              setSignalIndex({
+                signalIndexExists: true,
+                signalIndexName: signalIndex.name,
+                signalIndexMappingOutdated: signalIndex.index_mapping_outdated,
+              });
+            }
+          } catch (innerError) {
+            if (isSubscribed) {
+              setSignalIndex({
+                signalIndexExists: false,
+                signalIndexName: null,
+                signalIndexMappingOutdated: null,
+              });
+              if (isSecurityAppError(innerError) && innerError.body.status_code !== 404) {
+                addError(innerError, { title: i18n.SIGNAL_GET_NAME_FAILURE });
+              }
+            }
+          }
+          if (isSubscribed) {
+            setLoading(false);
+          }
+        } else {
+          setSignalIndex({
+            signalIndexExists: false,
+            signalIndexName: null,
+            signalIndexMappingOutdated: null,
+          });
+          addError(error, { title: i18n.SIGNAL_POST_FAILURE });
+        }
+      }
+    }
+    if (isSubscribed.current && !isFetchingData) {
       setLoading(false);
     }
-    return () => {
-      isSubscribed = false;
-      abortCtrl.abort();
-    };
-  }, [addError, hasIndexRead]);
+  }, [addError, isSubscribed]);
 
-  return { loading, ...signalIndex };
+  const fetchSignalIndex = useCallback(
+    async (signal) => {
+      if (hasIndexRead) {
+        try {
+          setLoading(true);
+          const signalIndex = await getSignalIndex({ signal });
+
+          if (isSubscribed.current && signalIndex != null) {
+            setSignalIndex({
+              signalIndexExists: true,
+              signalIndexName: signalIndex.name,
+              signalIndexMappingOutdated: signalIndex.index_mapping_outdated,
+            });
+          }
+        } catch (error) {
+          if (isSubscribed.current) {
+            setSignalIndex({
+              signalIndexExists: false,
+              signalIndexName: null,
+              signalIndexMappingOutdated: null,
+            });
+            if (isSecurityAppError(error) && error.body.status_code !== 404) {
+              addError(error, { title: i18n.SIGNAL_GET_NAME_FAILURE });
+            }
+          }
+        }
+      } else {
+        // Skip data fetching as the current user doesn't have enough priviliges.
+        // Attempt to get the signal index will result in 500 error.
+        setLoading(false);
+      }
+    },
+    [addError, hasIndexRead, isSubscribed]
+  );
+
+  useEffect(() => {
+    console.log('useSignalIndex useEffect');
+
+    const abortCtrolRef = abortCtrl.current;
+
+    fetchSignalIndex(abortCtrolRef.signal);
+    return () => {
+      isSubscribed.current = false;
+      abortCtrolRef.abort();
+    };
+  }, [addError, hasIndexRead, fetchSignalIndex]);
+
+  // return { loading, ...signalIndex };
+  return useMemo(() => {
+    return { loading, createDeSignalIndex: createIndex, ...signalIndexState };
+  }, [loading, signalIndexState, createIndex]);
 };

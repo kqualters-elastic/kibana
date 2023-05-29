@@ -9,6 +9,7 @@
 
 import { EuiAccordion, EuiLink, EuiText } from '@elastic/eui';
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import { useSelector } from 'react-redux';
 import { createHtmlPortalNode, InPortal } from 'react-reverse-portal';
 import styled, { css } from 'styled-components';
 import type { Filter, Query } from '@kbn/es-query';
@@ -28,7 +29,7 @@ import { MapToolTip } from './map_tool_tip/map_tool_tip';
 import * as i18n from './translations';
 import { useKibana } from '../../../../common/lib/kibana';
 import { getLayerList } from './map_config';
-import { sourcererSelectors } from '../../../../common/store/sourcerer';
+import { kv, sdefaultDataView } from '../../../../common/store/sourcerer/selectors';
 import type { SourcererDataView } from '../../../../common/store/sourcerer/model';
 import { SourcererScopeName } from '../../../../common/store/sourcerer/model';
 import { useDeepEqualSelector } from '../../../../common/hooks/use_selector';
@@ -115,13 +116,8 @@ export const EmbeddedMapComponent = ({
   const [storageValue, setStorageValue] = useState(storage.get(NETWORK_MAP_VISIBLE) ?? true);
 
   const { addError } = useAppToasts();
-
-  const getDataViewsSelector = useMemo(
-    () => sourcererSelectors.getSourcererDataViewsSelector(),
-    []
-  );
-  const { kibanaDataViews } = useDeepEqualSelector((state) => getDataViewsSelector(state));
-  const { selectedPatterns } = useSourcererDataView(SourcererScopeName.default);
+  const kibanaDataViews = useSelector(kv);
+  const { selectedPatterns } = useSelector(sdefaultDataView);
 
   const isFieldInIndexPattern = useIsFieldInIndexPattern();
 

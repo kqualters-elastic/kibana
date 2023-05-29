@@ -8,9 +8,9 @@
 import React, { useMemo, useCallback } from 'react';
 import { EuiButton, EuiButtonEmpty } from '@elastic/eui';
 import type { Filter } from '@kbn/es-query';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
-import { sourcererSelectors } from '../../../store';
+import { sdefaultDataView, sin } from '../../../store/sourcerer/selectors';
 import { InputsModelId } from '../../../store/inputs/constants';
 import type { TimeRange } from '../../../store/inputs/model';
 import { inputsActions } from '../../../store/inputs';
@@ -21,7 +21,6 @@ import type { DataProvider } from '../../../../../common/types';
 import { TimelineId, TimelineType } from '../../../../../common/types/timeline';
 import { useCreateTimeline } from '../../../../timelines/components/timeline/properties/use_create_timeline';
 import { ACTION_INVESTIGATE_IN_TIMELINE } from '../../../../detections/components/alerts_table/translations';
-import { useDeepEqualSelector } from '../../../hooks/use_selector';
 
 export interface InvestigateInTimelineButtonProps {
   asEmptyButton: boolean;
@@ -37,13 +36,8 @@ export const InvestigateInTimelineButton: React.FunctionComponent<
 > = ({ asEmptyButton, children, dataProviders, filters, timeRange, keepDataView, ...rest }) => {
   const dispatch = useDispatch();
 
-  const getDataViewsSelector = useMemo(
-    () => sourcererSelectors.getSourcererDataViewsSelector(),
-    []
-  );
-  const { defaultDataView, signalIndexName } = useDeepEqualSelector((state) =>
-    getDataViewsSelector(state)
-  );
+  const defaultDataView = useSelector(sdefaultDataView);
+  const signalIndexName = useSelector(sin);
 
   const hasTemplateProviders =
     dataProviders && dataProviders.find((provider) => provider.type === 'template');

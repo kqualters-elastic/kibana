@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { v4 as uuidv4 } from 'uuid';
 
 import { useDeepEqualSelector } from '../../../../common/hooks/use_selector';
@@ -20,7 +20,7 @@ import type { DataProvider, QueryOperator } from '../../../../../common/types/ti
 import { TimelineId, TimelineType } from '../../../../../common/types/timeline';
 import { useCreateTimeline } from '../../../../timelines/components/timeline/properties/use_create_timeline';
 import { updateProviders } from '../../../../timelines/store/timeline/actions';
-import { sourcererSelectors } from '../../../../common/store';
+import { sdefaultDataView, sin } from '../../../../common/store/sourcerer/selectors';
 import type { TimeRange } from '../../../../common/store/inputs/model';
 
 export interface Filter {
@@ -32,13 +32,8 @@ export interface Filter {
 export const useNavigateToTimeline = () => {
   const dispatch = useDispatch();
 
-  const getDataViewsSelector = useMemo(
-    () => sourcererSelectors.getSourcererDataViewsSelector(),
-    []
-  );
-  const { defaultDataView, signalIndexName } = useDeepEqualSelector((state) =>
-    getDataViewsSelector(state)
-  );
+  const defaultDataView = useSelector(sdefaultDataView);
+  const signalIndexName = useSelector(sin);
 
   const clearTimeline = useCreateTimeline({
     timelineId: TimelineId.active,

@@ -6,10 +6,19 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { i18n } from '@kbn/i18n';
 import { matchPath } from 'react-router-dom';
-import { sourcererActions, sourcererSelectors } from '../../store/sourcerer';
+import { sourcererActions } from '../../store/sourcerer';
+import {
+  stimelineScope,
+  sdefaultScope,
+  sdetectionsScope,
+  stimelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+  sin,
+} from '../../store/sourcerer/selectors';
 import type {
   SelectedDataView,
   SourcererDataView,
@@ -53,18 +62,20 @@ export const useInitSourcerer = (
   const { loading: loadingSignalIndex, isSignalIndexExists, signalIndexName } = useUserInfo();
   const updateUrlParam = useUpdateUrlParam<SourcererUrlState>(URL_PARAM_KEY.sourcerer);
 
-  const getDataViewsSelector = useMemo(
-    () => sourcererSelectors.getSourcererDataViewsSelector(),
-    []
-  );
-  const { defaultDataView, signalIndexName: signalIndexNameSourcerer } = useDeepEqualSelector(
-    (state) => getDataViewsSelector(state)
-  );
+  // const getDataViewsSelector = useMemo(
+  //   () => sourcererSelectors.getSourcererDataViewsSelector(),
+  //   []
+  // );
+  // const { defaultDataView, signalIndexName: signalIndexNameSourcerer } = useDeepEqualSelector(
+  //   (state) => getDataViewsSelector(state)
+  // );
+  const signalIndexNameSourcerer = useSelector(sin);
+  const defaultDataView = useSelector(sdefaultDataView);
 
   const { addError, addWarning } = useAppToasts();
 
   useEffect(() => {
-    if (defaultDataView.error != null) {
+    if (defaultDataView?.error != null) {
       addWarning({
         title: i18n.translate('xpack.securitySolution.sourcerer.permissions.title', {
           defaultMessage: 'Write role required to generate data',
@@ -75,26 +86,49 @@ export const useInitSourcerer = (
         }),
       });
     }
-  }, [addWarning, defaultDataView.error]);
+  }, [addWarning, defaultDataView?.error]);
 
   const getTimelineSelector = useMemo(() => timelineSelectors.getTimelineByIdSelector(), []);
   const activeTimeline = useDeepEqualSelector((state) =>
     getTimelineSelector(state, TimelineId.active)
   );
 
-  const sourcererScopeSelector = useMemo(() => sourcererSelectors.getSourcererScopeSelector(), []);
-  const {
-    sourcererScope: { selectedDataViewId: scopeDataViewId, selectedPatterns, missingPatterns },
-  } = useDeepEqualSelector((state) => sourcererScopeSelector(state, scopeId));
+  // const sourcererScopeSelector = useMemo(() => sourcererSelectors.getSourcererScopeSelector(), []);
+  const detectionsSourcerer = useSelector(sdetectionsScope);
+
+  const timelineSourcerer = useSelector(stimelineScope);
+  const defaultSourcerer = useSelector(sdefaultScope);
 
   const {
-    selectedDataView: timelineSelectedDataView,
-    sourcererScope: {
-      selectedDataViewId: timelineDataViewId,
-      selectedPatterns: timelineSelectedPatterns,
-      missingPatterns: timelineMissingPatterns,
-    },
-  } = useDeepEqualSelector((state) => sourcererScopeSelector(state, SourcererScopeName.timeline));
+    selectedDataViewId: scopeDataViewId,
+    selectedPatterns,
+    missingPatterns,
+  } = useMemo(() => {
+    if (scopeId === SourcererScopeName.detections) {
+      return detectionsSourcerer;
+    } else {
+      return defaultSourcerer;
+    }
+  }, [detectionsSourcerer, defaultSourcerer, scopeId]);
+
+  const {
+    selectedDataViewId: timelineDataViewId,
+    selectedPatterns: timelineSelectedPatterns,
+    missingPatterns: timelineMissingPatterns,
+  } = useMemo(() => {
+    return timelineSourcerer;
+  }, [timelineSourcerer]);
+
+  const timelineSelectedDataView = useSelector(stimelineDataView);
+
+  // const {
+  //   selectedDataView: timelineSelectedDataView,
+  //   sourcererScope: {
+  //     selectedDataViewId: timelineDataViewId,
+  //     selectedPatterns: timelineSelectedPatterns,
+  //     missingPatterns: timelineMissingPatterns,
+  //   },
+  // } = useDeepEqualSelector((state) => sourcererScopeSelector(state, SourcererScopeName.timeline));
 
   const { indexFieldsSearch } = useDataView();
 
@@ -191,13 +225,13 @@ export const useInitSourcerer = (
       signalIndexNameSourcerer == null &&
       (activeTimeline == null || activeTimeline.savedObjectId == null) &&
       initialTimelineSourcerer.current &&
-      defaultDataView.id.length > 0
+      defaultDataView?.id.length > 0
     ) {
       initialTimelineSourcerer.current = false;
       dispatch(
         sourcererActions.setSelectedDataView({
           id: SourcererScopeName.timeline,
-          selectedDataViewId: defaultDataView.id,
+          selectedDataViewId: defaultDataView?.id,
           selectedPatterns: getScopePatternListSelection(
             defaultDataView,
             SourcererScopeName.timeline,
@@ -210,13 +244,13 @@ export const useInitSourcerer = (
       signalIndexNameSourcerer != null &&
       (activeTimeline == null || activeTimeline.savedObjectId == null) &&
       initialTimelineSourcerer.current &&
-      defaultDataView.id.length > 0
+      defaultDataView?.id.length > 0
     ) {
       initialTimelineSourcerer.current = false;
       dispatch(
         sourcererActions.setSelectedDataView({
           id: SourcererScopeName.timeline,
-          selectedDataViewId: defaultDataView.id,
+          selectedDataViewId: defaultDataView?.id,
           selectedPatterns: getScopePatternListSelection(
             defaultDataView,
             SourcererScopeName.timeline,
@@ -275,12 +309,12 @@ export const useInitSourcerer = (
         }
       };
 
-      if (defaultDataView.title.indexOf(newSignalsIndex) === -1) {
+      if (defaultDataView?.title.indexOf(newSignalsIndex) === -1) {
         abortCtrl.current.abort();
-        asyncSearch([...defaultDataView.title.split(','), newSignalsIndex]);
+        asyncSearch([...defaultDataView?.title.split(','), newSignalsIndex]);
       }
     },
-    [defaultDataView.title, dispatch, dataViews, dataViewId, indexFieldsSearch, addError]
+    [defaultDataView?.title, dispatch, dataViews, dataViewId, indexFieldsSearch, addError]
   );
 
   const onSignalIndexUpdated = useCallback(() => {
@@ -288,13 +322,13 @@ export const useInitSourcerer = (
       !loadingSignalIndex &&
       signalIndexName != null &&
       signalIndexNameSourcerer == null &&
-      defaultDataView.id.length > 0
+      defaultDataView?.id.length > 0
     ) {
       updateSourcererDataView(signalIndexName);
       dispatch(sourcererActions.setSignalIndexName({ signalIndexName }));
     }
   }, [
-    defaultDataView.id.length,
+    defaultDataView?.id.length,
     dispatch,
     loadingSignalIndex,
     signalIndexName,
@@ -316,13 +350,13 @@ export const useInitSourcerer = (
       isSignalIndexExists &&
       signalIndexName != null &&
       initialDetectionSourcerer.current &&
-      defaultDataView.id.length > 0
+      defaultDataView?.id.length > 0
     ) {
       initialDetectionSourcerer.current = false;
       dispatch(
         sourcererActions.setSelectedDataView({
           id: SourcererScopeName.detections,
-          selectedDataViewId: defaultDataView.id,
+          selectedDataViewId: defaultDataView?.id,
           selectedPatterns: getScopePatternListSelection(
             defaultDataView,
             SourcererScopeName.detections,
@@ -335,12 +369,12 @@ export const useInitSourcerer = (
       scopeId === SourcererScopeName.detections &&
       signalIndexNameSourcerer != null &&
       initialTimelineSourcerer.current &&
-      defaultDataView.id.length > 0
+      defaultDataView?.id.length > 0
     ) {
       initialDetectionSourcerer.current = false;
       sourcererActions.setSelectedDataView({
         id: SourcererScopeName.detections,
-        selectedDataViewId: defaultDataView.id,
+        selectedDataViewId: defaultDataView?.id,
         selectedPatterns: getScopePatternListSelection(
           defaultDataView,
           SourcererScopeName.detections,
@@ -362,32 +396,62 @@ export const useInitSourcerer = (
 export const useSourcererDataView = (
   scopeId: SourcererScopeName = SourcererScopeName.default
 ): SelectedDataView => {
-  const { getDataViewsSelector, getSourcererDataViewSelector, getScopeSelector } = useMemo(
-    () => ({
-      getDataViewsSelector: sourcererSelectors.getSourcererDataViewsSelector(),
-      getSourcererDataViewSelector: sourcererSelectors.sourcererDataViewSelector(),
-      getScopeSelector: sourcererSelectors.scopeIdSelector(),
-    }),
-    []
-  );
+  const signalIndexName = useSelector(sin);
+  const detectionsSourcerer = useSelector(sdetectionsScope);
+
+  const timelineSourcerer = useSelector(stimelineScope);
+  const defaultSourcerer = useSelector(sdefaultScope);
+
   const {
-    signalIndexName,
-    selectedDataView,
-    sourcererScope: { missingPatterns, selectedPatterns: scopeSelectedPatterns, loading },
-  }: sourcererSelectors.SourcererScopeSelector = useDeepEqualSelector((state) => {
-    const sourcererScope = getScopeSelector(state, scopeId);
-    return {
-      ...getDataViewsSelector(state),
-      selectedDataView: getSourcererDataViewSelector(state, sourcererScope.selectedDataViewId),
-      sourcererScope,
-    };
-  });
+    selectedPatterns: scopeSelectedPatterns,
+    missingPatterns,
+    loading,
+  } = useMemo(() => {
+    if (scopeId === SourcererScopeName.detections) {
+      return detectionsSourcerer;
+    } else if (scopeId === SourcererScopeName.timeline) {
+      return timelineSourcerer;
+    } else {
+      return defaultSourcerer;
+    }
+  }, [detectionsSourcerer, defaultSourcerer, scopeId, timelineSourcerer]);
+
+  const timelineDataView = useSelector(stimelineDataView);
+  const defaultDataView = useSelector(sdefaultDataView);
+
+  const detectionsDataView = useSelector(sdetectionsDataView);
+
+  const selectedDataView = useMemo(() => {
+    if (scopeId === SourcererScopeName.default) {
+      return defaultDataView;
+    } else if (scopeId === SourcererScopeName.timeline) {
+      return timelineDataView;
+    } else {
+      return detectionsDataView;
+    }
+  }, [scopeId, timelineDataView, defaultDataView, detectionsDataView]);
+  // const {
+  //   selectedDataView,
+  //   sourcererScope: { missingPatterns, selectedPatterns: scopeSelectedPatterns, loading },
+  // }: sourcererSelectors.SourcererScopeSelector = useDeepEqualSelector((state) => {
+  //   const sourcererScope = getScopeSelector(state, scopeId);
+  //   return {
+  //     ...getDataViewsSelector(state),
+  //     selectedDataView: getSourcererDataViewSelector(state, sourcererScope.selectedDataViewId),
+  //     sourcererScope,
+  //   };
+  // });
   const selectedPatterns = useMemo(
     () => sortWithExcludesAtEnd(scopeSelectedPatterns),
     [scopeSelectedPatterns]
   );
-
-  const [legacyPatterns, setLegacyPatterns] = useState<string[]>([]);
+  const legacyPatterns = useMemo(() => {
+    if (selectedDataView == null || missingPatterns.length > 0) {
+      return selectedPatterns;
+    } else {
+      return [];
+    }
+  }, [missingPatterns.length, selectedDataView, selectedPatterns]);
 
   const [indexPatternsLoading, fetchIndexReturn] = useFetchIndex(legacyPatterns);
 
@@ -395,8 +459,8 @@ export const useSourcererDataView = (
     () => ({
       ...fetchIndexReturn,
       dataView: fetchIndexReturn.dataView,
-      runtimeMappings: fetchIndexReturn.dataView?.getRuntimeMappings() ?? {},
-      title: fetchIndexReturn.dataView?.getIndexPattern() ?? '',
+      runtimeMappings: fetchIndexReturn.dataView?.runtimeFieldMap ?? {},
+      title: fetchIndexReturn.dataView?.title ?? '',
       id: fetchIndexReturn.dataView?.id ?? null,
       loading: indexPatternsLoading,
       patternList: fetchIndexReturn.indexes,
@@ -407,61 +471,53 @@ export const useSourcererDataView = (
     [fetchIndexReturn, indexPatternsLoading]
   );
 
-  useEffect(() => {
-    if (selectedDataView == null || missingPatterns.length > 0) {
-      // old way of fetching indices, legacy timeline
-      setLegacyPatterns(selectedPatterns);
-    } else {
-      setLegacyPatterns([]);
-    }
-  }, [missingPatterns, selectedDataView, selectedPatterns]);
-
   const sourcererDataView = useMemo(
     () =>
       selectedDataView == null || missingPatterns.length > 0 ? legacyDataView : selectedDataView,
     [legacyDataView, missingPatterns.length, selectedDataView]
   );
-
   const indicesExist = useMemo(
     () =>
-      loading || sourcererDataView.loading
+      loading || sourcererDataView?.loading
         ? true
         : checkIfIndicesExist({
             scopeId,
             signalIndexName,
-            patternList: sourcererDataView.patternList,
+            patternList: sourcererDataView?.patternList ?? [],
           }),
-    [loading, scopeId, signalIndexName, sourcererDataView.loading, sourcererDataView.patternList]
+    [loading, scopeId, signalIndexName, sourcererDataView?.loading, sourcererDataView?.patternList]
   );
 
   const browserFields = useCallback(() => {
+    const patternListJoined = sourcererDataView?.patternList.join(',');
     const { browserFields: dataViewBrowserFields } = getDataViewStateFromIndexFields(
       sourcererDataView.patternList.join(','),
       sourcererDataView.fields,
       false
     );
     return dataViewBrowserFields;
-  }, [sourcererDataView.fields, sourcererDataView.patternList]);
+  }, [sourcererDataView?.fields, sourcererDataView?.patternList]);
 
   return useMemo(
     () => ({
       browserFields: browserFields(),
-      dataViewId: sourcererDataView.id,
+      dataViewId: sourcererDataView?.id ?? '',
       indexPattern: {
-        fields: sourcererDataView.indexFields,
+        fields: sourcererDataView?.indexFields ?? [],
         title: selectedPatterns.join(','),
         getName: () => selectedPatterns.join(','),
       },
       indicesExist,
-      loading: loading || sourcererDataView.loading,
-      runtimeMappings: sourcererDataView.runtimeMappings,
+      loading: (loading || sourcererDataView?.loading) ?? false,
+      runtimeMappings: sourcererDataView?.runtimeMappings ?? {},
       // all active & inactive patterns in DATA_VIEW
-      patternList: sourcererDataView.title.split(','),
+      patternList: sourcererDataView?.title.split(',') ?? [],
       // selected patterns in DATA_VIEW including filter
       selectedPatterns,
       // if we have to do an update to data view, tell us which patterns are active
-      ...(legacyPatterns.length > 0 ? { activePatterns: sourcererDataView.patternList } : {}),
-      sourcererDataView: sourcererDataView.dataView,
+      ...(legacyPatterns.length > 0 ? { activePatterns: sourcererDataView?.patternList } : {}),
+      sourcererDataView: sourcererDataView?.dataView,
+      dataView: sourcererDataView?.dataView,
     }),
     [
       browserFields,

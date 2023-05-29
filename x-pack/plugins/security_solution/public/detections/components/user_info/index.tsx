@@ -7,7 +7,7 @@
 
 import { noop } from 'lodash/fp';
 import type { Dispatch } from 'react';
-import React, { useEffect, useReducer, createContext, useContext } from 'react';
+import React, { useEffect, useReducer, createContext, useContext, useCallback } from 'react';
 
 import { useAlertsPrivileges } from '../../containers/detection_engine/alerts/use_alerts_privileges';
 import { useSignalIndex } from '../../containers/detection_engine/alerts/use_signal_index';
@@ -232,42 +232,50 @@ export const useUserInfo = (): State => {
     signalIndexMappingOutdated: apiSignalIndexMappingOutdated,
     createDeSignalIndex: createSignalIndex,
   } = useSignalIndex();
+  debugger;
+  const patchDispatch = useCallback(
+    (action: Action) => {
+      console.log(action);
+      dispatch(action);
+    },
+    [dispatch]
+  );
 
   useEffect(() => {
     if (!loading && canUserCRUD !== hasKibanaCRUD) {
-      dispatch({ type: 'updateCanUserCRUD', canUserCRUD: hasKibanaCRUD });
+      patchDispatch({ type: 'updateCanUserCRUD', canUserCRUD: hasKibanaCRUD });
     }
-  }, [dispatch, loading, canUserCRUD, hasKibanaCRUD]);
+  }, [patchDispatch, loading, canUserCRUD, hasKibanaCRUD]);
 
   useEffect(() => {
     if (!loading && canUserREAD !== hasKibanaREAD) {
-      dispatch({ type: 'updateCanUserREAD', canUserREAD: hasKibanaREAD });
+      patchDispatch({ type: 'updateCanUserREAD', canUserREAD: hasKibanaREAD });
     }
-  }, [dispatch, loading, canUserREAD, hasKibanaREAD]);
+  }, [patchDispatch, loading, canUserREAD, hasKibanaREAD]);
 
   useEffect(() => {
     if (loading !== (privilegeLoading || indexNameLoading)) {
-      dispatch({ type: 'updateLoading', loading: privilegeLoading || indexNameLoading });
+      patchDispatch({ type: 'updateLoading', loading: privilegeLoading || indexNameLoading });
     }
-  }, [dispatch, loading, privilegeLoading, indexNameLoading]);
+  }, [patchDispatch, loading, privilegeLoading, indexNameLoading]);
 
   useEffect(() => {
     if (!loading && hasIndexManage !== hasApiIndexManage && hasApiIndexManage != null) {
-      dispatch({ type: 'updateHasIndexManage', hasIndexManage: hasApiIndexManage });
+      patchDispatch({ type: 'updateHasIndexManage', hasIndexManage: hasApiIndexManage });
     }
-  }, [dispatch, loading, hasIndexManage, hasApiIndexManage]);
+  }, [patchDispatch, loading, hasIndexManage, hasApiIndexManage]);
 
   useEffect(() => {
     if (!loading && hasIndexWrite !== hasApiIndexWrite && hasApiIndexWrite != null) {
-      dispatch({ type: 'updateHasIndexWrite', hasIndexWrite: hasApiIndexWrite });
+      patchDispatch({ type: 'updateHasIndexWrite', hasIndexWrite: hasApiIndexWrite });
     }
-  }, [dispatch, loading, hasIndexWrite, hasApiIndexWrite]);
+  }, [patchDispatch, loading, hasIndexWrite, hasApiIndexWrite]);
 
   useEffect(() => {
     if (!loading && hasIndexRead !== hasApiIndexRead && hasApiIndexRead != null) {
-      dispatch({ type: 'updateHasIndexRead', hasIndexRead: hasApiIndexRead });
+      patchDispatch({ type: 'updateHasIndexRead', hasIndexRead: hasApiIndexRead });
     }
-  }, [dispatch, loading, hasIndexRead, hasApiIndexRead]);
+  }, [patchDispatch, loading, hasIndexRead, hasApiIndexRead]);
 
   useEffect(() => {
     if (
@@ -275,12 +283,12 @@ export const useUserInfo = (): State => {
       hasIndexUpdateDelete !== hasApiIndexUpdateDelete &&
       hasApiIndexUpdateDelete != null
     ) {
-      dispatch({
+      patchDispatch({
         type: 'updateHasIndexUpdateDelete',
         hasIndexUpdateDelete: hasApiIndexUpdateDelete,
       });
     }
-  }, [dispatch, loading, hasIndexUpdateDelete, hasApiIndexUpdateDelete]);
+  }, [patchDispatch, loading, hasIndexUpdateDelete, hasApiIndexUpdateDelete]);
 
   useEffect(() => {
     if (
@@ -288,9 +296,12 @@ export const useUserInfo = (): State => {
       hasIndexMaintenance !== hasApiIndexMaintenance &&
       hasApiIndexMaintenance != null
     ) {
-      dispatch({ type: 'updateHasIndexMaintenance', hasIndexMaintenance: hasApiIndexMaintenance });
+      patchDispatch({
+        type: 'updateHasIndexMaintenance',
+        hasIndexMaintenance: hasApiIndexMaintenance,
+      });
     }
-  }, [dispatch, loading, hasIndexMaintenance, hasApiIndexMaintenance]);
+  }, [patchDispatch, loading, hasIndexMaintenance, hasApiIndexMaintenance]);
 
   useEffect(() => {
     if (
@@ -298,27 +309,30 @@ export const useUserInfo = (): State => {
       isSignalIndexExists !== isApiSignalIndexExists &&
       isApiSignalIndexExists != null
     ) {
-      dispatch({ type: 'updateIsSignalIndexExists', isSignalIndexExists: isApiSignalIndexExists });
+      patchDispatch({
+        type: 'updateIsSignalIndexExists',
+        isSignalIndexExists: isApiSignalIndexExists,
+      });
     }
-  }, [dispatch, loading, isSignalIndexExists, isApiSignalIndexExists]);
+  }, [patchDispatch, loading, isSignalIndexExists, isApiSignalIndexExists]);
 
   useEffect(() => {
     if (!loading && isAuthenticated !== isApiAuthenticated && isApiAuthenticated != null) {
-      dispatch({ type: 'updateIsAuthenticated', isAuthenticated: isApiAuthenticated });
+      patchDispatch({ type: 'updateIsAuthenticated', isAuthenticated: isApiAuthenticated });
     }
-  }, [dispatch, loading, isAuthenticated, isApiAuthenticated]);
+  }, [patchDispatch, loading, isAuthenticated, isApiAuthenticated]);
 
   useEffect(() => {
     if (!loading && hasEncryptionKey !== isApiEncryptionKey && isApiEncryptionKey != null) {
-      dispatch({ type: 'updateHasEncryptionKey', hasEncryptionKey: isApiEncryptionKey });
+      patchDispatch({ type: 'updateHasEncryptionKey', hasEncryptionKey: isApiEncryptionKey });
     }
-  }, [dispatch, loading, hasEncryptionKey, isApiEncryptionKey]);
+  }, [patchDispatch, loading, hasEncryptionKey, isApiEncryptionKey]);
 
   useEffect(() => {
     if (!loading && signalIndexName !== apiSignalIndexName && apiSignalIndexName != null) {
-      dispatch({ type: 'updateSignalIndexName', signalIndexName: apiSignalIndexName });
+      patchDispatch({ type: 'updateSignalIndexName', signalIndexName: apiSignalIndexName });
     }
-  }, [dispatch, loading, signalIndexName, apiSignalIndexName]);
+  }, [patchDispatch, loading, signalIndexName, apiSignalIndexName]);
 
   useEffect(() => {
     if (
@@ -326,12 +340,12 @@ export const useUserInfo = (): State => {
       signalIndexMappingOutdated !== apiSignalIndexMappingOutdated &&
       apiSignalIndexMappingOutdated != null
     ) {
-      dispatch({
+      patchDispatch({
         type: 'updateSignalIndexMappingOutdated',
         signalIndexMappingOutdated: apiSignalIndexMappingOutdated,
       });
     }
-  }, [dispatch, loading, signalIndexMappingOutdated, apiSignalIndexMappingOutdated]);
+  }, [patchDispatch, loading, signalIndexMappingOutdated, apiSignalIndexMappingOutdated]);
 
   useEffect(() => {
     if (

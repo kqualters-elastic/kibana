@@ -117,7 +117,7 @@ const GroupedAlertsTableComponent: React.FC<AlertsTableComponentProps> = (props)
         !isEqual(selectorOptions.current, groupSelector.props.options))
     ) {
       selectorOptions.current = groupSelector.props.options;
-      dispatch(updateGroupSelector({ groupSelector }));
+      //dispatch(updateGroupSelector({ groupSelector }));
     } else if (!isNoneGroup(selectedGroups) && groupSelectorInRedux !== null) {
       dispatch(updateGroupSelector({ groupSelector: null }));
     }

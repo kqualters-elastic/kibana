@@ -157,11 +157,11 @@ export class TelemetryPlugin implements Plugin<TelemetryPluginSetup, TelemetryPl
       },
     });
 
-    analytics.registerShipper(ElasticV3BrowserShipper, {
-      channelName: 'kibana-browser',
-      version: currentKibanaVersion,
-      sendTo: config.sendUsageTo === 'prod' ? 'production' : 'staging',
-    });
+    // analytics.registerShipper(ElasticV3BrowserShipper, {
+    //   channelName: 'kibana-browser',
+    //   version: currentKibanaVersion,
+    //   sendTo: config.sendUsageTo === 'prod' ? 'production' : 'staging',
+    // });
 
     this.telemetrySender = new TelemetrySender(this.telemetryService, async () => {
       await this.refreshConfig(http);

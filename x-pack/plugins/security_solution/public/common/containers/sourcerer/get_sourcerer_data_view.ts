@@ -16,6 +16,7 @@ export const getSourcererDataView = async (
   refreshFields = false
 ): Promise<SourcererDataView> => {
   const dataViewData = await dataViewsService.get(dataViewId, true, refreshFields);
+  const dataView = dataViewData.toSpec();
   const defaultPatternsList = ensurePatternFormat(dataViewData.getIndexPattern().split(','));
 
   // typeguard used to assert that pattern is a string, otherwise
@@ -44,10 +45,10 @@ export const getSourcererDataView = async (
 
   return {
     loading: false,
-    id: dataViewData.id ?? '',
+    id: dataView.id ?? '',
     title: dataViewData.getIndexPattern(),
     indexFields: dataViewData.fields,
-    fields: dataViewData.fields,
+    fields: dataView.fields,
     patternList,
     dataView: dataViewData,
     browserFields: getDataViewStateFromIndexFields(

@@ -167,6 +167,7 @@ export class AnalyticsClient implements IAnalyticsClient {
   };
 
   public optIn = (optInConfig: OptInConfig) => {
+    console.log(optInConfig);
     const optInConfigInstance = new OptInConfigService(optInConfig);
     this.optInConfig$.next(optInConfigInstance);
   };

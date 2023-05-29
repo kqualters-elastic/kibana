@@ -109,7 +109,7 @@ export class ApplicationUsageTracker {
   }
 
   public start() {
-    this.attachListeners();
+    //this.attachListeners();
   }
 
   public stop() {

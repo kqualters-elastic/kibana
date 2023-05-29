@@ -28,8 +28,9 @@ export const sourcererDefaultDataViewSelector = ({
 export const dataViewSelector = (
   { sourcerer }: State,
   id: string | null
-): SourcererDataView | undefined =>
-  sourcerer.kibanaDataViews.find((dataView) => dataView.id === id);
+): SourcererDataView | undefined => {
+  return sourcerer.kibanaDataViews.find((dataView) => dataView.id === id);
+};
 
 export const sourcererScopeIdSelector = (
   { sourcerer }: State,
@@ -97,3 +98,33 @@ export const getSourcererScopeSelector = () => {
     };
   };
 };
+
+export const betterSelector = (state: State) => state.sourcerer;
+
+export const sourcererSelector = createSelector(betterSelector, (sourcerer) => sourcerer);
+
+export const scopes = createSelector(sourcererSelector, (sourcerer) => sourcerer.sourcererScopes);
+
+export const dv = createSelector(sourcererSelector, (sourcerer) => sourcerer.defaultDataView);
+
+export const kv = createSelector(sourcererSelector, (sourcerer) => sourcerer.kibanaDataViews);
+
+export const sin = createSelector(sourcererSelector, (sourcerer) => sourcerer.signalIndexName);
+
+export const stimelineScope = createSelector(scopes, (scopes) => scopes.timeline);
+
+export const sdefaultScope = createSelector(scopes, (scopes) => scopes.default);
+
+export const sdetectionsScope = createSelector(scopes, (scopes) => scopes.detections);
+
+export const stimelineDataView = createSelector(kv, stimelineScope, (kv, timelineScope) => {
+  return kv.find((dv) => dv.id === timelineScope.selectedDataViewId);
+});
+
+export const sdefaultDataView = createSelector(kv, sdefaultScope, (kv, defaultScope) => {
+  return kv.find((dv) => dv.id === defaultScope.selectedDataViewId);
+});
+
+export const sdetectionsDataView = createSelector(kv, sdetectionsScope, (kv, detectionsScope) => {
+  return kv.find((dv) => dv.id === detectionsScope.selectedDataViewId);
+});

@@ -37,6 +37,14 @@ export interface StartDeps {
  */
 export class RenderingService {
   start({ application, chrome, overlays, theme, i18n, targetDomElement }: StartDeps) {
+    // const whyDidYouRender = require('@welldone-software/why-did-you-render');
+    // const ReactRedux = require('react-redux');
+    // whyDidYouRender(React, {
+    //   trackAllPureComponents: true,
+    //   trackExtraHooks: [[ReactRedux, 'useSelector']],
+    //   //logOnDifferentValues: true,
+    //   collapseGroups: true,
+    // });
     const chromeHeader = chrome.getHeaderComponent();
     const appComponent = application.getComponent();
     const bannerComponent = overlays.banners.getComponent();

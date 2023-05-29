@@ -129,6 +129,7 @@ export class ElasticV3BrowserShipper implements IShipper {
   }
 
   private setUpInternalQueueSubscriber() {
+    console.log(this.isOptedIn$.value);
     this.internalQueue$
       .pipe(
         // Buffer events for 1 second or until we have an optIn value

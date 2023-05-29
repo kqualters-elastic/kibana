@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { EuiSuperSelectOption, EuiFormRowProps } from '@elastic/eui';
 import { EuiIcon, EuiBadge, EuiButtonEmpty, EuiFormRow } from '@elastic/eui';
 import styled, { css } from 'styled-components';
@@ -68,50 +68,53 @@ interface GetDataViewSelectOptionsProps {
   kibanaDataViews: sourcererModel.KibanaDataView[];
 }
 
-export const getDataViewSelectOptions = ({
+export const useDataViewSelectOptions = ({
   dataViewId,
   defaultDataViewId,
   isModified,
   isOnlyDetectionAlerts,
   kibanaDataViews,
-}: GetDataViewSelectOptionsProps): Array<EuiSuperSelectOption<string>> =>
-  isOnlyDetectionAlerts
-    ? [
-        {
-          inputDisplay: (
-            <span data-test-subj="security-alerts-option-super">
-              <EuiIcon type="logoSecurity" size="s" /> {i18n.SIEM_SECURITY_DATA_VIEW_LABEL}
-              <StyledBadge data-test-subj="security-alerts-option-badge">
-                {i18n.ALERTS_BADGE_TITLE}
-              </StyledBadge>
-            </span>
-          ),
-          value: defaultDataViewId,
-        },
-      ]
-    : kibanaDataViews.map(({ title, id }) => ({
-        inputDisplay:
-          id === defaultDataViewId ? (
-            <span data-test-subj="security-option-super">
-              <EuiIcon type="logoSecurity" size="s" /> {i18n.SECURITY_DEFAULT_DATA_VIEW_LABEL}
-              {isModified && id === dataViewId && (
-                <StyledBadge data-test-subj="security-modified-option-badge">
-                  {i18n.MODIFIED_BADGE_TITLE}
+}: GetDataViewSelectOptionsProps): Array<EuiSuperSelectOption<string>> => {
+  return useMemo(() => {
+    return isOnlyDetectionAlerts
+      ? [
+          {
+            inputDisplay: (
+              <span data-test-subj="security-alerts-option-super">
+                <EuiIcon type="logoSecurity" size="s" /> {i18n.SIEM_SECURITY_DATA_VIEW_LABEL}
+                <StyledBadge data-test-subj="security-alerts-option-badge">
+                  {i18n.ALERTS_BADGE_TITLE}
                 </StyledBadge>
-              )}
-            </span>
-          ) : (
-            <span data-test-subj="dataView-option-super">
-              <EuiIcon type="logoKibana" size="s" /> {title}
-              {isModified && id === dataViewId && (
-                <StyledBadge data-test-subj="security-modified-option-badge">
-                  {i18n.MODIFIED_BADGE_TITLE}
-                </StyledBadge>
-              )}
-            </span>
-          ),
-        value: id,
-      }));
+              </span>
+            ),
+            value: defaultDataViewId,
+          },
+        ]
+      : kibanaDataViews.map(({ title, id }) => ({
+          inputDisplay:
+            id === defaultDataViewId ? (
+              <span data-test-subj="security-option-super">
+                <EuiIcon type="logoSecurity" size="s" /> {i18n.SECURITY_DEFAULT_DATA_VIEW_LABEL}
+                {isModified && id === dataViewId && (
+                  <StyledBadge data-test-subj="security-modified-option-badge">
+                    {i18n.MODIFIED_BADGE_TITLE}
+                  </StyledBadge>
+                )}
+              </span>
+            ) : (
+              <span data-test-subj="dataView-option-super">
+                <EuiIcon type="logoKibana" size="s" /> {title}
+                {isModified && id === dataViewId && (
+                  <StyledBadge data-test-subj="security-modified-option-badge">
+                    {i18n.MODIFIED_BADGE_TITLE}
+                  </StyledBadge>
+                )}
+              </span>
+            ),
+          value: id,
+        }));
+  }, [dataViewId, defaultDataViewId, isModified, isOnlyDetectionAlerts, kibanaDataViews]);
+};
 
 interface GetTooltipContent {
   isOnlyDetectionAlerts: boolean;

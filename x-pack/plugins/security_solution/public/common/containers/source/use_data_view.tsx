@@ -12,7 +12,6 @@ import memoizeOne from 'memoize-one';
 import type { BrowserField } from '@kbn/timelines-plugin/common';
 import { getCategory } from '@kbn/triggers-actions-ui-plugin/public';
 import type { DataViewFieldBase } from '@kbn/es-query';
-
 import { useKibana } from '../../lib/kibana';
 import { sourcererActions } from '../../store/sourcerer';
 import { SourcererScopeName } from '../../store/sourcerer/model';
@@ -55,13 +54,15 @@ export const getDataViewStateFromIndexFields = memoizeOne(
   ): DataViewInfo => {
     // Adds two dangerous casts to allow for mutations within this function
     type DangerCastForMutation = Record<string, {}>;
+    if (fields == null) {
+      return { browserFields: {} };
+    } else {
+      const browserFields: DataViewSpec['fields'] = {};
+      for (const [name, field] of Object.entries(fields)) {
+        const category = getCategory(name);
 
-    return fields.reduce<DataViewInfo>(
-      (acc, field) => {
-        // mutate browserFields
-        const category = getCategory(field.name);
-        if (acc.browserFields[category] == null) {
-          (acc.browserFields as DangerCastForMutation)[category] = {};
+        if (browserFields[category] == null) {
+          (browserFields as DangerCastForMutation)[category] = {};
         }
         if (acc.browserFields[category].fields == null) {
           acc.browserFields[category].fields = {};
@@ -73,11 +74,12 @@ export const getDataViewStateFromIndexFields = memoizeOne(
       {
         browserFields: {},
       }
-    );
+      return { browserFields: browserFields as DangerCastForBrowserFieldsMutation };
+    }
   },
   (newArgs, lastArgs) =>
     newArgs[0] === lastArgs[0] &&
-    newArgs[1].length === lastArgs[1].length &&
+    newArgs[1]?.length === lastArgs[1]?.length &&
     newArgs[2] === lastArgs[2]
 );
 
