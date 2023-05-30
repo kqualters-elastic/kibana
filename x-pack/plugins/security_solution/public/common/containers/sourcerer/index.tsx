@@ -491,8 +491,8 @@ export const useSourcererDataView = (
   const browserFields = useCallback(() => {
     const patternListJoined = sourcererDataView?.patternList.join(',');
     const { browserFields: dataViewBrowserFields } = getDataViewStateFromIndexFields(
-      sourcererDataView.patternList.join(','),
-      sourcererDataView.fields,
+      patternListJoined ?? '',
+      sourcererDataView?.fields,
       false
     );
     return dataViewBrowserFields;
