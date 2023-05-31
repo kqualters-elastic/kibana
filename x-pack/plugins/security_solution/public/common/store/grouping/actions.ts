@@ -5,14 +5,11 @@
  * 2.0.
  */
 
-import {
-  createAction,
-  createReducer,
-  AnyAction,
-  PayloadAction,
-} from '@reduxjs/toolkit';
-import type React from 'react';
+import { createAction } from '@reduxjs/toolkit';
+import type { TableId } from '@kbn/securitysolution-data-table';
 
-export const updateGroupSelector = createAction<{
-  groupSelector: React.ReactElement | null;
-}>('UPDATE_GROUP_SELECTOR');
+export const updateGroups = createAction<{
+  activeGroups?: string[];
+  tableId: TableId;
+  options?: Array<{ key: string; label: string }>;
+}>('UPDATE_GROUPS');

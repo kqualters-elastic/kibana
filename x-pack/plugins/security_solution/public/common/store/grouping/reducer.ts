@@ -5,17 +5,19 @@
  * 2.0.
  */
 
-import { createAction, createReducer, AnyAction, PayloadAction } from '@reduxjs/toolkit';
-import { updateGroupSelector } from './actions';
-import type { GroupModel } from './types';
+import { createReducer } from '@reduxjs/toolkit';
+import { updateGroups } from './actions';
+import type { Groups } from './types';
 
-export const initialGroupingState: GroupModel = {
-  groupSelector: null,
-};
+export const initialGroupingState: Groups = {};
 
 export const groupsReducer = createReducer(initialGroupingState, (builder) =>
-  builder.addCase(updateGroupSelector, (state, { payload: { groupSelector } }) => ({
-    ...state,
-    groupSelector,
-  }))
+  builder.addCase(updateGroups, (state, { payload: { tableId, activeGroups, options } }) => {
+    if (activeGroups != null) {
+      state[tableId].activeGroups = activeGroups;
+    }
+    if (options != null) {
+      state[tableId].options = options;
+    }
+  })
 );
