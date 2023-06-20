@@ -98,10 +98,7 @@ export const getUseCellActionsHook = (tableId: TableId) => {
       [cellActions]
     );
 
-    return {
-      getCellActions,
-      visibleCellActions: 3,
-    };
+    return useMemo(() => ({ getCellActions, visibleCellActions: 3 }), [getCellActions]);
   };
 
   return useCellActions;

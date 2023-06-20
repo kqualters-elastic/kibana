@@ -6,7 +6,7 @@
  */
 
 import type { BulkActionsConfig } from '@kbn/triggers-actions-ui-plugin/public/types';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { Filter } from '@kbn/es-query';
 import { buildEsQuery } from '@kbn/es-query';
 import type { TableId } from '@kbn/securitysolution-data-table';
@@ -180,7 +180,9 @@ export const useBulkAlertActionItems = ({
     [getOnAction]
   );
 
-  return [FILTER_OPEN, FILTER_CLOSED, FILTER_ACKNOWLEDGED].map((status) =>
-    getUpdateAlertStatusAction(status as AlertWorkflowStatus)
-  );
+  return useMemo(() => {
+    return [FILTER_OPEN, FILTER_CLOSED, FILTER_ACKNOWLEDGED].map((status) =>
+      getUpdateAlertStatusAction(status as AlertWorkflowStatus)
+    );
+  }, [getUpdateAlertStatusAction]);
 };

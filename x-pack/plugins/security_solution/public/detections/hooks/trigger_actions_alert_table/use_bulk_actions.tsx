@@ -10,7 +10,7 @@ import type { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/type
 import type { SerializableRecord } from '@kbn/utility-types';
 import { isEqual } from 'lodash';
 import type { Filter } from '@kbn/es-query';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { TableId } from '@kbn/securitysolution-data-table';
 import type { inputsModel, State } from '../../../common/store';
 import { useShallowEqualSelector } from '../../../common/hooks/use_selector';
@@ -88,5 +88,5 @@ export const getBulkActionHook =
       refetch: refetchGlobalQuery,
     });
 
-    return [...alertActions, timelineAction];
+    return useMemo(() => [...alertActions, timelineAction], [alertActions, timelineAction]);
   };
