@@ -8,7 +8,7 @@
 import { pick } from 'lodash/fp';
 import { EuiProgress } from '@elastic/eui';
 import React, { useCallback, useEffect, useMemo, useRef, createContext } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 
 import { isTab } from '@kbn/timelines-plugin/public';
@@ -16,7 +16,17 @@ import { timelineActions, timelineSelectors } from '../../store/timeline';
 import { timelineDefaults } from '../../store/timeline/defaults';
 import { defaultHeaders } from './body/column_headers/default_headers';
 import type { CellValueElementProps } from './cell_rendering';
-import { SourcererScopeName } from '../../../common/store/sourcerer/model';
+import {
+  // defaultDataView,
+  kibanaDataView,
+  signalIndexName as signalIndexNameSelector,
+  timelineScope,
+  defaultScope,
+  detectionsScope,
+  timelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+} from '../../../common/store/sourcerer/selectors';
 import { FlyoutHeader, FlyoutHeaderPanel } from '../flyout/header';
 import type { TimelineId, RowRenderer } from '../../../../common/types/timeline';
 import { TimelineType } from '../../../../common/types/timeline/api';
@@ -29,7 +39,6 @@ import { HideShowContainer, TimelineContainer } from './styles';
 import { useTimelineFullScreen } from '../../../common/containers/use_full_screen';
 import { EXIT_FULL_SCREEN_CLASS_NAME } from '../../../common/components/exit_full_screen';
 import { useResolveConflict } from '../../../common/hooks/use_resolve_conflict';
-import { sourcererSelectors } from '../../../common/store';
 
 const TimelineTemplateBadge = styled.div`
   background: ${({ theme }) => theme.eui.euiColorVis3_behindText};
@@ -64,11 +73,12 @@ const StatefulTimelineComponent: React.FC<Props> = ({
   const dispatch = useDispatch();
   const containerElement = useRef<HTMLDivElement | null>(null);
   const getTimeline = useMemo(() => timelineSelectors.getTimelineByIdSelector(), []);
-  const scopeIdSelector = useMemo(() => sourcererSelectors.scopeIdSelector(), []);
+
   const {
-    selectedPatterns: selectedPatternsSourcerer,
     selectedDataViewId: selectedDataViewIdSourcerer,
-  } = useDeepEqualSelector((state) => scopeIdSelector(state, SourcererScopeName.timeline));
+    selectedPatterns: selectedPatternsSourcerer,
+    browserFields,
+  } = useSelector(timelineScope);
   const {
     dataViewId: selectedDataViewIdTimeline,
     indexNames: selectedPatternsTimeline,
@@ -133,11 +143,11 @@ const StatefulTimelineComponent: React.FC<Props> = ({
   }, [
     dispatch,
     savedObjectId,
-    selectedDataViewIdSourcerer,
     selectedDataViewIdTimeline,
-    selectedPatternsSourcerer,
     selectedPatternsTimeline,
     timelineId,
+    selectedDataViewIdSourcerer,
+    selectedPatternsSourcerer,
   ]);
 
   useEffect(() => {
@@ -198,8 +208,17 @@ const StatefulTimelineComponent: React.FC<Props> = ({
           $isVisible={!timelineFullScreen}
           data-test-subj="timeline-hide-show-container"
         >
-          <FlyoutHeaderPanel timelineId={timelineId} />
-          <FlyoutHeader timelineId={timelineId} />
+          <FlyoutHeaderPanel
+            timelineId={timelineId}
+            browserFields={browserFields}
+            indexPattern={selectedDataViewIdSourcerer}
+          />
+          <FlyoutHeader
+            timelineId={timelineId}
+            browserFields={browserFields}
+            indexPattern={selectedDataViewIdSourcerer}
+            selectedPatterns={selectedPatternsSourcerer}
+          />
         </HideShowContainer>
 
         <TabsContent

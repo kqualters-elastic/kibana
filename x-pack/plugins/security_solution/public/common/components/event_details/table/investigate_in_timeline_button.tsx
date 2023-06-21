@@ -8,9 +8,8 @@
 import React, { useMemo, useCallback } from 'react';
 import { EuiButton, EuiButtonEmpty } from '@elastic/eui';
 import type { Filter } from '@kbn/es-query';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
-import { sourcererSelectors } from '../../../store';
 import { InputsModelId } from '../../../store/inputs/constants';
 import type { TimeRange } from '../../../store/inputs/model';
 import { inputsActions } from '../../../store/inputs';
@@ -22,7 +21,17 @@ import { TimelineId } from '../../../../../common/types/timeline';
 import { TimelineType } from '../../../../../common/types/timeline/api';
 import { useCreateTimeline } from '../../../../timelines/components/timeline/properties/use_create_timeline';
 import { ACTION_INVESTIGATE_IN_TIMELINE } from '../../../../detections/components/alerts_table/translations';
-import { useDeepEqualSelector } from '../../../hooks/use_selector';
+import {
+  // defaultDataView,
+  kibanaDataView,
+  signalIndexName as signalIndexNameSelector,
+  timelineScope,
+  defaultScope,
+  detectionsScope,
+  timelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+} from '../../../store/sourcerer/selectors';
 
 export interface InvestigateInTimelineButtonProps {
   asEmptyButton: boolean;
@@ -37,14 +46,8 @@ export const InvestigateInTimelineButton: React.FunctionComponent<
   InvestigateInTimelineButtonProps
 > = ({ asEmptyButton, children, dataProviders, filters, timeRange, keepDataView, ...rest }) => {
   const dispatch = useDispatch();
-
-  const getDataViewsSelector = useMemo(
-    () => sourcererSelectors.getSourcererDataViewsSelector(),
-    []
-  );
-  const { defaultDataView, signalIndexName } = useDeepEqualSelector((state) =>
-    getDataViewsSelector(state)
-  );
+  const signalIndexName = useSelector(signalIndexNameSelector);
+  const defaultDataView = useSelector(sdefaultDataView);
 
   const hasTemplateProviders =
     dataProviders && dataProviders.find((provider) => provider.type === 'template');
@@ -88,7 +91,7 @@ export const InvestigateInTimelineButton: React.FunctionComponent<
         dispatch(
           sourcererActions.setSelectedDataView({
             id: SourcererScopeName.timeline,
-            selectedDataViewId: defaultDataView.id,
+            selectedDataViewId: defaultDataView?.id,
             selectedPatterns: [signalIndexName || ''],
           })
         );
@@ -100,7 +103,7 @@ export const InvestigateInTimelineButton: React.FunctionComponent<
     dataProviders,
     clearTimeline,
     dispatch,
-    defaultDataView.id,
+    defaultDataView?.id,
     signalIndexName,
     filters,
     timeRange,

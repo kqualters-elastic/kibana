@@ -43,12 +43,15 @@ interface UsePickIndexPatterns {
   setIndexPatternsByDataView: (newSelectedDataViewId: string, isAlerts?: boolean) => void;
 }
 
-const patternListToOptions = (patternList: string[], selectablePatterns?: string[]) =>
-  sortWithExcludesAtEnd(patternList).map((s) => ({
+const patternListToOptions = (patternList: string[], selectablePatterns?: string[]) => {
+  // console.log('always new');
+  const ret = sortWithExcludesAtEnd(patternList).map((s) => ({
     label: s,
     value: s,
     ...(selectablePatterns != null ? { disabled: !selectablePatterns.includes(s) } : {}),
   }));
+  return ret;
+};
 
 export const usePickIndexPatterns = ({
   dataViewId,
@@ -88,7 +91,7 @@ export const usePickIndexPatterns = ({
         selectablePatterns: [signalIndexName],
       };
     }
-    const theDataView = kibanaDataViews.find((dataView) => dataView.id === dataViewId);
+    const theDataView = kibanaDataViews?.find((dataView) => dataView.id === dataViewId);
 
     if (theDataView == null) {
       return {
@@ -124,7 +127,7 @@ export const usePickIndexPatterns = ({
         ? alertsOptions
         : patternListToOptions(
             getScopePatternListSelection(
-              kibanaDataViews.find((dataView) => dataView.id === id),
+              kibanaDataViews?.find((dataView) => dataView.id === id),
               scopeId,
               signalIndexName,
               id === defaultDataViewId

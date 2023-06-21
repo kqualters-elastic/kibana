@@ -7,6 +7,7 @@
 
 import type { MutableRefObject } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
 import type { DataViewField, DataView } from '@kbn/data-views-plugin/common';
 import type {
   CreateFieldComponent,
@@ -14,10 +15,19 @@ import type {
 } from '@kbn/triggers-actions-ui-plugin/public/types';
 import type { ColumnHeaderOptions } from '../../../../common/types';
 import { useDataView } from '../../../common/containers/source/use_data_view';
-import { useDeepEqualSelector } from '../../../common/hooks/use_selector';
+import {
+  // defaultDataView,
+  kibanaDataView,
+  signalIndexName as signalIndexNameSelector,
+  timelineScope,
+  defaultScope,
+  detectionsScope,
+  timelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+} from '../../../common/store/sourcerer/selectors';
 import { useKibana } from '../../../common/lib/kibana';
-import { sourcererSelectors } from '../../../common/store';
-import type { SourcererScopeName } from '../../../common/store/sourcerer/model';
+import { SourcererScopeName } from '../../../common/store/sourcerer/model';
 import { defaultColumnHeaderType } from '../timeline/body/column_headers/default_headers';
 import { DEFAULT_COLUMN_MIN_WIDTH } from '../timeline/body/constants';
 import { useCreateFieldButton } from './create_field_button';
@@ -58,10 +68,19 @@ export const useFieldBrowserOptions: UseFieldBrowserOptions = ({
     data: { dataViews },
   } = useKibana().services;
 
-  const scopeIdSelector = useMemo(() => sourcererSelectors.scopeIdSelector(), []);
-  const { missingPatterns, selectedDataViewId } = useDeepEqualSelector((state) =>
-    scopeIdSelector(state, sourcererScope)
-  );
+  const detectionsSourcerer = useSelector(detectionsScope);
+
+  const timelineSourcerer = useSelector(timelineScope);
+  const defaultSourcerer = useSelector(defaultScope);
+  const { selectedDataViewId, missingPatterns } = useMemo(() => {
+    if (sourcererScope === SourcererScopeName.detections) {
+      return detectionsSourcerer;
+    } else if (sourcererScope === SourcererScopeName.timeline) {
+      return timelineSourcerer;
+    } else {
+      return defaultSourcerer;
+    }
+  }, [detectionsSourcerer, defaultSourcerer, sourcererScope, timelineSourcerer]);
   useEffect(() => {
     const fetchAndSetDataView = async (dataViewId: string) => {
       const aDatView = await dataViews.get(dataViewId);

@@ -9,10 +9,21 @@ import { noop, pick } from 'lodash/fp';
 import React, { useCallback, useMemo } from 'react';
 import type { DropResult } from 'react-beautiful-dnd';
 import { DragDropContext } from 'react-beautiful-dnd';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import type { Dispatch } from 'redux';
 import deepEqual from 'fast-deep-equal';
 import { IS_DRAGGING_CLASS_NAME } from '@kbn/securitysolution-t-grid';
+import {
+  // defaultDataView,
+  kibanaDataView,
+  signalIndexName as signalIndexNameSelector,
+  timelineScope,
+  defaultScope,
+  detectionsScope,
+  timelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+} from '../../store/sourcerer/selectors';
 
 import type { BeforeCapture } from './drag_drop_context';
 import type { BrowserFields } from '../../containers/source';
@@ -47,7 +58,6 @@ import { defaultAlertsHeaders } from '../events_viewer/default_alert_headers';
 window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 interface Props {
-  browserFields: BrowserFields;
   children: React.ReactNode;
 }
 
@@ -99,12 +109,14 @@ const onDragEndHandler = ({
 /**
  * DragDropContextWrapperComponent handles all drag end events
  */
-export const DragDropContextWrapperComponent: React.FC<Props> = ({ browserFields, children }) => {
+export const DragDropContextWrapperComponent: React.FC<Props> = ({ children }) => {
   const dispatch = useDispatch();
   const getTimeline = useMemo(() => timelineSelectors.getTimelineByIdSelector(), []);
   const getDataProviders = useMemo(() => dragAndDropSelectors.getDataProvidersSelector(), []);
   const { timelines } = useKibana().services;
   const sensors = [timelines.getUseAddToTimelineSensor()];
+  const timelineSourcererDataView = useSelector(timelineDataView);
+
   const { dataProviders: activeTimelineDataProviders, timelineType } = useDeepEqualSelector(
     (state) =>
       pick(
@@ -132,6 +144,8 @@ export const DragDropContextWrapperComponent: React.FC<Props> = ({ browserFields
         enableScrolling();
 
         if (dataProviders != null) {
+          const browserFields = timelineSourcererDataView?.browserFields ?? {};
+
           onDragEndHandler({
             activeTimelineDataProviders,
             browserFields,
@@ -149,7 +163,13 @@ export const DragDropContextWrapperComponent: React.FC<Props> = ({ browserFields
         }
       }
     },
-    [activeTimelineDataProviders, browserFields, dataProviders, dispatch, onAddedToTimeline]
+    [
+      activeTimelineDataProviders,
+      dataProviders,
+      dispatch,
+      onAddedToTimeline,
+      timelineSourcererDataView?.browserFields,
+    ]
   );
   return (
     <DragDropContext onDragEnd={onDragEnd} onBeforeCapture={onBeforeCapture} sensors={sensors}>

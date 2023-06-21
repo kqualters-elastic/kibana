@@ -16,12 +16,22 @@ import {
 } from '@elastic/eui';
 import type { ChangeEventHandler } from 'react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  // defaultDataView,
+  kibanaDataView,
+  signalIndexName as signalIndexNameSelector,
+  timelineScope,
+  defaultScope,
+  detectionsScope,
+  timelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+} from '../../store/sourcerer/selectors';
 
 import * as i18n from './translations';
 import type { sourcererModel } from '../../store/sourcerer';
-import { sourcererActions, sourcererSelectors } from '../../store/sourcerer';
-import { useDeepEqualSelector } from '../../hooks/use_selector';
+import { sourcererActions } from '../../store/sourcerer';
 import type { SourcererUrlState } from '../../store/sourcerer/model';
 import { SourcererScopeName } from '../../store/sourcerer/model';
 import { usePickIndexPatterns } from './use_pick_index_patterns';
@@ -46,18 +56,24 @@ export const Sourcerer = React.memo<SourcererComponentProps>(({ scope: scopeId }
   const isDefaultSourcerer = scopeId === SourcererScopeName.default;
   const updateUrlParam = useUpdateUrlParam<SourcererUrlState>(URL_PARAM_KEY.sourcerer);
 
-  const sourcererScopeSelector = useMemo(() => sourcererSelectors.getSourcererScopeSelector(), []);
-  const {
-    defaultDataView,
-    kibanaDataViews,
-    signalIndexName,
-    sourcererScope: {
-      selectedDataViewId,
-      selectedPatterns,
-      missingPatterns: sourcererMissingPatterns,
-    },
-  } = useDeepEqualSelector((state) => sourcererScopeSelector(state, scopeId));
+  const signalIndexName = useSelector(signalIndexNameSelector);
+  const defaultDataView = useSelector(sdefaultDataView);
+  const detectionsSourcerer = useSelector(detectionsScope);
+  const kibanaDataViews = useSelector(kibanaDataView);
 
+  const timelineSourcerer = useSelector(timelineScope);
+  const defaultSourcerer = useSelector(defaultScope);
+  const {
+    selectedDataViewId,
+    selectedPatterns,
+    missingPatterns: sourcererMissingPatterns,
+  } = useMemo(() => {
+    if (scopeId === SourcererScopeName.detections) {
+      return detectionsSourcerer;
+    } else {
+      return defaultSourcerer;
+    }
+  }, [detectionsSourcerer, defaultSourcerer, scopeId]);
   const { pollForSignalIndex } = useSignalHelpers();
 
   useEffect(() => {
@@ -111,7 +127,7 @@ export const Sourcerer = React.memo<SourcererComponentProps>(({ scope: scopeId }
     setIndexPatternsByDataView,
   } = usePickIndexPatterns({
     dataViewId,
-    defaultDataViewId: defaultDataView.id,
+    defaultDataViewId: defaultDataView?.id,
     isOnlyDetectionAlerts,
     kibanaDataViews,
     missingPatterns,
@@ -124,10 +140,10 @@ export const Sourcerer = React.memo<SourcererComponentProps>(({ scope: scopeId }
   const onCheckboxChanged: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
       setIsOnlyDetectionAlertsChecked(e.target.checked);
-      setDataViewId(defaultDataView.id);
-      setIndexPatternsByDataView(defaultDataView.id, e.target.checked);
+      setDataViewId(defaultDataView?.id);
+      setIndexPatternsByDataView(defaultDataView?.id, e.target.checked);
     },
-    [defaultDataView.id, setIndexPatternsByDataView]
+    [defaultDataView?.id, setIndexPatternsByDataView]
   );
 
   const [expandAdvancedOptions, setExpandAdvancedOptions] = useState(false);
@@ -173,11 +189,11 @@ export const Sourcerer = React.memo<SourcererComponentProps>(({ scope: scopeId }
   );
 
   const resetDataSources = useCallback(() => {
-    setDataViewId(defaultDataView.id);
-    setIndexPatternsByDataView(defaultDataView.id);
+    setDataViewId(defaultDataView?.id);
+    setIndexPatternsByDataView(defaultDataView?.id);
     setIsOnlyDetectionAlertsChecked(false);
     setMissingPatterns([]);
-  }, [defaultDataView.id, setIndexPatternsByDataView]);
+  }, [defaultDataView?.id, setIndexPatternsByDataView]);
 
   const handleSaveIndices = useCallback(() => {
     const patterns = selectedOptions.map((so) => so.label);
@@ -196,11 +212,11 @@ export const Sourcerer = React.memo<SourcererComponentProps>(({ scope: scopeId }
   const onContinueUpdateDeprecated = useCallback(() => {
     setIsShowingUpdateModal(false);
     const patterns = selectedPatterns.filter((pattern) =>
-      defaultDataView.patternList.includes(pattern)
+      defaultDataView?.patternList.includes(pattern)
     );
-    dispatchChangeDataView(defaultDataView.id, patterns);
+    dispatchChangeDataView(defaultDataView?.id, patterns);
     setPopoverIsOpen(false);
-  }, [defaultDataView.id, defaultDataView.patternList, dispatchChangeDataView, selectedPatterns]);
+  }, [defaultDataView?.id, defaultDataView?.patternList, dispatchChangeDataView, selectedPatterns]);
 
   const onUpdateDeprecated = useCallback(() => {
     // are all the patterns in the default?
@@ -227,7 +243,7 @@ export const Sourcerer = React.memo<SourcererComponentProps>(({ scope: scopeId }
 
     if (isUiSettingsSuccess) {
       dispatchChangeDataView(
-        defaultDataView.id,
+        defaultDataView?.id,
         // to be at this stage, activePatterns is defined, the ?? selectedPatterns is to make TS happy
         activePatterns ?? selectedPatterns,
         false
@@ -236,7 +252,7 @@ export const Sourcerer = React.memo<SourcererComponentProps>(({ scope: scopeId }
     }
   }, [
     activePatterns,
-    defaultDataView.id,
+    defaultDataView?.id,
     missingPatterns,
     dispatchChangeDataView,
     selectedPatterns,

@@ -8,10 +8,19 @@
 import React, { useCallback, useMemo } from 'react';
 import { EuiButton, EuiButtonEmpty } from '@elastic/eui';
 import type { Filter } from '@kbn/es-query';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
-import { useDeepEqualSelector } from '../../common/hooks/use_selector';
-import { sourcererSelectors } from '../../common/store';
+import {
+  // defaultDataView,
+  kibanaDataView,
+  signalIndexName as signalIndexNameSelector,
+  timelineScope,
+  defaultScope,
+  detectionsScope,
+  timelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+} from '../../common/store/sourcerer/selectors';
 import { sourcererActions } from '../../common/store/actions';
 import { inputsActions } from '../../common/store/inputs';
 import { InputsModelId } from '../../common/store/inputs/constants';
@@ -50,14 +59,8 @@ export const SendToTimelineButton: React.FunctionComponent<SendToTimelineButtonP
 }) => {
   const dispatch = useDispatch();
 
-  const getDataViewsSelector = useMemo(
-    () => sourcererSelectors.getSourcererDataViewsSelector(),
-    []
-  );
-  const { defaultDataView, signalIndexName } = useDeepEqualSelector((state) =>
-    getDataViewsSelector(state)
-  );
-
+  const signalIndexName = useSelector(signalIndexNameSelector);
+  const defaultDataView = useSelector(sdefaultDataView);
   const hasTemplateProviders =
     dataProviders && dataProviders.find((provider) => provider.type === 'template');
 
@@ -162,7 +165,7 @@ export const SendToTimelineButton: React.FunctionComponent<SendToTimelineButtonP
         dispatch(
           sourcererActions.setSelectedDataView({
             id: SourcererScopeName.timeline,
-            selectedDataViewId: defaultDataView.id,
+            selectedDataViewId: defaultDataView?.id,
             selectedPatterns: [signalIndexName || ''],
           })
         );
@@ -174,7 +177,7 @@ export const SendToTimelineButton: React.FunctionComponent<SendToTimelineButtonP
     dataProviders,
     clearTimeline,
     dispatch,
-    defaultDataView.id,
+    defaultDataView?.id,
     signalIndexName,
     filters,
     timeRange,

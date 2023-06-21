@@ -7,10 +7,19 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import { i18n } from '@kbn/i18n';
-import { useDispatch } from 'react-redux';
-import { sourcererSelectors } from '../../store';
-import { useDeepEqualSelector } from '../../hooks/use_selector';
+import { useDispatch, useSelector } from 'react-redux';
 import { useSourcererDataView } from '.';
+import {
+  // defaultDataView,
+  kibanaDataView,
+  signalIndexName as signalIndexNameSelector,
+  timelineScope,
+  defaultScope,
+  detectionsScope,
+  timelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+} from '../../store/sourcerer/selectors';
 import { SourcererScopeName } from '../../store/sourcerer/model';
 import { useDataView } from '../source/use_data_view';
 import { useAppToasts } from '../../hooks/use_app_toasts';
@@ -33,20 +42,12 @@ export const useSignalHelpers = (): {
     data: { dataViews },
   } = useKibana().services;
 
-  const getDefaultDataViewSelector = useMemo(
-    () => sourcererSelectors.defaultDataViewSelector(),
-    []
-  );
-  const getSignalIndexNameSelector = useMemo(
-    () => sourcererSelectors.signalIndexNameSelector(),
-    []
-  );
-  const signalIndexNameSourcerer = useDeepEqualSelector(getSignalIndexNameSelector);
-  const defaultDataView = useDeepEqualSelector(getDefaultDataViewSelector);
+  const signalIndexName = useSelector(signalIndexNameSelector);
+  const defaultDataView = useSelector(sdefaultDataView);
 
   const signalIndexNeedsInit = useMemo(
-    () => !defaultDataView.title.includes(`${signalIndexNameSourcerer}`),
-    [defaultDataView.title, signalIndexNameSourcerer]
+    () => !defaultDataView?.title.includes(`${signalIndexName}`),
+    [defaultDataView?.title, signalIndexName]
   );
   const shouldWePollForIndex = useMemo(
     () => !indicesExist && !signalIndexNeedsInit,
@@ -58,15 +59,15 @@ export const useSignalHelpers = (): {
       abortCtrl.current = new AbortController();
       try {
         const sourcererDataView = await createSourcererDataView({
-          body: { patternList: defaultDataView.title.split(',') },
+          body: { patternList: defaultDataView?.title.split(',') },
           signal: abortCtrl.current.signal,
           dataViewId,
           dataViewService: dataViews,
         });
 
         if (
-          signalIndexNameSourcerer !== null &&
-          sourcererDataView?.defaultDataView.patternList.includes(signalIndexNameSourcerer)
+          signalIndexName !== null &&
+          sourcererDataView?.defaultDataView.patternList.includes(signalIndexName)
         ) {
           // first time signals is defined and validated in the sourcerer
           // redo indexFieldsSearch
@@ -89,7 +90,7 @@ export const useSignalHelpers = (): {
       }
     };
 
-    if (signalIndexNameSourcerer !== null) {
+    if (signalIndexName !== null) {
       abortCtrl.current.abort();
       asyncSearch();
     }
@@ -97,10 +98,10 @@ export const useSignalHelpers = (): {
     addError,
     dataViewId,
     dataViews,
-    defaultDataView.title,
+    defaultDataView?.title,
     dispatch,
     indexFieldsSearch,
-    signalIndexNameSourcerer,
+    signalIndexName,
   ]);
 
   return {

@@ -6,19 +6,30 @@
  */
 
 import React, { useCallback, useMemo } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { EuiButton, EuiButtonEmpty } from '@elastic/eui';
 
 import { InputsModelId } from '../../../../common/store/inputs/constants';
 import { defaultHeaders } from '../body/column_headers/default_headers';
 import { timelineActions } from '../../../store/timeline';
+import {
+  // defaultDataView,
+  kibanaDataView,
+  signalIndexName as signalIndexNameSelector,
+  timelineScope,
+  defaultScope,
+  detectionsScope,
+  timelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+} from '../../../../common/store/sourcerer/selectors';
 import { useTimelineFullScreen } from '../../../../common/containers/use_full_screen';
 import { TimelineId } from '../../../../../common/types/timeline';
 import type { TimelineTypeLiteral } from '../../../../../common/types/timeline/api';
 import { TimelineType } from '../../../../../common/types/timeline/api';
 import { useDeepEqualSelector } from '../../../../common/hooks/use_selector';
 import { inputsActions, inputsSelectors } from '../../../../common/store/inputs';
-import { sourcererActions, sourcererSelectors } from '../../../../common/store/sourcerer';
+import { sourcererActions } from '../../../../common/store/sourcerer';
 import { SourcererScopeName } from '../../../../common/store/sourcerer/model';
 import { appActions } from '../../../../common/store/app';
 import type { TimeRange } from '../../../../common/store/inputs/model';
@@ -32,9 +43,8 @@ interface Props {
 
 export const useCreateTimeline = ({ timelineId, timelineType, closeGearMenu }: Props) => {
   const dispatch = useDispatch();
-  const defaultDataViewSelector = useMemo(() => sourcererSelectors.defaultDataViewSelector(), []);
-  const { id: dataViewId, patternList: selectedPatterns } =
-    useDeepEqualSelector(defaultDataViewSelector);
+
+  const { selectedDataViewId: dataViewId, selectedPatterns } = useSelector(timelineScope);
 
   const { timelineFullScreen, setTimelineFullScreen } = useTimelineFullScreen();
   const globalTimeRange = useDeepEqualSelector(inputsSelectors.globalTimeRangeSelector);

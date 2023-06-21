@@ -74,8 +74,8 @@ export const getDataViewSelectOptions = ({
   isModified,
   isOnlyDetectionAlerts,
   kibanaDataViews,
-}: GetDataViewSelectOptionsProps): Array<EuiSuperSelectOption<string>> =>
-  isOnlyDetectionAlerts
+}: GetDataViewSelectOptionsProps): Array<EuiSuperSelectOption<string>> => {
+  return isOnlyDetectionAlerts
     ? [
         {
           inputDisplay: (
@@ -89,7 +89,8 @@ export const getDataViewSelectOptions = ({
           value: defaultDataViewId,
         },
       ]
-    : kibanaDataViews.map(({ title, id }) => ({
+    : kibanaDataViews
+    ? kibanaDataViews.map(({ title, id }) => ({
         inputDisplay:
           id === defaultDataViewId ? (
             <span data-test-subj="security-option-super">
@@ -111,7 +112,9 @@ export const getDataViewSelectOptions = ({
             </span>
           ),
         value: id,
-      }));
+      }))
+    : [];
+};
 
 interface GetTooltipContent {
   isOnlyDetectionAlerts: boolean;

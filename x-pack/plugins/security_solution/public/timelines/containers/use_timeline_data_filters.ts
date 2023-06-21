@@ -7,6 +7,7 @@
 
 import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 import { useDeepEqualSelector } from '../../common/hooks/use_selector';
 import {
@@ -14,9 +15,19 @@ import {
   startSelector,
   endSelector,
 } from '../../common/components/super_date_picker/selectors';
+import {
+  // defaultDataView,
+  kibanaDataView,
+  signalIndexName as signalIndexNameSelector,
+  timelineScope,
+  defaultScope,
+  detectionsScope,
+  timelineDataView,
+  sdefaultDataView,
+  sdetectionsDataView,
+} from '../../common/store/sourcerer/selectors';
 import { SourcererScopeName } from '../../common/store/sourcerer/model';
 import { useSourcererDataView, getScopeFromPath } from '../../common/containers/sourcerer';
-import { sourcererSelectors } from '../../common/store';
 
 export function useTimelineDataFilters(isActiveTimelines: boolean) {
   const getStartSelector = useMemo(() => startSelector(), []);
@@ -44,11 +55,8 @@ export function useTimelineDataFilters(isActiveTimelines: boolean) {
       return getEndSelector(state.inputs.global);
     }
   });
-  const getDefaultDataViewSelector = useMemo(
-    () => sourcererSelectors.defaultDataViewSelector(),
-    []
-  );
-  const defaultDataView = useDeepEqualSelector(getDefaultDataViewSelector);
+  const defaultDataView = useSelector(sdefaultDataView);
+
   const { pathname } = useLocation();
   const { selectedPatterns: nonTimelinePatterns } = useSourcererDataView(
     getScopeFromPath(pathname)

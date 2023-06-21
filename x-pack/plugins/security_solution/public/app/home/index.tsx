@@ -41,8 +41,6 @@ const HomePageComponent: React.FC<HomePageProps> = ({ children, setHeaderActionM
   useUpdateBrowserTitle();
   useUpdateExecutionContext();
 
-  const { browserFields } = useSourcererDataView(getScopeFromPath(pathname));
-
   // side effect: this will attempt to upgrade the endpoint package if it is not up to date
   // this will run when a user navigates to the Security Solution app and when they navigate between
   // tabs in the app. This is useful for keeping the endpoint package as up to date as possible until
@@ -57,9 +55,7 @@ const HomePageComponent: React.FC<HomePageProps> = ({ children, setHeaderActionM
         <TourContextProvider>
           <>
             <GlobalHeader setHeaderActionMenu={setHeaderActionMenu} />
-            <DragDropContextWrapper browserFields={browserFields}>
-              {children}
-            </DragDropContextWrapper>
+            <DragDropContextWrapper>{children}</DragDropContextWrapper>
             <HelpMenu />
           </>
         </TourContextProvider>
