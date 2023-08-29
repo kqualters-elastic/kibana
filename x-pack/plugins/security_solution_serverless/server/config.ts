@@ -20,6 +20,7 @@ export const config: PluginConfigDescriptor<ServerlessSecurityConfig> = {
   exposeToBrowser: {
     productTypes: true,
     developer: true,
+    enabled: true,
   },
   schema: configSchema,
   deprecations: ({ renameFromRoot }) => [

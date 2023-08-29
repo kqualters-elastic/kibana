@@ -41,7 +41,19 @@ export class SecuritySolutionServerlessPlugin
     setupDeps: SecuritySolutionServerlessPluginSetupDeps
   ): SecuritySolutionServerlessPluginSetup {
     setupDeps.securitySolution.setAppLinksSwitcher(projectAppLinksSwitcher);
-
+    const { productTypes, enabled } = this.config;
+    _core.application.register({
+      id: 'discover',
+      title: 'Discover',
+      order: 1000,
+      euiIconType: 'logoKibana',
+      defaultPath: '#/',
+      //category: DEFAULT_APP_CATEGORIES.kibana,
+      navLinkStatus: 1,
+      mount: async (params: AppMountParameters) => {
+        window.location = 'http://localhost:5601/app/security/alerts?timeline=%28isOpen%3Atrue%2CactiveTab%3Adiscover%29';
+      },
+    });
     return {};
   }
 
@@ -50,7 +62,7 @@ export class SecuritySolutionServerlessPlugin
     startDeps: SecuritySolutionServerlessPluginStartDeps
   ): SecuritySolutionServerlessPluginStart {
     const { securitySolution } = startDeps;
-    const { productTypes } = this.config;
+    const { productTypes, enabled } = this.config;
 
     const services = createServices(core, startDeps);
 
