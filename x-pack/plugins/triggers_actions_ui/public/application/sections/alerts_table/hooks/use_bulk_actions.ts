@@ -4,7 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-import { useCallback, useContext, useEffect, useMemo } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/typesWithBodyKey';
 import { useKibana } from '@kbn/kibana-react-plugin/public';
 import { ALERT_CASE_IDS } from '@kbn/rule-data-utils';
@@ -86,6 +86,7 @@ const addItemsToInitialPanel = ({
 }) => {
   if (panels.length > 0) {
     if (panels[0].items) {
+      console.log('lol', panels[0].items, items);
       panels[0].items.push(...items);
     }
     return panels;
@@ -99,10 +100,20 @@ export const useBulkAddToCaseActions = ({
   refresh,
   clearSelection,
 }: UseBulkAddToCaseActionsProps): BulkActionsConfig[] => {
+  const prop1 = useRef(null);
+  const prop2 = useRef(null);
+  const prop3 = useRef(null);
+  const prop4 = useRef(null);
+  const prop5 = useRef(null);
+  const prop6 = useRef(null);
   const { cases: casesService } = useKibana<{ cases?: CasesService }>().services;
 
-  const userCasesPermissions = casesService?.helpers.canUseCases(casesConfig?.owner ?? []);
-  const CasesContext = casesService?.ui.getCasesContext();
+  const userCasesPermissions = useMemo(() => {
+    return casesService?.helpers.canUseCases(casesConfig?.owner ?? []);
+  }, [casesConfig?.owner, casesService?.helpers]);
+  const CasesContext = useMemo(() => {
+    return casesService?.ui.getCasesContext();
+  }, [casesService?.ui]);
   const isCasesContextAvailable = Boolean(casesService && CasesContext);
 
   const onSuccess = useCallback(() => {
@@ -110,62 +121,85 @@ export const useBulkAddToCaseActions = ({
     clearSelection();
   }, [clearSelection, refresh]);
 
-  const createCaseFlyout = casesService?.hooks.useCasesAddToNewCaseFlyout({ onSuccess });
-  const selectCaseModal = casesService?.hooks.useCasesAddToExistingCaseModal({
-    onSuccess,
-    noAttachmentsToaster: {
-      title: NO_ALERTS_ADDED_TO_CASE,
-      content: ALERTS_ALREADY_ATTACHED_TO_CASE,
-    },
-  });
+  const createCaseArgs = useMemo(() => {
+    return { onSuccess };
+  }, [onSuccess]);
+
+  const selectCaseArgs = useMemo(() => {
+    return {
+      onSuccess,
+      noAttachmentsToaster: {
+        title: NO_ALERTS_ADDED_TO_CASE,
+        content: ALERTS_ALREADY_ATTACHED_TO_CASE,
+      },
+    };
+  }, [onSuccess]);
+
+  const createCaseFlyout = casesService?.hooks.useCasesAddToNewCaseFlyout(createCaseArgs).open;
+  const selectCaseModal = casesService?.hooks.useCasesAddToExistingCaseModal(selectCaseArgs).open;
+  // console.log(
+  //   prop1.current === createCaseFlyout,
+  //   prop2.current === selectCaseModal,
+  //   prop3.current === userCasesPermissions,
+  //   prop4.current === isCasesContextAvailable,
+  //   prop5.current === casesService
+  // );
+  prop1.current = createCaseFlyout;
+  prop2.current = selectCaseModal;
+  prop3.current = userCasesPermissions;
+  prop4.current = isCasesContextAvailable;
+  prop5.current = casesService;
 
   return useMemo(() => {
-    return isCasesContextAvailable &&
+    if (
+      isCasesContextAvailable &&
       createCaseFlyout &&
       selectCaseModal &&
       userCasesPermissions?.create &&
       userCasesPermissions?.read
-      ? [
-          {
-            label: ADD_TO_NEW_CASE,
-            key: 'attach-new-case',
-            'data-test-subj': 'attach-new-case',
-            disableOnQuery: true,
-            disabledLabel: ADD_TO_NEW_CASE,
-            onClick: (alerts?: TimelineItem[]) => {
-              const caseAttachments = alerts
-                ? casesService?.helpers.groupAlertsByRule(alerts) ?? []
-                : [];
+    ) {
+      const addToNewCase = {
+        label: ADD_TO_NEW_CASE,
+        key: 'attach-new-case',
+        'data-test-subj': 'attach-new-case',
+        disableOnQuery: true,
+        disabledLabel: ADD_TO_NEW_CASE,
+        onClick: (alerts?: TimelineItem[]) => {
+          const caseAttachments = alerts
+            ? casesService?.helpers.groupAlertsByRule(alerts) ?? []
+            : [];
 
-              createCaseFlyout.open({
-                attachments: caseAttachments,
+          createCaseFlyout({
+            attachments: caseAttachments,
+          });
+        },
+      };
+      const addToExistingCase = {
+        label: ADD_TO_EXISTING_CASE,
+        key: 'attach-existing-case',
+        disableOnQuery: true,
+        disabledLabel: ADD_TO_EXISTING_CASE,
+        'data-test-subj': 'attach-existing-case',
+        onClick: (alerts?: TimelineItem[]) => {
+          selectCaseModal({
+            getAttachments: ({ theCase }) => {
+              if (theCase == null) {
+                return alerts ? casesService?.helpers.groupAlertsByRule(alerts) ?? [] : [];
+              }
+
+              return getCaseAttachments({
+                alerts,
+                caseId: theCase.id,
+                groupAlertsByRule: casesService?.helpers.groupAlertsByRule,
               });
             },
-          },
-          {
-            label: ADD_TO_EXISTING_CASE,
-            key: 'attach-existing-case',
-            disableOnQuery: true,
-            disabledLabel: ADD_TO_EXISTING_CASE,
-            'data-test-subj': 'attach-existing-case',
-            onClick: (alerts?: TimelineItem[]) => {
-              selectCaseModal.open({
-                getAttachments: ({ theCase }) => {
-                  if (theCase == null) {
-                    return alerts ? casesService?.helpers.groupAlertsByRule(alerts) ?? [] : [];
-                  }
-
-                  return getCaseAttachments({
-                    alerts,
-                    caseId: theCase.id,
-                    groupAlertsByRule: casesService?.helpers.groupAlertsByRule,
-                  });
-                },
-              });
-            },
-          },
-        ]
-      : [];
+          });
+        },
+      };
+      return [addToNewCase, addToExistingCase];
+    } else {
+      return [];
+    }
   }, [
     casesService?.helpers,
     createCaseFlyout,
@@ -189,45 +223,57 @@ export const useBulkUntrackActions = ({
   const { application } = useKibana().services;
   const { mutateAsync: untrackAlerts } = useBulkUntrackAlerts();
   // Check if at least one Observability feature is enabled
-  if (!application?.capabilities) return [];
-  const hasApmPermission = application.capabilities.apm?.['alerting:show'];
-  const hasInfrastructurePermission = application.capabilities.infrastructure?.show;
-  const hasLogsPermission = application.capabilities.logs?.show;
-  const hasUptimePermission = application.capabilities.uptime?.show;
-  const hasSloPermission = application.capabilities.slo?.show;
-  const hasObservabilityPermission = application.capabilities.observability?.show;
+  const hasApmPermission = application?.capabilities.apm?.['alerting:show'];
+  const hasInfrastructurePermission = application?.capabilities.infrastructure?.show;
+  const hasLogsPermission = application?.capabilities.logs?.show;
+  const hasUptimePermission = application?.capabilities.uptime?.show;
+  const hasSloPermission = application?.capabilities.slo?.show;
+  const hasObservabilityPermission = application?.capabilities.observability?.show;
 
-  if (
-    !hasApmPermission &&
-    !hasInfrastructurePermission &&
-    !hasLogsPermission &&
-    !hasUptimePermission &&
-    !hasSloPermission &&
-    !hasObservabilityPermission
-  )
-    return [];
-
-  return [
-    {
-      label: MARK_AS_UNTRACKED,
-      key: 'mark-as-untracked',
-      disableOnQuery: true,
-      disabledLabel: MARK_AS_UNTRACKED,
-      'data-test-subj': 'mark-as-untracked',
-      onClick: async (alerts?: TimelineItem[]) => {
-        if (!alerts) return;
-        const alertUuids = alerts.map((alert) => alert._id);
-        const indices = alerts.map((alert) => alert._index ?? '');
-        try {
-          setIsBulkActionsLoading(true);
-          await untrackAlerts({ indices, alertUuids });
-          onSuccess();
-        } finally {
-          setIsBulkActionsLoading(false);
-        }
+  return useMemo(() => {
+    if (!application?.capabilities) return [];
+    if (
+      !hasApmPermission &&
+      !hasInfrastructurePermission &&
+      !hasLogsPermission &&
+      !hasUptimePermission &&
+      !hasSloPermission &&
+      !hasObservabilityPermission
+    )
+      return [];
+    return [
+      {
+        label: MARK_AS_UNTRACKED,
+        key: 'mark-as-untracked',
+        disableOnQuery: true,
+        disabledLabel: MARK_AS_UNTRACKED,
+        'data-test-subj': 'mark-as-untracked',
+        onClick: async (alerts?: TimelineItem[]) => {
+          if (!alerts) return;
+          const alertUuids = alerts.map((alert) => alert._id);
+          const indices = alerts.map((alert) => alert._index ?? '');
+          try {
+            setIsBulkActionsLoading(true);
+            await untrackAlerts({ indices, alertUuids });
+            onSuccess();
+          } finally {
+            setIsBulkActionsLoading(false);
+          }
+        },
       },
-    },
-  ];
+    ];
+  }, [
+    onSuccess,
+    setIsBulkActionsLoading,
+    untrackAlerts,
+    application?.capabilities,
+    hasApmPermission,
+    hasInfrastructurePermission,
+    hasLogsPermission,
+    hasUptimePermission,
+    hasSloPermission,
+    hasObservabilityPermission,
+  ]);
 };
 
 export function useBulkActions({
@@ -238,29 +284,48 @@ export function useBulkActions({
   useBulkActionsConfig = () => [],
 }: BulkActionsProps): UseBulkActions {
   const [bulkActionsState, updateBulkActionsState] = useContext(BulkActionsContext);
+  const prop10 = useRef(null);
   const configBulkActionPanels = useBulkActionsConfig(query);
-
-  const clearSelection = () => {
+  // console.log('config', configBulkActionPanels === prop10.current, configBulkActionPanels, prop10.current);
+  // prop10.current = configBulkActionPanels;
+  const oldReturn = useRef(null);
+  const prop1 = useRef(null);
+  const prop2 = useRef(null);
+  const prop3 = useRef(null);
+  const prop4 = useRef(null);
+  const prop5 = useRef(null);
+  const prop6 = useRef(null);
+  const prop7 = useRef(null);
+  const prop8 = useRef(null);
+  const clearSelection = useCallback(() => {
     updateBulkActionsState({ action: BulkActionsVerbs.clear });
-  };
-  const setIsBulkActionsLoading = (isLoading: boolean = true) => {
-    updateBulkActionsState({ action: BulkActionsVerbs.updateAllLoadingState, isLoading });
-  };
+  }, [updateBulkActionsState]);
+  const setIsBulkActionsLoading = useCallback(
+    (isLoading: boolean = true) => {
+      updateBulkActionsState({ action: BulkActionsVerbs.updateAllLoadingState, isLoading });
+    },
+    [updateBulkActionsState]
+  );
   const caseBulkActions = useBulkAddToCaseActions({ casesConfig, refresh, clearSelection });
+  // console.log('cases', caseBulkActions === prop7.current, caseBulkActions, prop7.current);
+  // prop7.current = caseBulkActions;
   const untrackBulkActions = useBulkUntrackActions({
     setIsBulkActionsLoading,
     refresh,
     clearSelection,
   });
+  // console.log('bulk', untrackBulkActions === prop8.current, untrackBulkActions, prop8.current);
+  // prop8.current = untrackBulkActions;
 
-  const initialItems = [...caseBulkActions, ...untrackBulkActions];
-
-  const bulkActions = initialItems.length
-    ? addItemsToInitialPanel({
-        panels: configBulkActionPanels,
-        items: initialItems,
-      })
-    : configBulkActionPanels;
+  const bulkActions = useMemo(() => {
+    const initialItems = [...caseBulkActions, ...untrackBulkActions];
+    return initialItems.length
+      ? addItemsToInitialPanel({
+          panels: configBulkActionPanels,
+          items: initialItems,
+        })
+      : configBulkActionPanels;
+  }, [caseBulkActions, configBulkActionPanels, untrackBulkActions]);
 
   const isBulkActionsColumnActive = bulkActions.length !== 0;
 
@@ -268,12 +333,38 @@ export function useBulkActions({
     updateBulkActionsState({ action: BulkActionsVerbs.rowCountUpdate, rowCount: alerts.length });
   }, [alerts, updateBulkActionsState]);
 
-  return {
-    isBulkActionsColumnActive,
-    getBulkActionsLeadingControlColumn,
-    bulkActionsState,
+  const ret = useMemo(() => {
+    return {
+      isBulkActionsColumnActive,
+      getBulkActionsLeadingControlColumn,
+      bulkActionsState,
+      bulkActions,
+      setIsBulkActionsLoading,
+      clearSelection,
+    };
+  }, [
     bulkActions,
-    setIsBulkActionsLoading,
+    bulkActionsState,
     clearSelection,
-  };
+    isBulkActionsColumnActive,
+    setIsBulkActionsLoading,
+  ]);
+  // console.log(
+  //   ret === oldReturn.current,
+  //   prop1.current === isBulkActionsColumnActive,
+  //   prop2.current === getBulkActionsLeadingControlColumn,
+  //   prop3.current === bulkActionsState,
+  //   prop4.current === bulkActions,
+  //   prop5.current === setIsBulkActionsLoading,
+  //   prop6.current === clearSelection
+  // );
+  // console.log(bulkActions, prop4.current);
+  oldReturn.current = ret;
+  prop1.current = isBulkActionsColumnActive;
+  prop2.current = getBulkActionsLeadingControlColumn;
+  prop3.current = bulkActionsState;
+  prop4.current = bulkActions;
+  prop5.current = setIsBulkActionsLoading;
+  prop6.current = clearSelection;
+  return ret;
 }

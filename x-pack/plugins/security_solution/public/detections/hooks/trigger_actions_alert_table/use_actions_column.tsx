@@ -106,9 +106,10 @@ export const getUseActionColumnHook =
         eventContext,
       ]
     );
-
-    return {
-      renderCustomActionsRow,
-      width: leadingControlColumn.width,
-    };
+    return useMemo(() => {
+      return {
+        renderCustomActionsRow,
+        width: leadingControlColumn.width,
+      };
+    }, [renderCustomActionsRow, leadingControlColumn.width]);
   };

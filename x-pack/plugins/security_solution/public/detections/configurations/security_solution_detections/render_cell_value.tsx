@@ -126,6 +126,7 @@ export const getRenderCellValueHook = ({
         linkValues,
         truncate = true,
       }) => {
+        console.log('render cell value');
         const myHeader = header ?? { id: columnId, ...browserFieldsByName[columnId] };
         /**
          * There is difference between how `triggers actions` fetched data v/s

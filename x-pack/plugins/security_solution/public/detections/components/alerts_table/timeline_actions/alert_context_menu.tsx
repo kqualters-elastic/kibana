@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useRef } from 'react';
 
 import { EuiButtonIcon, EuiContextMenu, EuiPopover, EuiToolTip } from '@elastic/eui';
 import { indexOf } from 'lodash';
@@ -28,6 +28,7 @@ import type { AddExceptionFlyoutProps } from '../../../../detection_engine/rule_
 import { AddExceptionFlyout } from '../../../../detection_engine/rule_exceptions/components/add_exception_flyout';
 import * as i18n from '../translations';
 import type { inputsModel, State } from '../../../../common/store';
+import { TimelineId } from '../../../../../common/types';
 import { inputsSelectors } from '../../../../common/store';
 import type { AlertData, EcsHit } from '../../../../detection_engine/rule_exceptions/utils/types';
 import { useQueryAlerts } from '../../../containers/detection_engine/alerts/use_query';
@@ -67,13 +68,12 @@ const AlertContextMenuComponent: React.FC<AlertContextMenuProps & PropsFromRedux
   ecsRowData,
   onRuleChange,
   scopeId,
-  globalQuery,
-  timelineQuery,
+  scopedQueries,
   refetch,
 }) => {
   const [isPopoverOpen, setPopover] = useState(false);
   const [isOsqueryFlyoutOpen, setOsqueryFlyoutOpen] = useState(false);
-  const [routeProps] = useRouteSpy();
+  //const [routeProps] = useRouteSpy();
 
   const onMenuItemClick = useCallback(() => {
     setPopover(false);
@@ -88,14 +88,18 @@ const AlertContextMenuComponent: React.FC<AlertContextMenuProps & PropsFromRedux
     scopeId as TableId
   );
 
-  const { addToCaseActionItems } = useAddToCaseActions({
-    ecsData: ecsRowData,
-    onMenuItemClick,
-    isActiveTimelines: isActiveTimeline(scopeId ?? ''),
-    ariaLabel: ATTACH_ALERT_TO_CASE_FOR_ROW({ ariaRowindex, columnValues }),
-    isInDetections,
-    refetch,
-  });
+  const addToCaseArgs = useMemo(() => {
+    return {
+      ecsData: ecsRowData,
+      onMenuItemClick,
+      isActiveTimelines: isActiveTimeline(scopeId ?? ''),
+      ariaLabel: ATTACH_ALERT_TO_CASE_FOR_ROW({ ariaRowindex, columnValues }),
+      isInDetections,
+      refetch,
+    };
+  }, [ariaRowindex, columnValues, ecsRowData, isInDetections, onMenuItemClick, refetch, scopeId]);
+
+  const { addToCaseActionItems } = useAddToCaseActions(addToCaseArgs);
 
   const { loading: endpointPrivilegesLoading, canWriteEventFilters } =
     useUserPrivileges().endpointPrivileges;
@@ -138,21 +142,13 @@ const AlertContextMenuComponent: React.FC<AlertContextMenuProps & PropsFromRedux
     );
   }, [disabled, onButtonClick, ariaLabel, isPopoverOpen]);
 
-  const refetchQuery = (newQueries: inputsModel.GlobalQuery[]) => {
-    newQueries.forEach((q) => q.refetch && (q.refetch as inputsModel.Refetch)());
-  };
-
   const refetchAll = useCallback(() => {
-    if (isActiveTimeline(scopeId ?? '')) {
-      refetchQuery([timelineQuery]);
-      if (routeProps.pageName === 'alerts') {
-        refetchQuery(globalQuery);
-      }
-    } else {
-      refetchQuery(globalQuery);
-      if (refetch) refetch();
-    }
-  }, [scopeId, globalQuery, timelineQuery, routeProps, refetch]);
+    const refetchQuery = (newQueries: inputsModel.GlobalQuery[]) => {
+      newQueries.forEach((q) => q.refetch && (q.refetch as inputsModel.Refetch)());
+    };
+    refetchQuery(scopedQueries);
+    if (refetch) refetch();
+  }, [scopedQueries, refetch]);
 
   const ruleIndex =
     ecsRowData['kibana.alert.rule.parameters']?.index ?? ecsRowData?.signal?.rule?.index;
@@ -160,28 +156,36 @@ const AlertContextMenuComponent: React.FC<AlertContextMenuProps & PropsFromRedux
     ecsRowData['kibana.alert.rule.parameters']?.data_view_id ??
     ecsRowData?.signal?.rule?.data_view_id;
 
+  const exceptionArgs = useMemo(() => {
+    return {
+      refetch: refetchAll,
+      onRuleChange,
+      isActiveTimelines: isActiveTimeline(scopeId ?? ''),
+    };
+  }, [refetchAll, onRuleChange, scopeId]);
+
   const {
     exceptionFlyoutType,
     openAddExceptionFlyout,
     onAddExceptionCancel,
     onAddExceptionConfirm,
     onAddExceptionTypeClick,
-  } = useExceptionFlyout({
-    refetch: refetchAll,
-    onRuleChange,
-    isActiveTimelines: isActiveTimeline(scopeId ?? ''),
-  });
+  } = useExceptionFlyout(exceptionArgs);
 
   const { closeAddEventFilterModal, isAddEventFilterModalOpen, onAddEventFilterClick } =
     useEventFilterModal();
 
-  const { actionItems: statusActionItems } = useAlertsActions({
-    alertStatus,
-    eventId: ecsRowData?._id,
-    scopeId,
-    refetch: refetchAll,
-    closePopover,
-  });
+  const alertActionArgs = useMemo(() => {
+    return {
+      alertStatus,
+      eventId: ecsRowData?._id,
+      scopeId,
+      refetch: refetchAll,
+      closePopover,
+    };
+  }, [alertStatus, ecsRowData, refetchAll, scopeId, closePopover]);
+
+  const { actionItems: statusActionItems } = useAlertsActions(alertActionArgs);
 
   const handleOnAddExceptionTypeClick = useCallback(
     (type?: ExceptionListTypeEnum) => {
@@ -335,9 +339,11 @@ const makeMapStateToProps = () => {
   const getGlobalQueries = inputsSelectors.globalQuery();
   const getTimelineQuery = inputsSelectors.timelineQueryByIdSelector();
   const mapStateToProps = (state: State, { scopeId }: AlertContextMenuProps) => {
+    const timelineQueryId = `${scopeId}-query`;
+    const globalQuery = getGlobalQueries(state);
+    const timelineQuery = getTimelineQuery(state, timelineQueryId);
     return {
-      globalQuery: getGlobalQueries(state),
-      timelineQuery: getTimelineQuery(state, scopeId),
+      scopedQueries: scopeId === TimelineId.active ? [timelineQuery] : globalQuery,
     };
   };
   return mapStateToProps;

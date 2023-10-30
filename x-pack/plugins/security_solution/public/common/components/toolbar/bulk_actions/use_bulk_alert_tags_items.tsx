@@ -34,16 +34,18 @@ export const useBulkAlertTagsItems = ({ refetch }: UseBulkAlertTagsItemsProps) =
     [setAlertTags]
   );
 
-  const alertTagsItems = [
-    {
-      key: 'manage-alert-tags',
-      'data-test-subj': 'alert-tags-context-menu-item',
-      name: i18n.ALERT_TAGS_CONTEXT_MENU_ITEM_TITLE,
-      panel: 1,
-      label: i18n.ALERT_TAGS_CONTEXT_MENU_ITEM_TITLE,
-      disableOnQuery: true,
-    },
-  ];
+  const alertTagsItems = useMemo(() => {
+    return [
+      {
+        key: 'manage-alert-tags',
+        'data-test-subj': 'alert-tags-context-menu-item',
+        name: i18n.ALERT_TAGS_CONTEXT_MENU_ITEM_TITLE,
+        panel: 1,
+        label: i18n.ALERT_TAGS_CONTEXT_MENU_ITEM_TITLE,
+        disableOnQuery: true,
+      },
+    ];
+  }, []);
 
   const TitleContent = useMemo(
     () => (
@@ -90,8 +92,10 @@ export const useBulkAlertTagsItems = ({ refetch }: UseBulkAlertTagsItemsProps) =
     [TitleContent, renderContent]
   );
 
-  return {
-    alertTagsItems,
-    alertTagsPanels,
-  };
+  return useMemo(() => {
+    return {
+      alertTagsItems,
+      alertTagsPanels,
+    };
+  }, [alertTagsItems, alertTagsPanels]);
 };

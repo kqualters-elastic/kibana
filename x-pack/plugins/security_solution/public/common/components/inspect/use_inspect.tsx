@@ -6,9 +6,9 @@
  */
 
 import { useCallback, useMemo } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { InputsModelId } from '../../store/inputs/constants';
-import { useDeepEqualSelector } from '../../hooks/use_selector';
+import type { State } from '../../store';
 import { inputsSelectors } from '../../store';
 import { inputsActions } from '../../store/actions';
 
@@ -33,13 +33,17 @@ export const useInspect = ({
 }: UseInspectModalProps) => {
   const dispatch = useDispatch();
 
-  const getGlobalQuery = inputsSelectors.globalQueryByIdSelector();
-  const getTimelineQuery = inputsSelectors.timelineQueryByIdSelector();
-  const { loading, inspect, selectedInspectIndex, isInspected } = useDeepEqualSelector((state) =>
-    inputId === InputsModelId.global
-      ? getGlobalQuery(state, queryId)
-      : getTimelineQuery(state, queryId)
-  );
+  const getGlobalQuery = useMemo(() => inputsSelectors.globalQueryByIdSelector(), []);
+  const getTimelineQuery = useMemo(() => inputsSelectors.timelineQueryByIdSelector(), []);
+  const globalQuery = useSelector((state: State) => getGlobalQuery(state, queryId));
+  const timelineQuery = useSelector((state: State) => getTimelineQuery(state, queryId));
+  const { loading, inspect, selectedInspectIndex, isInspected } = useMemo(() => {
+    if (inputId === InputsModelId.global) {
+      return globalQuery;
+    } else {
+      return timelineQuery;
+    }
+  }, [globalQuery, inputId, timelineQuery]);
 
   const handleClick = useCallback(() => {
     if (onClick) {

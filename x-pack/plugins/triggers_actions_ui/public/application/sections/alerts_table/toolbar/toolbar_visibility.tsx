@@ -9,7 +9,7 @@ import {
   EuiDataGridToolBarAdditionalControlsOptions,
   EuiDataGridToolBarVisibilityOptions,
 } from '@elastic/eui';
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, memo, useMemo, useRef } from 'react';
 import { BrowserFields } from '@kbn/rule-registry-plugin/common';
 import { AlertsCount } from './components/alerts_count/alerts_count';
 import type {
@@ -26,29 +26,69 @@ import { ALERTS_TABLE_TITLE } from '../translations';
 
 const BulkActionsToolbar = lazy(() => import('../bulk_actions/components/toolbar'));
 
-const rightControl = ({
-  controls,
-  updatedAt,
-  getInspectQuery,
-  showInspectButton,
-}: {
-  controls?: EuiDataGridToolBarAdditionalControlsOptions;
-  updatedAt: number;
-  getInspectQuery: GetInspectQuery;
-  showInspectButton: boolean;
-}) => {
-  return (
-    <>
-      {showInspectButton && (
-        <InspectButton inspectTitle={ALERTS_TABLE_TITLE} getInspectQuery={getInspectQuery} />
-      )}
-      <LastUpdatedAt updatedAt={updatedAt} />
-      {controls?.right}
-    </>
-  );
-};
+const RightControl = memo(
+  ({
+    controls,
+    updatedAt,
+    getInspectQuery,
+    showInspectButton,
+  }: {
+    controls?: EuiDataGridToolBarAdditionalControlsOptions;
+    updatedAt: number;
+    getInspectQuery: GetInspectQuery;
+    showInspectButton: boolean;
+  }) => {
+    return (
+      <>
+        {showInspectButton && (
+          <InspectButton inspectTitle={ALERTS_TABLE_TITLE} getInspectQuery={getInspectQuery} />
+        )}
+        <LastUpdatedAt updatedAt={updatedAt} />
+        {controls?.right}
+      </>
+    );
+  }
+);
 
-const getDefaultVisibility = ({
+const LeftAppendControl = memo(
+  ({
+    alertsCount,
+    hasBrowserFields,
+    columnIds,
+    browserFields,
+    onResetColumns,
+    onToggleColumn,
+    fieldBrowserOptions,
+  }: {
+    alertsCount: number;
+    columnIds: string[];
+    onToggleColumn: (columnId: string) => void;
+    onResetColumns: () => void;
+    controls?: EuiDataGridToolBarAdditionalControlsOptions;
+    fieldBrowserOptions?: FieldBrowserOptions;
+    getInspectQuery: GetInspectQuery;
+    showInspectButton: boolean;
+    hasBrowserFields: boolean;
+    browserFields: BrowserFields;
+  }) => {
+    return (
+      <>
+        <AlertsCount count={alertsCount} />
+        {hasBrowserFields && (
+          <FieldBrowser
+            columnIds={columnIds}
+            browserFields={browserFields}
+            onResetColumns={onResetColumns}
+            onToggleColumn={onToggleColumn}
+            options={fieldBrowserOptions}
+          />
+        )}
+      </>
+    );
+  }
+);
+
+const useGetDefaultVisibility = ({
   alertsCount,
   updatedAt,
   columnIds,
@@ -71,37 +111,97 @@ const getDefaultVisibility = ({
   getInspectQuery: GetInspectQuery;
   showInspectButton: boolean;
 }): EuiDataGridToolBarVisibilityOptions => {
-  const hasBrowserFields = Object.keys(browserFields).length > 0;
-  const additionalControls = {
-    right: rightControl({ controls, updatedAt, getInspectQuery, showInspectButton }),
-    left: {
-      append: (
-        <>
-          <AlertsCount count={alertsCount} />
-          {hasBrowserFields && (
-            <FieldBrowser
+  const prop1 = useRef(null);
+  const prop2 = useRef(null);
+  const prop3 = useRef(null);
+  const prop4 = useRef(null);
+  const prop5 = useRef(null);
+  const prop6 = useRef(null);
+  const prop7 = useRef(null);
+  const prop8 = useRef(null);
+  const prop9 = useRef(null);
+  const prop10 = useRef(null);
+  const prop11 = useRef(null);
+  const prop12 = useRef(null);
+  const prop13 = useRef(null);
+  const prop14 = useRef(null);
+  const prop15 = useRef(null);
+  const prop16 = useRef(null);
+  const prop17 = useRef(null);
+  const prop18 = useRef(null);
+  const prop19 = useRef(null);
+  const defaultVisibility = useMemo(() => {
+    const hasBrowserFields = Object.keys(browserFields).length > 0;
+    return {
+      additionalControls: {
+        right: (
+          <RightControl
+            controls={controls}
+            updatedAt={updatedAt}
+            getInspectQuery={getInspectQuery}
+            showInspectButton={showInspectButton}
+          />
+        ),
+        left: {
+          append: (
+            <LeftAppendControl
+              alertsCount={alertsCount}
+              hasBrowserFields={hasBrowserFields}
               columnIds={columnIds}
               browserFields={browserFields}
               onResetColumns={onResetColumns}
               onToggleColumn={onToggleColumn}
-              options={fieldBrowserOptions}
+              fieldBrowserOptions={fieldBrowserOptions}
             />
-          )}
-        </>
-      ),
-    },
-  };
-
-  return {
-    additionalControls,
-    showColumnSelector: {
-      allowHide: false,
-    },
-    showSortSelector: true,
-  };
+          ),
+        },
+      },
+      showColumnSelector: {
+        allowHide: false,
+      },
+      showSortSelector: true,
+    };
+  }, [
+    alertsCount,
+    browserFields,
+    columnIds,
+    fieldBrowserOptions,
+    getInspectQuery,
+    onResetColumns,
+    onToggleColumn,
+    showInspectButton,
+    controls,
+    updatedAt,
+  ]);
+  console.log(
+    'useGetDefaultVisibility',
+    alertsCount === prop2.current,
+    updatedAt === prop6.current,
+    columnIds === prop7.current,
+    onToggleColumn === prop8.current,
+    onResetColumns === prop9.current,
+    browserFields === prop10.current,
+    controls === prop13.current,
+    fieldBrowserOptions === prop15.current, // false
+    getInspectQuery === prop16.current,
+    showInspectButton === prop17.current,
+    defaultVisibility === prop19.current // false
+  );
+  prop2.current = alertsCount;
+  prop6.current = updatedAt;
+  prop7.current = columnIds;
+  prop8.current = onToggleColumn;
+  prop9.current = onResetColumns;
+  prop10.current = browserFields;
+  prop13.current = controls;
+  prop15.current = fieldBrowserOptions;
+  prop16.current = getInspectQuery;
+  prop17.current = showInspectButton;
+  prop19.current = defaultVisibility;
+  return defaultVisibility;
 };
 
-export const getToolbarVisibility = ({
+export const useGetToolbarVisibility = ({
   bulkActions,
   alertsCount,
   rowSelection,
@@ -140,8 +240,40 @@ export const getToolbarVisibility = ({
   showInspectButton: boolean;
   toolbarVisiblityProp?: EuiDataGridToolBarVisibilityOptions;
 }): EuiDataGridToolBarVisibilityOptions => {
+  const prop1 = useRef(null);
+  const prop2 = useRef(null);
+  const prop3 = useRef(null);
+  const prop4 = useRef(null);
+  const prop5 = useRef(null);
+  const prop6 = useRef(null);
+  const prop7 = useRef(null);
+  const prop8 = useRef(null);
+  const prop9 = useRef(null);
+  const prop10 = useRef(null);
+  const prop11 = useRef(null);
+  const prop12 = useRef(null);
+  const prop13 = useRef(null);
+  const prop14 = useRef(null);
+  const prop15 = useRef(null);
+  const prop16 = useRef(null);
+  const prop17 = useRef(null);
+  const prop18 = useRef(null);
+  const prop19 = useRef(null);
   const selectedRowsCount = rowSelection.size;
-  const defaultVisibility = getDefaultVisibility({
+  const defaultVisibilityProps = useMemo(() => {
+    return {
+      alertsCount,
+      updatedAt,
+      columnIds,
+      onToggleColumn,
+      onResetColumns,
+      browserFields,
+      controls,
+      fieldBrowserOptions,
+      getInspectQuery,
+      showInspectButton,
+    };
+  }, [
     alertsCount,
     updatedAt,
     columnIds,
@@ -152,41 +284,105 @@ export const getToolbarVisibility = ({
     fieldBrowserOptions,
     getInspectQuery,
     showInspectButton,
-  });
-  const isBulkActionsActive =
-    selectedRowsCount === 0 || selectedRowsCount === undefined || bulkActions.length === 0;
+  ]);
+  const defaultVisibility = useGetDefaultVisibility(defaultVisibilityProps);
+  console.log(
+    'useGetToolbarVisibility',
+    bulkActions === prop1.current,
+    alertsCount === prop2.current,
+    rowSelection === prop3.current,
+    alerts === prop4.current,
+    isLoading === prop5.current,
+    updatedAt === prop6.current,
+    columnIds === prop7.current,
+    onToggleColumn === prop8.current,
+    onResetColumns === prop9.current,
+    browserFields === prop10.current,
+    setIsBulkActionsLoading === prop11.current,
+    clearSelection === prop12.current,
+    controls === prop13.current,
+    refresh === prop14.current,
+    fieldBrowserOptions === prop15.current, // false
+    getInspectQuery === prop16.current,
+    showInspectButton === prop17.current,
+    toolbarVisiblityProp === prop18.current,
+    defaultVisibility === prop19.current // false
+  );
+  prop1.current = bulkActions;
+  prop2.current = alertsCount;
+  prop3.current = rowSelection;
+  prop4.current = alerts;
+  prop5.current = isLoading;
+  prop6.current = updatedAt;
+  prop7.current = columnIds;
+  prop8.current = onToggleColumn;
+  prop9.current = onResetColumns;
+  prop10.current = browserFields;
+  prop11.current = setIsBulkActionsLoading;
+  prop12.current = clearSelection;
+  prop13.current = controls;
+  prop14.current = refresh;
+  prop15.current = fieldBrowserOptions;
+  prop16.current = getInspectQuery;
+  prop17.current = showInspectButton;
+  prop18.current = toolbarVisiblityProp;
+  prop19.current = defaultVisibility;
+  const options = useMemo(() => {
+    const isBulkActionsActive =
+      selectedRowsCount === 0 || selectedRowsCount === undefined || bulkActions.length === 0;
 
-  if (isBulkActionsActive)
+    if (isBulkActionsActive)
+      return {
+        ...defaultVisibility,
+        ...(toolbarVisiblityProp ?? {}),
+      };
     return {
-      ...defaultVisibility,
+      showColumnSelector: false,
+      showSortSelector: false,
+      additionalControls: {
+        right: (
+          <RightControl
+            controls={controls}
+            updatedAt={updatedAt}
+            getInspectQuery={getInspectQuery}
+            showInspectButton={showInspectButton}
+          />
+        ),
+        left: {
+          append: (
+            <>
+              <AlertsCount count={alertsCount} />
+              <Suspense fallback={null}>
+                <BulkActionsToolbar
+                  totalItems={alertsCount}
+                  panels={bulkActions}
+                  alerts={alerts}
+                  setIsBulkActionsLoading={setIsBulkActionsLoading}
+                  clearSelection={clearSelection}
+                  refresh={refresh}
+                />
+              </Suspense>
+            </>
+          ),
+        },
+      },
       ...(toolbarVisiblityProp ?? {}),
     };
-
-  const options = {
-    showColumnSelector: false,
-    showSortSelector: false,
-    additionalControls: {
-      right: rightControl({ controls, updatedAt, getInspectQuery, showInspectButton }),
-      left: {
-        append: (
-          <>
-            <AlertsCount count={alertsCount} />
-            <Suspense fallback={null}>
-              <BulkActionsToolbar
-                totalItems={alertsCount}
-                panels={bulkActions}
-                alerts={alerts}
-                setIsBulkActionsLoading={setIsBulkActionsLoading}
-                clearSelection={clearSelection}
-                refresh={refresh}
-              />
-            </Suspense>
-          </>
-        ),
-      },
-    },
-    ...(toolbarVisiblityProp ?? {}),
-  };
+  }, [
+    alertsCount,
+    bulkActions,
+    defaultVisibility,
+    selectedRowsCount,
+    toolbarVisiblityProp,
+    alerts,
+    clearSelection,
+    refresh,
+    setIsBulkActionsLoading,
+    updatedAt,
+    controls,
+    getInspectQuery,
+    showInspectButton,
+  ]);
 
   return options;
 };

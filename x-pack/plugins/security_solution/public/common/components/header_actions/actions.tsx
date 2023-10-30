@@ -120,9 +120,9 @@ const ActionsComponent: React.FC<ActionProps> = ({
   const isDisabled = useMemo(() => !isInvestigateInResolverActionEnabled(ecsData), [ecsData]);
   const { setGlobalFullScreen } = useGlobalFullScreen();
   const { setTimelineFullScreen } = useTimelineFullScreen();
-  const scopedActions = getScopedActions(timelineId);
   const handleClick = useCallback(() => {
     startTransaction({ name: ALERTS_ACTIONS.OPEN_ANALYZER });
+    const scopedActions = getScopedActions(timelineId);
 
     const dataGridIsFullScreen = document.querySelector('.euiDataGrid--fullScreen');
     if (scopedActions) {
@@ -140,7 +140,6 @@ const ActionsComponent: React.FC<ActionProps> = ({
     }
   }, [
     startTransaction,
-    scopedActions,
     timelineId,
     dispatch,
     ecsData._id,
@@ -175,6 +174,7 @@ const ActionsComponent: React.FC<ActionProps> = ({
 
   const openSessionView = useCallback(() => {
     const dataGridIsFullScreen = document.querySelector('.euiDataGrid--fullScreen');
+    const scopedActions = getScopedActions(timelineId);
     startTransaction({ name: ALERTS_ACTIONS.OPEN_SESSION_VIEW });
 
     if (timelineId === TimelineId.active) {
@@ -201,7 +201,6 @@ const ActionsComponent: React.FC<ActionProps> = ({
     setTimelineFullScreen,
     dispatch,
     setGlobalFullScreen,
-    scopedActions,
   ]);
 
   const { activeStep, isTourShown, incrementStep } = useTourContext();

@@ -90,12 +90,15 @@ const EmptyConfiguration: AlertsTableConfigurationRegistry = {
   getRenderCellValue: () => () => null,
 };
 
+const FakeAlertsTable = React.memo(() => <div />);
+
 const AlertsTableWithBulkActionsContextComponent: React.FunctionComponent<{
   tableProps: AlertsTableProps;
   initialBulkActionsState: [BulkActionsState, React.Dispatch<BulkActionsReducerAction>];
 }> = ({ tableProps, initialBulkActionsState }) => (
   <BulkActionsContext.Provider value={initialBulkActionsState}>
     <AlertsTable {...tableProps} />
+    {/* <FakeAlertsTable /> */}
   </BulkActionsContext.Provider>
 );
 
