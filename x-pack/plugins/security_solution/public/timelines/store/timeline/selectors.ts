@@ -10,11 +10,9 @@ import type { State } from '../../../common/store/types';
 import { TimelineId } from '../../../../common/types';
 
 import type { TimelineModel } from './model';
-import type { AutoSavedWarningMsg, InsertTimeline, TimelineById } from './types';
+import type { InsertTimeline, TimelineById } from './types';
 
 const selectTimelineById = (state: State): TimelineById => state.timeline.timelineById;
-
-const selectAutoSaveMsg = (state: State): AutoSavedWarningMsg => state.timeline.autoSavedWarningMsg;
 
 const selectCallOutUnauthorizedMsg = (state: State): boolean =>
   state.timeline.showCallOutUnauthorizedMsg;
@@ -28,8 +26,6 @@ export const selectInsertTimeline = (state: State): InsertTimeline | null =>
 export const savedSearchId = createSelector(selectTimelineById, (timeline) =>
   timeline[TimelineId.active] ? timeline[TimelineId.active].savedSearchId : null
 );
-
-export const autoSaveMsgSelector = createSelector(selectAutoSaveMsg, (autoSaveMsg) => autoSaveMsg);
 
 export const timelineByIdSelector = createSelector(
   selectTimelineById,

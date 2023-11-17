@@ -7,7 +7,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/typesWithBodyKey';
 import { useKibana } from '@kbn/kibana-react-plugin/public';
-import { ALERT_CASE_IDS } from '@kbn/rule-data-utils';
+import { ALERT_CASE_IDS, ValidFeatureId } from '@kbn/rule-data-utils';
 import {
   Alerts,
   AlertsTableConfigurationRegistry,
@@ -39,6 +39,7 @@ interface BulkActionsProps {
   casesConfig?: AlertsTableConfigurationRegistry['cases'];
   useBulkActionsConfig?: UseBulkActionsRegistry;
   refresh: () => void;
+  featureIds?: ValidFeatureId[];
 }
 
 export interface UseBulkActions {
@@ -282,6 +283,7 @@ export function useBulkActions({
   query,
   refresh,
   useBulkActionsConfig = () => [],
+  featureIds,
 }: BulkActionsProps): UseBulkActions {
   const [bulkActionsState, updateBulkActionsState] = useContext(BulkActionsContext);
   const prop10 = useRef(null);
@@ -318,14 +320,17 @@ export function useBulkActions({
   // prop8.current = untrackBulkActions;
 
   const bulkActions = useMemo(() => {
-    const initialItems = [...caseBulkActions, ...untrackBulkActions];
+    const initialItems = [
+      ...caseBulkActions,
+      ...(featureIds?.includes('siem') ? [] : untrackBulkActions),
+    ];
     return initialItems.length
       ? addItemsToInitialPanel({
           panels: configBulkActionPanels,
           items: initialItems,
         })
       : configBulkActionPanels;
-  }, [caseBulkActions, configBulkActionPanels, untrackBulkActions]);
+  }, [caseBulkActions, configBulkActionPanels, untrackBulkActions, featureIds]);
 
   const isBulkActionsColumnActive = bulkActions.length !== 0;
 

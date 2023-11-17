@@ -19,6 +19,7 @@ import type { AlertWorkflowStatus } from '../../../common/types';
 import { FILTER_CLOSED, FILTER_OPEN, FILTER_ACKNOWLEDGED } from '../../../../common/types';
 import * as i18n from '../translations';
 import { buildTimeRangeFilter } from '../../components/alerts_table/helpers';
+import { useAlertsPrivileges } from '../../containers/detection_engine/alerts/use_alerts_privileges';
 
 interface UseBulkAlertActionItemsArgs {
   /* Table ID for which this hook is being used */
@@ -41,6 +42,7 @@ export const useBulkAlertActionItems = ({
   to,
   refetch: refetchProp,
 }: UseBulkAlertActionItemsArgs) => {
+  const { hasIndexWrite } = useAlertsPrivileges();
   const { startTransaction } = useStartTransaction();
 
   const { addSuccess, addError, addWarning } = useAppToasts();
@@ -173,8 +175,10 @@ export const useBulkAlertActionItems = ({
   );
 
   return useMemo(() => {
-    return [FILTER_OPEN, FILTER_CLOSED, FILTER_ACKNOWLEDGED].map((status) => {
-      return getUpdateAlertStatusAction(status as AlertWorkflowStatus);
-    });
-  }, [getUpdateAlertStatusAction]);
+    return hasIndexWrite
+      ? [FILTER_OPEN, FILTER_CLOSED, FILTER_ACKNOWLEDGED].map((status) => {
+          return getUpdateAlertStatusAction(status as AlertWorkflowStatus);
+        })
+      : [];
+  }, [getUpdateAlertStatusAction, hasIndexWrite]);
 };
