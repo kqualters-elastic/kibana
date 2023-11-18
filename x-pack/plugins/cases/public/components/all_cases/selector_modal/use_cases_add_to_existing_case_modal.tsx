@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { CaseStatuses } from '../../../../common/types/domain';
 import type { AllCasesSelectorModalProps } from '.';
 import { useCasesToast } from '../../../common/use_cases_toast';
@@ -51,29 +51,7 @@ export const useCasesAddToExistingCaseModal = (props: AddToExistingCaseModalProp
   const casesToasts = useCasesToast();
   const { mutateAsync: createAttachments } = useCreateAttachments();
   const { startTransaction } = useAddAttachmentToExistingCaseTransaction();
-  // const prop1 = useRef(null);
-  // const prop2 = useRef(null);
-  // const prop3 = useRef(null);
-  // const prop4 = useRef(null);
-  // const prop5 = useRef(null);
-  // const prop6 = useRef(null);
-  // const prop7 = useRef(null);
-  // const prop8 = useRef(null);
-  // const prop9 = useRef(null);
-  // const prop10 = useRef(null);
-  // const prop11 = useRef(null);
-  // const prop12 = useRef(null);
-  // const oldProps = useRef(null);
-  // console.log(
-  //   props,
-  //   oldProps.current === props,
-  //   oldProps.current,
-  //   props.onSuccess === oldProps.current?.onSuccess,
-  //   props.onClose === oldProps.current?.onClose,
-  //   props.successToaster === oldProps.current?.successToaster,
-  //   props.noAttachmentsToaster === oldProps.current?.noAttachmentsToaster
-  // );
-  // oldProps.current = props;
+
   const closeModal = useCallback(() => {
     dispatch({
       type: CasesContextStoreActionsList.CLOSE_ADD_TO_CASE_MODAL,
@@ -173,35 +151,7 @@ export const useCasesAddToExistingCaseModal = (props: AddToExistingCaseModalProp
     },
     [closeModal, dispatch, handleOnRowClick, onClose]
   );
-  // console.log(
-  //   'cases hook',
-  //   prop1.current === openModal, // false
-  //   prop2.current === closeModal, // true
-  //   prop3.current === handleOnRowClick, // false
-  //   prop4.current === dispatch, // true
-  //   prop5.current === appId, // true
-  //   prop6.current === casesToasts, // false
-  //   prop7.current === createAttachments, // true
-  //   prop8.current === createNewCaseFlyout, // false
-  //   prop9.current === startTransaction, // true
-  //   prop10.current === successToaster, // true
-  //   prop11.current === onSuccess, // true
-  //   prop12.current === noAttachmentsToaster // true
-  // );
-  // cases hook false true false true true false true false true true true true
-  // cases hook false true false true true false true false true true true true
-  // prop1.current = openModal;
-  // prop2.current = closeModal;
-  // prop3.current = handleOnRowClick;
-  // prop4.current = dispatch;
-  // prop5.current = appId;
-  // prop6.current = casesToasts;
-  // prop7.current = createAttachments;
-  // prop8.current = createNewCaseFlyout;
-  // prop9.current = startTransaction;
-  // prop10.current = successToaster;
-  // prop11.current = onSuccess;
-  // prop12.current = noAttachmentsToaster;
+
   return useMemo(() => {
     return {
       open: openModal,

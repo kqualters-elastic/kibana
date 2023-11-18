@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState } from 'react';
 import type { ExceptionListTypeEnum } from '@kbn/securitysolution-io-ts-list-types';
 
 import type { inputsModel } from '../../../../common/store';
@@ -36,13 +36,6 @@ export const useExceptionFlyout = ({
   const [exceptionFlyoutType, setExceptionFlyoutType] = useState<ExceptionListTypeEnum | null>(
     null
   );
-  // const prop1 = useRef(null);
-  // const prop2 = useRef(null);
-  // const prop3 = useRef(null);
-  // console.log('useExceptionFlyout', prop1.current === refetch, prop2.current === onRuleChange, prop3.current === isActiveTimelines);
-  // prop1.current = refetch;
-  // prop2.current = onRuleChange;
-  // prop3.current = isActiveTimelines;
 
   const onAddExceptionTypeClick = useCallback((exceptionListType?: ExceptionListTypeEnum): void => {
     setExceptionFlyoutType(exceptionListType ?? null);

@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { useMemo, useCallback, useRef } from 'react';
+import { useMemo, useCallback } from 'react';
 import type { AlertTableContextMenuItem } from '../../../../detections/components/alerts_table/types';
 import { FILTER_ACKNOWLEDGED, FILTER_CLOSED, FILTER_OPEN } from '../../../../../common/types';
 import type {
@@ -186,51 +186,6 @@ export const useBulkActionItems = ({
 
     return [...actionItems, ...additionalItems];
   }, [currentStatus, customBulkActions, eventIds, onClickUpdate, query, showAlertStatusActions]);
-  // const prop1 = useRef(null);
-  // const prop2 = useRef(null);
-  // const prop3 = useRef(null);
-  // const prop4 = useRef(null);
-  // const prop5 = useRef(null);
-  // const prop6 = useRef(null);
-  // const prop7 = useRef(null);
-  // const prop8 = useRef(null);
-  // const prop9 = useRef(null);
-  // const prop10 = useRef(null);
-  // const prop11 = useRef(null);
-  // const prop12 = useRef(null);
-  // const prop13 = useRef(null);
-  // console.log(
-  //   'useBulkActionItems',
-  //   prop1.current === currentStatus,
-  //   prop2.current === customBulkActions,
-  //   prop3.current === eventIds,
-  //   prop4.current === onClickUpdate, // false
-  //   prop5.current === query,
-  //   prop6.current === showAlertStatusActions,
-  //   prop7.current === setEventsLoading,
-  //   prop8.current === setEventsDeleted,
-  //   prop9.current === onAlertStatusUpdateSuccess, // false
-  //   prop10.current === onAlertStatusUpdateFailure, // false
-  //   prop11.current === startTransaction,
-  //   prop12.current === onUpdateSuccess,
-  //   prop13.current === onUpdateFailure,
-  //   eventIds,
-  //   prop3.current,
-  //   onClickUpdate,
-  //   prop4.current
-  // );
-  // prop1.current = currentStatus;
-  // prop2.current = customBulkActions;
-  // prop3.current = eventIds;
-  // prop4.current = onClickUpdate;
-  // prop5.current = query;
-  // prop6.current = showAlertStatusActions;
-  // prop7.current = setEventsLoading;
-  // prop8.current = setEventsDeleted;
-  // prop9.current = onAlertStatusUpdateSuccess;
-  // prop10.current = onAlertStatusUpdateFailure;
-  // prop11.current = startTransaction;
-  // prop12.current = onUpdateSuccess;
-  // prop13.current = onUpdateFailure;
+
   return items;
 };

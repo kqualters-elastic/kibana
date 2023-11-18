@@ -108,6 +108,7 @@ interface RenderCellValueProps {
   alerts: Alerts;
 }
 
+// TODO: better types
 export const ProposedRenderCellValue: renderCellValueWithContext = (
   props: EuiDataGridCellValueElementPropsWithContext<
     Partial<CellValueElementProps & RenderCustomActionsRowArgs & RenderCellValueProps>
