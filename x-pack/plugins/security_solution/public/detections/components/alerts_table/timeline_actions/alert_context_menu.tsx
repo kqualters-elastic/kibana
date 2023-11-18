@@ -70,7 +70,6 @@ const AlertContextMenuComponent: React.FC<AlertContextMenuProps> = ({
   ecsRowData,
   onRuleChange,
   scopeId,
-  scopedQueries,
   refetch,
 }) => {
   const [isPopoverOpen, setPopover] = useState(false);
@@ -152,9 +151,13 @@ const AlertContextMenuComponent: React.FC<AlertContextMenuProps> = ({
     const refetchQuery = (newQueries: inputsModel.GlobalQuery[]) => {
       newQueries.forEach((q) => q.refetch && (q.refetch as inputsModel.Refetch)());
     };
-    refetchQuery(scopedQueries);
-    if (refetch) refetch();
-  }, [scopedQueries, refetch]);
+    if (isActiveTimeline(scopeId ?? '')) {
+      refetchQuery([timelineQuery]);
+    } else {
+      refetchQuery(globalQuery);
+      if (refetch) refetch();
+    }
+  }, [scopeId, globalQuery, timelineQuery, refetch]);
 
   const ruleIndex =
     ecsRowData['kibana.alert.rule.parameters']?.index ?? ecsRowData?.signal?.rule?.index;

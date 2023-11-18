@@ -4,7 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-import { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useContext, useEffect, useMemo } from 'react';
 import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/typesWithBodyKey';
 import { useKibana } from '@kbn/kibana-react-plugin/public';
 import { ALERT_CASE_IDS, ValidFeatureId } from '@kbn/rule-data-utils';
@@ -87,7 +87,6 @@ const addItemsToInitialPanel = ({
 }) => {
   if (panels.length > 0) {
     if (panels[0].items) {
-      console.log('lol', panels[0].items, items);
       panels[0].items.push(...items);
     }
     return panels;
@@ -101,12 +100,6 @@ export const useBulkAddToCaseActions = ({
   refresh,
   clearSelection,
 }: UseBulkAddToCaseActionsProps): BulkActionsConfig[] => {
-  const prop1 = useRef(null);
-  const prop2 = useRef(null);
-  const prop3 = useRef(null);
-  const prop4 = useRef(null);
-  const prop5 = useRef(null);
-  const prop6 = useRef(null);
   const { cases: casesService } = useKibana<{ cases?: CasesService }>().services;
 
   const userCasesPermissions = useMemo(() => {
@@ -138,18 +131,6 @@ export const useBulkAddToCaseActions = ({
 
   const createCaseFlyout = casesService?.hooks.useCasesAddToNewCaseFlyout(createCaseArgs).open;
   const selectCaseModal = casesService?.hooks.useCasesAddToExistingCaseModal(selectCaseArgs).open;
-  // console.log(
-  //   prop1.current === createCaseFlyout,
-  //   prop2.current === selectCaseModal,
-  //   prop3.current === userCasesPermissions,
-  //   prop4.current === isCasesContextAvailable,
-  //   prop5.current === casesService
-  // );
-  prop1.current = createCaseFlyout;
-  prop2.current = selectCaseModal;
-  prop3.current = userCasesPermissions;
-  prop4.current = isCasesContextAvailable;
-  prop5.current = casesService;
 
   return useMemo(() => {
     if (
@@ -286,19 +267,8 @@ export function useBulkActions({
   featureIds,
 }: BulkActionsProps): UseBulkActions {
   const [bulkActionsState, updateBulkActionsState] = useContext(BulkActionsContext);
-  const prop10 = useRef(null);
   const configBulkActionPanels = useBulkActionsConfig(query);
-  // console.log('config', configBulkActionPanels === prop10.current, configBulkActionPanels, prop10.current);
-  // prop10.current = configBulkActionPanels;
-  const oldReturn = useRef(null);
-  const prop1 = useRef(null);
-  const prop2 = useRef(null);
-  const prop3 = useRef(null);
-  const prop4 = useRef(null);
-  const prop5 = useRef(null);
-  const prop6 = useRef(null);
-  const prop7 = useRef(null);
-  const prop8 = useRef(null);
+
   const clearSelection = useCallback(() => {
     updateBulkActionsState({ action: BulkActionsVerbs.clear });
   }, [updateBulkActionsState]);
@@ -338,7 +308,7 @@ export function useBulkActions({
     updateBulkActionsState({ action: BulkActionsVerbs.rowCountUpdate, rowCount: alerts.length });
   }, [alerts, updateBulkActionsState]);
 
-  const ret = useMemo(() => {
+  return useMemo(() => {
     return {
       isBulkActionsColumnActive,
       getBulkActionsLeadingControlColumn,
@@ -354,22 +324,4 @@ export function useBulkActions({
     isBulkActionsColumnActive,
     setIsBulkActionsLoading,
   ]);
-  // console.log(
-  //   ret === oldReturn.current,
-  //   prop1.current === isBulkActionsColumnActive,
-  //   prop2.current === getBulkActionsLeadingControlColumn,
-  //   prop3.current === bulkActionsState,
-  //   prop4.current === bulkActions,
-  //   prop5.current === setIsBulkActionsLoading,
-  //   prop6.current === clearSelection
-  // );
-  // console.log(bulkActions, prop4.current);
-  oldReturn.current = ret;
-  prop1.current = isBulkActionsColumnActive;
-  prop2.current = getBulkActionsLeadingControlColumn;
-  prop3.current = bulkActionsState;
-  prop4.current = bulkActions;
-  prop5.current = setIsBulkActionsLoading;
-  prop6.current = clearSelection;
-  return ret;
 }

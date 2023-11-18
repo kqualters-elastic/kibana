@@ -5,14 +5,23 @@
  * 2.0.
  */
 
-import type { EuiDataGridCellValueElementProps } from '@elastic/eui';
-import { EuiIcon, EuiToolTip, EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
+import type {
+  EuiDataGridCellValueElementPropsWithContext,
+  renderCellValueWithContext,
+} from '@elastic/eui';
+import { EuiIcon, EuiToolTip, EuiFlexGroup, EuiFlexItem, EuiSkeletonText } from '@elastic/eui';
 import React, { useCallback, useMemo } from 'react';
-import type { GetRenderCellValue } from '@kbn/triggers-actions-ui-plugin/public';
+import type {
+  GetRenderCellValue,
+  RenderCustomActionsRowArgs,
+  AlertsTableProps,
+  Alerts,
+} from '@kbn/triggers-actions-ui-plugin/public';
 import { find, getOr } from 'lodash/fp';
 import type { TimelineNonEcsData } from '@kbn/timelines-plugin/common';
 import { tableDefaults, dataTableSelectors } from '@kbn/securitysolution-data-table';
 import type { TableId } from '@kbn/securitysolution-data-table';
+import type { RuleRegistrySearchRequestPagination } from '@kbn/rule-registry-plugin/common';
 import { useLicense } from '../../../common/hooks/use_license';
 import { useShallowEqualSelector } from '../../../common/hooks/use_selector';
 import { defaultRowRenderers } from '../../../timelines/components/timeline/body/renderers';
@@ -39,9 +48,9 @@ import { eventRenderedViewColumns, getColumns } from './columns';
  * accepts `EuiDataGridCellValueElementProps`, plus `data`
  * from the TGrid
  */
-export const RenderCellValue: React.FC<EuiDataGridCellValueElementProps & CellValueElementProps> = (
-  props
-) => {
+export const SecurityRenderCellValue: React.FC<
+  EuiDataGridCellValueElementPropsWithContext<CellValueElementProps>
+> = (props) => {
   const { columnId, rowIndex, scopeId } = props;
   const isTourAnchor = useMemo(
     () =>
@@ -88,6 +97,68 @@ export const RenderCellValue: React.FC<EuiDataGridCellValueElementProps & CellVa
   );
 };
 
+interface RenderCellValueProps {
+  pagination: RuleRegistrySearchRequestPagination;
+  isLoading: boolean;
+  maintenanceWindows: AlertsTableProps['maintenanceWindows'];
+  showAlertStatusWithFlapping: AlertsTableProps['showAlertStatusWithFlapping'];
+  isLoadingMaintenanceWindows: boolean;
+  isLoadingCases: boolean;
+  cases: AlertsTableProps['cases'];
+  alerts: Alerts;
+}
+
+export const ProposedRenderCellValue: renderCellValueWithContext = (
+  props: EuiDataGridCellValueElementPropsWithContext<
+    Partial<CellValueElementProps & RenderCustomActionsRowArgs & RenderCellValueProps>
+  >
+) => {
+  const {
+    isLoading,
+    columnId,
+    rowIndex,
+    pagination,
+    alerts,
+    ecsData,
+    isLoadingCases,
+    isLoadingMaintenanceWindows,
+    cases,
+    maintenanceWindows,
+    showAlertStatusWithFlapping,
+    browserFields,
+  } = props;
+  const browserFieldsByName = useMemo(() => getAllFieldsByName(browserFields), [browserFields]);
+  const rowData = useMemo(() => {
+    const pageSize = pagination?.pageSize ?? 0;
+    const pageIndex = pagination?.pageIndex ?? 0;
+    const idx = rowIndex - pageSize * pageIndex;
+    const alert = alerts && alerts[idx];
+    const ecsAlert = ecsData && ecsData[idx];
+    const data: Array<{ field: string; value: string[] }> = [];
+    Object.entries(alert ?? {}).forEach(([key, value]) => {
+      data.push({ field: key, value: value as string[] });
+    });
+    return {
+      data,
+      ecsAlert,
+    };
+  }, [ecsData, rowIndex, pagination?.pageSize, pagination?.pageIndex, alerts]);
+  if (isLoading || isLoadingCases || isLoadingMaintenanceWindows) {
+    return <EuiSkeletonText lines={1} />;
+  } else if (rowData.data && rowData.ecsAlert) {
+    return (
+      <SecurityRenderCellValue
+        {...props}
+        header={{ id: columnId, ...browserFieldsByName[columnId] }}
+        data={rowData.data}
+        ecsData={rowData.ecsAlert}
+      />
+    );
+  } else {
+    return null;
+  }
+};
+
 export const getRenderCellValueHook = ({
   scopeId,
   tableId,
@@ -95,7 +166,7 @@ export const getRenderCellValueHook = ({
   scopeId: SourcererScopeName;
   tableId: TableId;
 }) => {
-  const useRenderCellValue: GetRenderCellValue = () => {
+  const RenderCellValue: GetRenderCellValue = () => {
     const { browserFields } = useSourcererDataView(scopeId);
     const browserFieldsByName = useMemo(() => getAllFieldsByName(browserFields), [browserFields]);
     const getTable = useMemo(() => dataTableSelectors.getTableByIdSelector(), []);
@@ -126,7 +197,6 @@ export const getRenderCellValueHook = ({
         linkValues,
         truncate = true,
       }) => {
-        console.log('render cell value');
         const myHeader = header ?? { id: columnId, ...browserFieldsByName[columnId] };
         /**
          * There is difference between how `triggers actions` fetched data v/s
@@ -155,7 +225,7 @@ export const getRenderCellValueHook = ({
         const localLinkValues = getOr([], colHeader?.linkField ?? '', ecsData);
 
         return (
-          <RenderCellValue
+          <SecurityRenderCellValue
             browserFields={browserFields}
             columnId={columnId}
             data={finalData}
@@ -182,5 +252,5 @@ export const getRenderCellValueHook = ({
     return result;
   };
 
-  return useRenderCellValue;
+  return RenderCellValue;
 };

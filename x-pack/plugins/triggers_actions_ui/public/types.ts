@@ -16,6 +16,7 @@ import type { UnifiedSearchPublicPluginStart } from '@kbn/unified-search-plugin/
 import type {
   IconType,
   RecursivePartial,
+  EuiDataGridCellProps,
   EuiDataGridCellValueElementProps,
   EuiDataGridToolBarAdditionalControlsOptions,
   EuiDataGridProps,
@@ -555,6 +556,8 @@ export type AlertsTableProps = {
   'data-test-subj': string;
   updatedAt: number;
   browserFields: any;
+  RenderCellValue?: EuiDataGridCellProps['renderCellValue'];
+  renderCellContext?: EuiDataGridCellProps['renderCellContext'];
   onToggleColumn: (columnId: string) => void;
   onResetColumns: () => void;
   onChangeVisibleColumns: (newColumns: string[]) => void;
@@ -575,11 +578,7 @@ export type AlertsTableProps = {
 } & Partial<Pick<EuiDataGridProps, 'gridStyle' | 'rowHeightsOptions'>>;
 
 // TODO We need to create generic type between our plugin, right now we have different one because of the old alerts table
-export type GetRenderCellValue = ({
-  setFlyoutAlert,
-}: {
-  setFlyoutAlert?: (data: unknown) => void;
-}) => (props: unknown) => React.ReactNode;
+export type GetRenderCellValue = (props: unknown) => React.ReactNode;
 
 export type AlertTableFlyoutComponent =
   | React.FunctionComponent<AlertsTableFlyoutBaseProps>

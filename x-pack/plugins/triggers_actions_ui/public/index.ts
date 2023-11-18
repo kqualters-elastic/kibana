@@ -44,6 +44,9 @@ export type {
   AlertSummaryTimeRange,
   NotifyWhenSelectOptions,
   RuleCreationValidConsumer,
+  RenderCustomActionsRowArgs,
+  Alerts,
+  FetchAlertData,
 } from './types';
 
 export type {

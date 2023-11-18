@@ -46,6 +46,7 @@ import { eventsViewerSelector } from '../../../common/components/events_viewer/s
 import type { State } from '../../../common/store';
 import * as i18n from './translations';
 import { eventRenderedViewColumns } from '../../configurations/security_solution_detections/columns';
+import { ProposedRenderCellValue } from '../../configurations/security_solution_detections/render_cell_value';
 import { getAlertsDefaultModel } from './default_config';
 
 const { updateIsLoading, updateTotalCount } = dataTableActions;
@@ -252,6 +253,15 @@ export const AlertsTableComponent: FC<DetectionEngineAlertTableProps> = ({
     [dispatch, tableId, alertTableRefreshHandlerRef, setQuery]
   );
 
+  const renderCellContext = useCallback(() => {
+    return {
+      scopeId: SourcererScopeName.detections,
+      tableId,
+      isDraggable: false,
+      isTimeline: false,
+    };
+  }, [tableId]);
+
   const alertStateProps: AlertsTableStateProps = useMemo(
     () => ({
       alertsTableConfigurationRegistry: triggersActionsUi.alertsTableConfigurationRegistry,
@@ -267,6 +277,8 @@ export const AlertsTableComponent: FC<DetectionEngineAlertTableProps> = ({
       browserFields: finalBrowserFields,
       onUpdate: onAlertTableUpdate,
       runtimeMappings,
+      RenderCellValue: ProposedRenderCellValue,
+      renderCellContext,
       toolbarVisibility: {
         showColumnSelector: !isEventRenderedView,
         showSortSelector: !isEventRenderedView,
@@ -282,6 +294,7 @@ export const AlertsTableComponent: FC<DetectionEngineAlertTableProps> = ({
       rowHeightsOptions,
       finalColumns,
       finalBrowserFields,
+      renderCellContext,
       onAlertTableUpdate,
       runtimeMappings,
       isEventRenderedView,
