@@ -18,7 +18,6 @@ import React, {
 } from 'react';
 import {
   EuiDataGrid,
-  EuiDataGridCellValueElementProps,
   EuiDataGridCellValueElementPropsWithContext,
   EuiDataGridStyle,
   EuiDataGridRefProps,

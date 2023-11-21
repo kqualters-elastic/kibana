@@ -34,6 +34,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { useFetchAlerts } from './hooks/use_fetch_alerts';
 import { AlertsTable } from './alerts_table';
 import { BulkActionsContext } from './bulk_actions/context';
+import { bulkActionsReducer } from './bulk_actions/reducer';
 import { EmptyState } from './empty_state';
 import {
   Alert,
@@ -43,13 +44,11 @@ import {
   BulkActionsReducerAction,
   BulkActionsPanelConfig,
   BulkActionsState,
-  BulkActionsVerbs,
   RowSelectionState,
   TableUpdateHandlerArgs,
 } from '../../../types';
 import { ALERTS_TABLE_CONF_ERROR_MESSAGE, ALERTS_TABLE_CONF_ERROR_TITLE } from './translations';
 import { useColumns } from './hooks/use_columns';
-import { useBulkActions } from './hooks/use_bulk_actions';
 import { InspectButtonContainer } from './toolbar/components/inspect';
 import { alertsTableQueryClient } from './query_client';
 import { useBulkGetCases } from './hooks/use_bulk_get_cases';
@@ -94,8 +93,18 @@ export interface AlertsTableStorage {
 
 const stableEmptyArray: string[] = [];
 const emptyPanelConfig: BulkActionsPanelConfig[] = [];
-const emptyColumns: EuiDataGridControlColumn[] = [];
+const emptyLeadingColumns: EuiDataGridControlColumn[] = [];
+const emptyTrailingColumns: EuiDataGridControlColumn[] = [];
 const defaultPageSizeOptions = [10, 20, 50, 100];
+
+const emptyRowSelection = new Map<number, RowSelectionState>();
+
+const createInitialBulkActionsState = () => ({
+  rowSelection: emptyRowSelection,
+  isAllSelected: false,
+  areAllVisibleRowsSelected: false,
+  rowCount: 0,
+});
 
 const EmptyConfiguration: AlertsTableConfigurationRegistry = {
   id: '',
@@ -318,19 +327,19 @@ const AlertsTableStateWithQueryProvider = memo(
         canFetchMaintenanceWindows: fetchMaintenanceWindows,
       });
 
-    const bulkActions = useBulkActions({
-      alerts,
-      casesConfig: alertsTableConfiguration.cases,
-      query,
-      refresh,
-      useBulkActionsConfig: alertsTableConfiguration.useBulkActions,
-      featureIds,
-    });
+    const initialBulkActionsState = useReducer(
+      bulkActionsReducer,
+      null,
+      createInitialBulkActionsState
+    );
 
-    const initialBulkActionsState: [BulkActionsState, React.Dispatch<BulkActionsReducerAction>] =
-      useMemo(() => {
-        return [bulkActions.bulkActionsState, bulkActions.updateBulkActionsState];
-      }, [bulkActions.bulkActionsState, bulkActions.updateBulkActionsState]);
+    // useEffect(() => {
+    //   const bulkActionsDispatch = initialBulkActionsState[1];
+    //   bulkActionsDispatch({
+    //     action: BulkActionsVerbs.rowCountUpdate,
+    //     rowCount: alerts.length,
+    //   });
+    // }, [alerts]);
 
     const onSortChange = useCallback(
       (_sort: EuiDataGridSorting['columns']) => {
@@ -417,9 +426,9 @@ const AlertsTableStateWithQueryProvider = memo(
         pageSize: pagination.pageSize,
         pageSizeOptions: defaultPageSizeOptions,
         id,
-        leadingControlColumns: leadingControlColumns ?? emptyColumns,
+        leadingControlColumns: leadingControlColumns ?? emptyLeadingColumns,
         showAlertStatusWithFlapping,
-        trailingControlColumns: emptyColumns,
+        trailingControlColumns: emptyTrailingColumns,
         useFetchAlertsData,
         visibleColumns,
         'data-test-subj': 'internalAlertsState',
