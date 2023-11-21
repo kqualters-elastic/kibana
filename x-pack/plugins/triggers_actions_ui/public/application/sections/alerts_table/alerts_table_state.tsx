@@ -9,6 +9,7 @@ import React, { useState, useCallback, useRef, useMemo, useReducer, useEffect, m
 import { isEmpty } from 'lodash';
 import {
   EuiDataGridColumn,
+  EuiDataGridControlColumn,
   EuiProgress,
   EuiDataGridSorting,
   EuiEmptyPrompt,
@@ -40,13 +41,15 @@ import {
   AlertsTableConfigurationRegistry,
   AlertsTableProps,
   BulkActionsReducerAction,
+  BulkActionsPanelConfig,
   BulkActionsState,
+  BulkActionsVerbs,
   RowSelectionState,
   TableUpdateHandlerArgs,
 } from '../../../types';
 import { ALERTS_TABLE_CONF_ERROR_MESSAGE, ALERTS_TABLE_CONF_ERROR_TITLE } from './translations';
-import { bulkActionsReducer } from './bulk_actions/reducer';
 import { useColumns } from './hooks/use_columns';
+import { useBulkActions } from './hooks/use_bulk_actions';
 import { InspectButtonContainer } from './toolbar/components/inspect';
 import { alertsTableQueryClient } from './query_client';
 import { useBulkGetCases } from './hooks/use_bulk_get_cases';
@@ -88,6 +91,11 @@ export interface AlertsTableStorage {
   visibleColumns?: string[];
   sort: SortCombinations[];
 }
+
+const stableEmptyArray: string[] = [];
+const emptyPanelConfig: BulkActionsPanelConfig[] = [];
+const emptyColumns: EuiDataGridControlColumn[] = [];
+const defaultPageSizeOptions = [10, 20, 50, 100];
 
 const EmptyConfiguration: AlertsTableConfigurationRegistry = {
   id: '',
@@ -139,13 +147,15 @@ const isCasesColumnEnabled = (columns: EuiDataGridColumn[]): boolean =>
 const isMaintenanceWindowColumnEnabled = (columns: EuiDataGridColumn[]): boolean =>
   columns.some(({ id }) => id === ALERT_MAINTENANCE_WINDOW_IDS);
 
-const AlertsTableState = (props: AlertsTableStateProps) => {
+const AlertsTableState = memo((props: AlertsTableStateProps) => {
   return (
     <QueryClientProvider client={alertsTableQueryClient}>
       <AlertsTableStateWithQueryProvider {...props} />
     </QueryClientProvider>
   );
-};
+});
+
+AlertsTableState.displayName = 'AlertsTableState';
 
 const AlertsTableStateWithQueryProvider = memo(
   ({
@@ -198,21 +208,24 @@ const AlertsTableStateWithQueryProvider = memo(
         ? localStorageAlertsTableConfig?.columns
         : columnConfigByClient;
 
-    const getStorageConfig = () => ({
-      columns: columnsLocal,
-      sort:
-        localStorageAlertsTableConfig &&
-        localStorageAlertsTableConfig.sort &&
-        !isEmpty(localStorageAlertsTableConfig?.sort)
-          ? localStorageAlertsTableConfig?.sort
-          : alertsTableConfiguration?.sort ?? [],
-      visibleColumns:
-        localStorageAlertsTableConfig &&
-        localStorageAlertsTableConfig.visibleColumns &&
-        !isEmpty(localStorageAlertsTableConfig?.visibleColumns)
-          ? localStorageAlertsTableConfig?.visibleColumns
-          : columnsLocal.map((c) => c.id),
-    });
+    const getStorageConfig = useCallback(
+      () => ({
+        columns: columnsLocal,
+        sort:
+          localStorageAlertsTableConfig &&
+          localStorageAlertsTableConfig.sort &&
+          !isEmpty(localStorageAlertsTableConfig?.sort)
+            ? localStorageAlertsTableConfig?.sort
+            : alertsTableConfiguration?.sort ?? [],
+        visibleColumns:
+          localStorageAlertsTableConfig &&
+          localStorageAlertsTableConfig.visibleColumns &&
+          !isEmpty(localStorageAlertsTableConfig?.visibleColumns)
+            ? localStorageAlertsTableConfig?.visibleColumns
+            : columnsLocal.map((c) => c.id),
+      }),
+      [alertsTableConfiguration?.sort, columnsLocal, localStorageAlertsTableConfig]
+    );
     const storageAlertsTable = useRef<AlertsTableStorage>(getStorageConfig());
 
     storageAlertsTable.current = getStorageConfig();
@@ -286,9 +299,9 @@ const AlertsTableStateWithQueryProvider = memo(
     const caseIds = useMemo(() => getCaseIdsFromAlerts(alerts), [alerts]);
     const maintenanceWindowIds = useMemo(() => getMaintenanceWindowIdsFromAlerts(alerts), [alerts]);
 
-    const casesPermissions = casesService?.helpers.canUseCases(
-      alertsTableConfiguration?.cases?.owner ?? []
-    );
+    const casesPermissions = useMemo(() => {
+      return casesService?.helpers.canUseCases(alertsTableConfiguration?.cases?.owner ?? []);
+    }, [alertsTableConfiguration?.cases?.owner, casesService]);
 
     const hasCaseReadPermissions = Boolean(casesPermissions?.read);
     const fetchCases = isCasesColumnEnabled(columns) && hasCaseReadPermissions;
@@ -305,12 +318,19 @@ const AlertsTableStateWithQueryProvider = memo(
         canFetchMaintenanceWindows: fetchMaintenanceWindows,
       });
 
-    const initialBulkActionsState = useReducer(bulkActionsReducer, {
-      rowSelection: new Map<number, RowSelectionState>(),
-      isAllSelected: false,
-      areAllVisibleRowsSelected: false,
-      rowCount: alerts.length,
+    const bulkActions = useBulkActions({
+      alerts,
+      casesConfig: alertsTableConfiguration.cases,
+      query,
+      refresh,
+      useBulkActionsConfig: alertsTableConfiguration.useBulkActions,
+      featureIds,
     });
+
+    const initialBulkActionsState: [BulkActionsState, React.Dispatch<BulkActionsReducerAction>] =
+      useMemo(() => {
+        return [bulkActions.bulkActionsState, bulkActions.updateBulkActionsState];
+      }, [bulkActions.bulkActionsState, bulkActions.updateBulkActionsState]);
 
     const onSortChange = useCallback(
       (_sort: EuiDataGridSorting['columns']) => {
@@ -364,7 +384,9 @@ const AlertsTableStateWithQueryProvider = memo(
       updatedAt,
     ]);
 
-    const CasesContext = casesService?.ui.getCasesContext();
+    const CasesContext = useMemo(() => {
+      return casesService?.ui.getCasesContext();
+    }, [casesService]);
     const isCasesContextAvailable = casesService && CasesContext;
 
     const memoizedCases = useMemo(
@@ -389,15 +411,15 @@ const AlertsTableStateWithQueryProvider = memo(
         cases: memoizedCases,
         maintenanceWindows: memoizedMaintenanceWindows,
         columns,
-        bulkActions: [],
-        deletedEventIds: [],
-        disabledCellActions: [],
+        bulkActions: emptyPanelConfig,
+        deletedEventIds: stableEmptyArray,
+        disabledCellActions: stableEmptyArray,
         pageSize: pagination.pageSize,
-        pageSizeOptions: [10, 20, 50, 100],
+        pageSizeOptions: defaultPageSizeOptions,
         id,
-        leadingControlColumns: leadingControlColumns ?? [],
+        leadingControlColumns: leadingControlColumns ?? emptyColumns,
         showAlertStatusWithFlapping,
-        trailingControlColumns: [],
+        trailingControlColumns: emptyColumns,
         useFetchAlertsData,
         visibleColumns,
         'data-test-subj': 'internalAlertsState',

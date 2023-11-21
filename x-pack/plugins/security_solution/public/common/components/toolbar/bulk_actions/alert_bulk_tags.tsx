@@ -8,7 +8,7 @@
 import type { EuiSelectableOption } from '@elastic/eui';
 import { EuiPopoverTitle, EuiSelectable, EuiButton } from '@elastic/eui';
 import type { TimelineItem } from '@kbn/timelines-plugin/common';
-import React, { memo, useCallback, useMemo, useReducer } from 'react';
+import React, { memo, useCallback, useMemo, useReducer, useEffect } from 'react';
 import { ALERT_WORKFLOW_TAGS } from '@kbn/rule-data-utils';
 import type { EuiSelectableOnChangeEvent } from '@elastic/eui/src/components/selectable/selectable';
 import { DEFAULT_ALERT_TAGS_KEY } from '../../../../../common/constants';
@@ -27,6 +27,13 @@ interface BulkAlertTagsPanelComponentProps {
   closePopoverMenu: () => void;
   onSubmit: SetAlertTagsFunc;
 }
+
+const tagsInitialState = {
+  ...initialState,
+  // selectableAlertTags: createInitialTagsState(existingTags, defaultAlertTagOptions),
+  tagsToAdd: new Set<string>(),
+  tagsToRemove: new Set<string>(),
+};
 const BulkAlertTagsPanelComponent: React.FC<BulkAlertTagsPanelComponentProps> = ({
   alertItems,
   refresh,
@@ -40,21 +47,22 @@ const BulkAlertTagsPanelComponent: React.FC<BulkAlertTagsPanelComponentProps> = 
 
   const existingTags = useMemo(
     () =>
-      alertItems.map(
-        (item) => item.data.find((data) => data.field === ALERT_WORKFLOW_TAGS)?.value ?? []
-      ),
+      alertItems.map((item) => {
+        return item.data.find((data) => data.field === ALERT_WORKFLOW_TAGS)?.value ?? [];
+      }),
     [alertItems]
   );
   const [{ selectableAlertTags, tagsToAdd, tagsToRemove }, dispatch] = useReducer(
     createAlertTagsReducer(),
-    {
-      ...initialState,
-      selectableAlertTags: createInitialTagsState(existingTags, defaultAlertTagOptions),
-      tagsToAdd: new Set<string>(),
-      tagsToRemove: new Set<string>(),
-    }
+    tagsInitialState
   );
 
+  useEffect(() => {
+    dispatch({
+      type: 'setSelectableAlertTags',
+      value: createInitialTagsState(existingTags, defaultAlertTagOptions),
+    });
+  }, [existingTags, defaultAlertTagOptions]);
   const addAlertTag = useCallback(
     (value: string) => {
       dispatch({ type: 'addAlertTag', value });

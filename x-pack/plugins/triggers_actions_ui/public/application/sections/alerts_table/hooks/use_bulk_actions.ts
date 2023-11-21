@@ -4,7 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-import { useCallback, useContext, useEffect, useMemo } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/typesWithBodyKey';
 import { useKibana } from '@kbn/kibana-react-plugin/public';
 import { ALERT_CASE_IDS, ValidFeatureId } from '@kbn/rule-data-utils';
@@ -15,6 +15,7 @@ import {
   BulkActionsPanelConfig,
   BulkActionsState,
   BulkActionsVerbs,
+  BulkActionsReducerAction,
   UseBulkActionsRegistry,
 } from '../../../../types';
 import { BulkActionsContext } from '../bulk_actions/context';
@@ -49,6 +50,7 @@ export interface UseBulkActions {
   bulkActions: BulkActionsPanelConfig[];
   setIsBulkActionsLoading: (isLoading: boolean) => void;
   clearSelection: () => void;
+  updateBulkActionsState: React.Dispatch<BulkActionsReducerAction>;
 }
 
 type UseBulkAddToCaseActionsProps = Pick<BulkActionsProps, 'casesConfig' | 'refresh'> &
@@ -279,16 +281,11 @@ export function useBulkActions({
     [updateBulkActionsState]
   );
   const caseBulkActions = useBulkAddToCaseActions({ casesConfig, refresh, clearSelection });
-  // console.log('cases', caseBulkActions === prop7.current, caseBulkActions, prop7.current);
-  // prop7.current = caseBulkActions;
   const untrackBulkActions = useBulkUntrackActions({
     setIsBulkActionsLoading,
     refresh,
     clearSelection,
   });
-  // console.log('bulk', untrackBulkActions === prop8.current, untrackBulkActions, prop8.current);
-  // prop8.current = untrackBulkActions;
-
   const bulkActions = useMemo(() => {
     const initialItems = [
       ...caseBulkActions,
@@ -316,6 +313,7 @@ export function useBulkActions({
       bulkActions,
       setIsBulkActionsLoading,
       clearSelection,
+      updateBulkActionsState,
     };
   }, [
     bulkActions,
@@ -323,5 +321,6 @@ export function useBulkActions({
     clearSelection,
     isBulkActionsColumnActive,
     setIsBulkActionsLoading,
+    updateBulkActionsState,
   ]);
 }

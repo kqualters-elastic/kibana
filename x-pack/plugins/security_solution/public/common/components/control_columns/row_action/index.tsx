@@ -6,7 +6,7 @@
  */
 
 import type { EuiDataGridCellValueElementProps } from '@elastic/eui';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, memo } from 'react';
 import { useDispatch } from 'react-redux';
 import { useExpandableFlyoutContext } from '@kbn/expandable-flyout';
 import { dataTableActions, TableId } from '@kbn/securitysolution-data-table';
@@ -46,132 +46,136 @@ type Props = EuiDataGridCellValueElementProps & {
   refetch?: () => void;
 };
 
-const RowActionComponent = ({
-  columnHeaders,
-  controlColumn,
-  data,
-  disabled,
-  index,
-  isEventViewer,
-  loadingEventIds,
-  onRowSelected,
-  onRuleChange,
-  pageRowIndex,
-  rowIndex,
-  selectedEventIds,
-  showCheckboxes,
-  tabType,
-  tableId,
-  setEventsLoading,
-  setEventsDeleted,
-  width,
-  refetch,
-}: Props) => {
-  const { data: timelineNonEcsData, ecs: ecsData, _id: eventId, _index: indexName } = data ?? {};
+const RowActionComponent = memo(
+  ({
+    columnHeaders,
+    controlColumn,
+    data,
+    disabled,
+    index,
+    isEventViewer,
+    loadingEventIds,
+    onRowSelected,
+    onRuleChange,
+    pageRowIndex,
+    rowIndex,
+    selectedEventIds,
+    showCheckboxes,
+    tabType,
+    tableId,
+    setEventsLoading,
+    setEventsDeleted,
+    width,
+    refetch,
+  }: Props) => {
+    const { data: timelineNonEcsData, ecs: ecsData, _id: eventId, _index: indexName } = data ?? {};
 
-  const { openFlyout } = useExpandableFlyoutContext();
+    const { openFlyout } = useExpandableFlyoutContext();
 
-  const dispatch = useDispatch();
-  const [isSecurityFlyoutEnabled] = useUiSetting$<boolean>(ENABLE_EXPANDABLE_FLYOUT_SETTING);
+    const dispatch = useDispatch();
+    const [isSecurityFlyoutEnabled] = useUiSetting$<boolean>(ENABLE_EXPANDABLE_FLYOUT_SETTING);
 
-  const columnValues = useMemo(
-    () =>
-      timelineNonEcsData &&
-      columnHeaders
-        .map(
-          (header) =>
-            getMappedNonEcsValue({
-              data: timelineNonEcsData,
-              fieldName: header.id,
-            }) ?? []
-        )
-        .join(' '),
-    [columnHeaders, timelineNonEcsData]
-  );
+    const columnValues = useMemo(
+      () =>
+        timelineNonEcsData &&
+        columnHeaders
+          .map(
+            (header) =>
+              getMappedNonEcsValue({
+                data: timelineNonEcsData,
+                fieldName: header.id,
+              }) ?? []
+          )
+          .join(' '),
+      [columnHeaders, timelineNonEcsData]
+    );
 
-  const handleOnEventDetailPanelOpened = useCallback(() => {
-    const updatedExpandedDetail: ExpandedDetailType = {
-      panelView: 'eventDetail',
-      params: {
-        eventId: eventId ?? '',
-        indexName: indexName ?? '',
-      },
-    };
-
-    // TODO remove when https://github.com/elastic/security-team/issues/7760 is merged
-    // excluding rule preview page as some sections in new flyout are not applicable when user is creating a new rule
-    if (isSecurityFlyoutEnabled && tableId !== TableId.rulePreview) {
-      openFlyout({
-        right: {
-          id: RightPanelKey,
-          params: {
-            id: eventId,
-            indexName,
-            scopeId: tableId,
-          },
+    const handleOnEventDetailPanelOpened = useCallback(() => {
+      const updatedExpandedDetail: ExpandedDetailType = {
+        panelView: 'eventDetail',
+        params: {
+          eventId: eventId ?? '',
+          indexName: indexName ?? '',
         },
-      });
-    }
-    // TODO remove when https://github.com/elastic/security-team/issues/7462 is merged
-    // support of old flyout in cases page
-    else if (tableId === TableId.alertsOnCasePage) {
-      dispatch(
-        timelineActions.toggleDetailPanel({
-          ...updatedExpandedDetail,
-          id: TimelineId.casePage,
-        })
-      );
-    }
-    // TODO remove when https://github.com/elastic/security-team/issues/7462 is merged
-    // support of old flyout
-    else {
-      dispatch(
-        dataTableActions.toggleDetailPanel({
-          ...updatedExpandedDetail,
-          tabType,
-          id: tableId,
-        })
-      );
-    }
-  }, [dispatch, eventId, indexName, isSecurityFlyoutEnabled, openFlyout, tabType, tableId]);
+      };
 
-  const Action = controlColumn.rowCellRender;
+      // TODO remove when https://github.com/elastic/security-team/issues/7760 is merged
+      // excluding rule preview page as some sections in new flyout are not applicable when user is creating a new rule
+      if (isSecurityFlyoutEnabled && tableId !== TableId.rulePreview) {
+        openFlyout({
+          right: {
+            id: RightPanelKey,
+            params: {
+              id: eventId,
+              indexName,
+              scopeId: tableId,
+            },
+          },
+        });
+      }
+      // TODO remove when https://github.com/elastic/security-team/issues/7462 is merged
+      // support of old flyout in cases page
+      else if (tableId === TableId.alertsOnCasePage) {
+        dispatch(
+          timelineActions.toggleDetailPanel({
+            ...updatedExpandedDetail,
+            id: TimelineId.casePage,
+          })
+        );
+      }
+      // TODO remove when https://github.com/elastic/security-team/issues/7462 is merged
+      // support of old flyout
+      else {
+        dispatch(
+          dataTableActions.toggleDetailPanel({
+            ...updatedExpandedDetail,
+            tabType,
+            id: tableId,
+          })
+        );
+      }
+    }, [dispatch, eventId, indexName, isSecurityFlyoutEnabled, openFlyout, tabType, tableId]);
 
-  if (!timelineNonEcsData || !ecsData || !eventId) {
-    return <span data-test-subj="noData" />;
+    const Action = controlColumn.rowCellRender;
+
+    if (!timelineNonEcsData || !ecsData || !eventId) {
+      return <span data-test-subj="noData" />;
+    }
+
+    return (
+      <>
+        {Action && (
+          <Action
+            ariaRowindex={pageRowIndex + 1}
+            checked={Object.keys(selectedEventIds).includes(eventId)}
+            columnId={controlColumn.id || ''}
+            columnValues={columnValues || ''}
+            data={timelineNonEcsData}
+            data-test-subj="actions"
+            disabled={disabled}
+            ecsData={ecsData}
+            eventId={eventId}
+            index={index}
+            isEventViewer={isEventViewer}
+            loadingEventIds={loadingEventIds}
+            onEventDetailsPanelOpened={handleOnEventDetailPanelOpened}
+            onRowSelected={onRowSelected}
+            onRuleChange={onRuleChange}
+            rowIndex={rowIndex}
+            showCheckboxes={showCheckboxes}
+            tabType={tabType}
+            timelineId={tableId}
+            width={width}
+            setEventsLoading={setEventsLoading}
+            setEventsDeleted={setEventsDeleted}
+            refetch={refetch}
+          />
+        )}
+      </>
+    );
   }
+);
 
-  return (
-    <>
-      {Action && (
-        <Action
-          ariaRowindex={pageRowIndex + 1}
-          checked={Object.keys(selectedEventIds).includes(eventId)}
-          columnId={controlColumn.id || ''}
-          columnValues={columnValues || ''}
-          data={timelineNonEcsData}
-          data-test-subj="actions"
-          disabled={disabled}
-          ecsData={ecsData}
-          eventId={eventId}
-          index={index}
-          isEventViewer={isEventViewer}
-          loadingEventIds={loadingEventIds}
-          onEventDetailsPanelOpened={handleOnEventDetailPanelOpened}
-          onRowSelected={onRowSelected}
-          onRuleChange={onRuleChange}
-          rowIndex={rowIndex}
-          showCheckboxes={showCheckboxes}
-          tabType={tabType}
-          timelineId={tableId}
-          width={width}
-          setEventsLoading={setEventsLoading}
-          setEventsDeleted={setEventsDeleted}
-          refetch={refetch}
-        />
-      )}
-    </>
-  );
-};
+RowActionComponent.displayName = 'RowAction';
 
 export const RowAction = React.memo(RowActionComponent);

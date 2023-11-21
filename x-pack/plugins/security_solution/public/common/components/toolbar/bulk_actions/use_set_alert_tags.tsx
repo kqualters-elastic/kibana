@@ -35,7 +35,8 @@ export type ReturnSetAlertTags = SetAlertTagsFunc | null;
 export const useSetAlertTags = (): ReturnSetAlertTags => {
   const { http } = useKibana<CoreStart>().services;
   const { addSuccess, addError } = useAppToasts();
-  const setAlertTagsRef = useRef<SetAlertTagsFunc | null>(null);
+  const abortCtrl = useRef(new AbortController());
+  const ignore = useRef(false);
 
   const onUpdateSuccess = useCallback(
     (updated: number = 0) => addSuccess(i18n.UPDATE_ALERT_TAGS_SUCCESS_TOAST(updated)),
@@ -49,33 +50,33 @@ export const useSetAlertTags = (): ReturnSetAlertTags => {
     [addError]
   );
 
-  useEffect(() => {
-    let ignore = false;
-    const abortCtrl = new AbortController();
-
-    const onSetAlertTags: SetAlertTagsFunc = async (tags, ids, onSuccess, setTableLoading) => {
+  const onSetAlertTags = useCallback<SetAlertTagsFunc>(
+    async (tags, ids, onSuccess, setTableLoading) => {
       try {
         setTableLoading(true);
-        const response = await setAlertTags({ tags, ids, signal: abortCtrl.signal });
-        if (!ignore) {
+        const response = await setAlertTags({ tags, ids, signal: abortCtrl.current.signal });
+        if (!ignore.current) {
           onSuccess();
           setTableLoading(false);
           onUpdateSuccess(response.updated);
         }
       } catch (error) {
-        if (!ignore) {
+        if (!ignore.current) {
           setTableLoading(false);
           onUpdateFailure(error);
         }
       }
-    };
+    },
+    [onUpdateFailure, onUpdateSuccess]
+  );
 
-    setAlertTagsRef.current = onSetAlertTags;
+  useEffect(() => {
+    const ctrlRef = abortCtrl.current;
     return (): void => {
-      ignore = true;
-      abortCtrl.abort();
+      ignore.current = true;
+      ctrlRef.abort();
     };
-  }, [http, onUpdateFailure, onUpdateSuccess]);
+  }, [http, onSetAlertTags]);
 
-  return setAlertTagsRef.current;
+  return onSetAlertTags;
 };

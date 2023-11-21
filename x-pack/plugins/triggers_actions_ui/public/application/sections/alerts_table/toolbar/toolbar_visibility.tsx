@@ -9,7 +9,7 @@ import {
   EuiDataGridToolBarAdditionalControlsOptions,
   EuiDataGridToolBarVisibilityOptions,
 } from '@elastic/eui';
-import React, { lazy, Suspense, memo, useMemo } from 'react';
+import React, { lazy, Suspense, memo, useMemo, useRef } from 'react';
 import { BrowserFields } from '@kbn/rule-registry-plugin/common';
 import { AlertsCount } from './components/alerts_count/alerts_count';
 import type {

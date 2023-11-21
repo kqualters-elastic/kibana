@@ -19,6 +19,8 @@ import { getAlertsDefaultModel } from '../../components/alerts_table/default_con
 import type { State } from '../../../common/store';
 import { RowAction } from '../../../common/components/control_columns/row_action';
 
+const rowSelectedNoOp = () => {};
+
 export const getUseActionColumnHook =
   (tableId: TableId): AlertsTableConfigurationRegistry['useActionsColumn'] =>
   () => {
@@ -72,7 +74,7 @@ export const getUseActionColumnHook =
             isEventViewer={false}
             isExpandable={cveProps.isExpandable}
             loadingEventIds={loadingEventIds}
-            onRowSelected={() => {}}
+            onRowSelected={rowSelectedNoOp}
             rowIndex={cveProps.rowIndex}
             colIndex={cveProps.colIndex}
             pageRowIndex={rowIndex}
@@ -90,7 +92,7 @@ export const getUseActionColumnHook =
               }
               if (setIsActionLoading) setIsActionLoading(isLoading);
             }}
-            setEventsDeleted={() => {}}
+            setEventsDeleted={rowSelectedNoOp}
             refetch={alertsTableRefresh}
           />
         );

@@ -8,7 +8,7 @@
 
 import type { FieldSpec } from '@kbn/data-views-plugin/common';
 import { METRIC_TYPE, UiCounterMetricType } from '@kbn/analytics';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 
 import { groupActions, groupByIdSelector } from './state';
 import type { GroupOption } from './types';
@@ -59,19 +59,23 @@ export const useGetGroupSelectorStateless = ({
     [onGroupChange]
   );
 
-  return (
-    <GroupSelector
-      {...{
-        groupingId,
-        groupsSelected: ['none'],
-        'data-test-subj': 'alerts-table-group-selector',
-        onGroupChange: onChange,
-        fields,
-        maxGroupingLevels,
-        options: defaultGroupingOptions,
-      }}
-    />
-  );
+  const selector = useMemo(() => {
+    return (
+      <GroupSelector
+        {...{
+          groupingId,
+          groupsSelected: ['none'],
+          'data-test-subj': 'alerts-table-group-selector',
+          onGroupChange: onChange,
+          fields,
+          maxGroupingLevels,
+          options: defaultGroupingOptions,
+        }}
+      />
+    );
+  }, [groupingId, fields, maxGroupingLevels, defaultGroupingOptions, onChange]);
+
+  return selector;
 };
 
 export const useGetGroupSelector = ({
@@ -174,17 +178,20 @@ export const useGetGroupSelector = ({
     }
   }, [defaultGroupingOptions, options, selectedGroups, setOptions]);
 
-  return (
-    <GroupSelector
-      {...{
-        groupingId,
-        groupsSelected: selectedGroups,
-        'data-test-subj': 'alerts-table-group-selector',
-        onGroupChange: onChange,
-        fields,
-        maxGroupingLevels,
-        options,
-      }}
-    />
-  );
+  const selector = useMemo(() => {
+    return (
+      <GroupSelector
+        {...{
+          groupingId,
+          groupsSelected: selectedGroups,
+          'data-test-subj': 'alerts-table-group-selector',
+          onGroupChange: onChange,
+          fields,
+          maxGroupingLevels,
+          options,
+        }}
+      />
+    );
+  }, [groupingId, fields, maxGroupingLevels, onChange, selectedGroups, options]);
+  return selector;
 };

@@ -80,24 +80,28 @@ export const useAddBulkToTimelineAction = ({
 
   const esQueryConfig = useMemo(() => getEsQueryConfig(uiSettings), [uiSettings]);
 
-  const timelineQuerySortField = sort.map(({ columnId, columnType, esTypes, sortDirection }) => ({
-    field: columnId,
-    direction: sortDirection as Direction,
-    esTypes: esTypes ?? [],
-    type: columnType,
-  }));
+  const timelineQuerySortField = useMemo(() => {
+    return sort.map(({ columnId, columnType, esTypes, sortDirection }) => ({
+      field: columnId,
+      direction: sortDirection as Direction,
+      esTypes: esTypes ?? [],
+      type: columnType,
+    }));
+  }, [sort]);
 
   const combinedFilters = useMemo(() => [...localFilters, ...filters], [localFilters, filters]);
 
-  const combinedQuery = combineQueries({
-    config: esQueryConfig,
-    dataProviders: [],
-    indexPattern,
-    filters: combinedFilters,
-    kqlQuery: { query: '', language: 'kuery' },
-    browserFields,
-    kqlMode: 'filter',
-  });
+  const combinedQuery = useMemo(() => {
+    return combineQueries({
+      config: esQueryConfig,
+      dataProviders: [],
+      indexPattern,
+      filters: combinedFilters,
+      kqlQuery: { query: '', language: 'kuery' },
+      browserFields,
+      kqlMode: 'filter',
+    });
+  }, [esQueryConfig, indexPattern, combinedFilters, browserFields]);
 
   const filterQuery = useMemo(() => {
     if (!combinedQuery) return '';
@@ -235,15 +239,13 @@ export const useAddBulkToTimelineAction = ({
       : INVESTIGATE_BULK_IN_TIMELINE;
   }, [disableActionOnSelectAll]);
 
-  const memoized = useMemo(
-    () => ({
+  return useMemo(() => {
+    return {
       label: investigateInTimelineTitle,
       key: 'add-bulk-to-timeline',
       'data-test-subj': 'investigate-bulk-in-timeline',
       disableOnQuery: disableActionOnSelectAll,
       onClick: onActionClick,
-    }),
-    [disableActionOnSelectAll, investigateInTimelineTitle, onActionClick]
-  );
-  return memoized;
+    };
+  }, [disableActionOnSelectAll, investigateInTimelineTitle, onActionClick]);
 };
