@@ -14,11 +14,21 @@ import {
   EuiEmptyPrompt,
   EuiDataGridProps,
   EuiDataGridToolBarVisibilityOptions,
+<<<<<<< HEAD
   EuiDataGridCellProps,
   EuiDataGridControlColumn,
+=======
+  EuiButton,
+  EuiCode,
+  EuiCopy,
+>>>>>>> main
 } from '@elastic/eui';
 import type { MappingRuntimeFields } from '@elastic/elasticsearch/lib/api/typesWithBodyKey';
-import { ALERT_CASE_IDS, ALERT_MAINTENANCE_WINDOW_IDS } from '@kbn/rule-data-utils';
+import {
+  ALERT_CASE_IDS,
+  ALERT_MAINTENANCE_WINDOW_IDS,
+  ALERT_RULE_UUID,
+} from '@kbn/rule-data-utils';
 import type { ValidFeatureId } from '@kbn/rule-data-utils';
 import type {
   BrowserFields,
@@ -44,7 +54,13 @@ import {
   RowSelectionState,
   TableUpdateHandlerArgs,
 } from '../../../types';
-import { ALERTS_TABLE_CONF_ERROR_MESSAGE, ALERTS_TABLE_CONF_ERROR_TITLE } from './translations';
+import {
+  ALERTS_TABLE_CONF_ERROR_MESSAGE,
+  ALERTS_TABLE_CONF_ERROR_TITLE,
+  ALERTS_TABLE_UNKNOWN_ERROR_TITLE,
+  ALERTS_TABLE_UNKNOWN_ERROR_MESSAGE,
+  ALERTS_TABLE_UNKNOWN_ERROR_COPY_TO_CLIPBOARD_LABEL,
+} from './translations';
 import { bulkActionsReducer } from './bulk_actions/reducer';
 import { useColumns } from './hooks/use_columns';
 import { InspectButtonContainer } from './toolbar/components/inspect';
@@ -53,6 +69,7 @@ import { useBulkGetCases } from './hooks/use_bulk_get_cases';
 import { useBulkGetMaintenanceWindows } from './hooks/use_bulk_get_maintenance_windows';
 import { CasesService } from './types';
 import { AlertsTableContext, AlertsTableQueryContext } from './contexts/alerts_table_context';
+import { ErrorBoundary, FallbackComponent } from '../common/components/error_boundary';
 
 const DefaultPagination = {
   pageSize: 10,
@@ -129,6 +146,7 @@ const isCasesColumnEnabled = (columns: EuiDataGridColumn[]): boolean =>
 const isMaintenanceWindowColumnEnabled = (columns: EuiDataGridColumn[]): boolean =>
   columns.some(({ id }) => id === ALERT_MAINTENANCE_WINDOW_IDS);
 
+<<<<<<< HEAD
 const stableEmptyArray: string[] = [];
 const emptyLeadingColumns: EuiDataGridControlColumn[] = [];
 const emptyTrailingColumns: EuiDataGridControlColumn[] = [];
@@ -145,9 +163,39 @@ const initialBulkActionsState = {
 };
 
 const AlertsTableState = memo((props: AlertsTableStateProps) => {
+=======
+const ErrorBoundaryFallback: FallbackComponent = ({ error }) => {
+  return (
+    <EuiEmptyPrompt
+      iconType="error"
+      color="danger"
+      title={<h2>{ALERTS_TABLE_UNKNOWN_ERROR_TITLE}</h2>}
+      body={
+        <>
+          <p>{ALERTS_TABLE_UNKNOWN_ERROR_MESSAGE}</p>
+          {error.message && <EuiCode>{error.message}</EuiCode>}
+        </>
+      }
+      actions={
+        <EuiCopy textToCopy={[error.message, error.stack].filter(Boolean).join('\n')}>
+          {(copy) => (
+            <EuiButton onClick={copy} color="danger" fill>
+              {ALERTS_TABLE_UNKNOWN_ERROR_COPY_TO_CLIPBOARD_LABEL}
+            </EuiButton>
+          )}
+        </EuiCopy>
+      }
+    />
+  );
+};
+
+const AlertsTableState = (props: AlertsTableStateProps) => {
+>>>>>>> main
   return (
     <QueryClientProvider client={alertsTableQueryClient} context={AlertsTableQueryContext}>
-      <AlertsTableStateWithQueryProvider {...props} />
+      <ErrorBoundary fallback={ErrorBoundaryFallback}>
+        <AlertsTableStateWithQueryProvider {...props} />
+      </ErrorBoundary>
     </QueryClientProvider>
   );
 });
@@ -172,6 +220,7 @@ const AlertsTableStateWithQueryProvider = memo(
     onUpdate,
     onLoaded,
     runtimeMappings,
+<<<<<<< HEAD
     showAlertStatusWithFlapping,
     toolbarVisibility,
     shouldHighlightRow,
@@ -235,6 +284,43 @@ const AlertsTableStateWithQueryProvider = memo(
       ...DefaultPagination,
       pageSize: pageSize ?? DefaultPagination.pageSize,
     });
+=======
+    sort,
+    skip: false,
+  });
+
+  const { data: mutedAlerts } = useGetMutedAlerts([
+    ...new Set(alerts.map((a) => a[ALERT_RULE_UUID]![0])),
+  ]);
+
+  useEffect(() => {
+    if (hasAlertsTableConfiguration) {
+      alertsTableConfigurationRegistry.update(configurationId, {
+        ...alertsTableConfiguration,
+        actions: { toggleColumn: onToggleColumn },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onToggleColumn]);
+
+  useEffect(() => {
+    if (onUpdate) {
+      onUpdate({ isLoading, totalCount: alertsCount, refresh });
+    }
+  }, [isLoading, alertsCount, onUpdate, refresh]);
+  useEffect(() => {
+    if (lastReloadRequestTime) {
+      refresh();
+    }
+  }, [lastReloadRequestTime, refresh]);
+
+  const caseIds = useMemo(() => getCaseIdsFromAlerts(alerts), [alerts]);
+  const maintenanceWindowIds = useMemo(() => getMaintenanceWindowIdsFromAlerts(alerts), [alerts]);
+
+  const casesPermissions = casesService?.helpers.canUseCases(
+    alertsTableConfiguration?.cases?.owner ?? []
+  );
+>>>>>>> main
 
     const {
       columns,
@@ -395,6 +481,7 @@ const AlertsTableStateWithQueryProvider = memo(
       pagination,
       refresh,
       sort,
+<<<<<<< HEAD
     ]);
 
     const CasesContext = useMemo(() => {
@@ -528,6 +615,155 @@ const AlertsTableStateWithQueryProvider = memo(
 );
 
 AlertsTableStateWithQueryProvider.displayName = 'AlertsTableStateWithQueryProvider';
+=======
+      updatedAt,
+      oldAlertsData,
+      ecsAlertsData,
+    };
+  }, [
+    alerts,
+    alertsCount,
+    ecsAlertsData,
+    getInspectQuery,
+    isInitializing,
+    isLoading,
+    oldAlertsData,
+    onPageChange,
+    onSortChange,
+    pagination,
+    refresh,
+    sort,
+    updatedAt,
+  ]);
+
+  const CasesContext = casesService?.ui.getCasesContext();
+  const isCasesContextAvailable = casesService && CasesContext;
+
+  const memoizedCases = useMemo(
+    () => ({
+      data: cases ?? new Map(),
+      isLoading: isLoadingCases,
+    }),
+    [cases, isLoadingCases]
+  );
+
+  const memoizedMaintenanceWindows = useMemo(
+    () => ({
+      data: maintenanceWindows ?? new Map(),
+      isLoading: isLoadingMaintenanceWindows,
+    }),
+    [maintenanceWindows, isLoadingMaintenanceWindows]
+  );
+
+  const tableProps: AlertsTableProps = useMemo(
+    () => ({
+      alertsTableConfiguration,
+      cases: memoizedCases,
+      maintenanceWindows: memoizedMaintenanceWindows,
+      columns,
+      bulkActions: [],
+      deletedEventIds: [],
+      disabledCellActions: [],
+      pageSize: pagination.pageSize,
+      pageSizeOptions: [10, 20, 50, 100],
+      id,
+      leadingControlColumns: leadingControlColumns ?? [],
+      showAlertStatusWithFlapping,
+      trailingControlColumns: [],
+      useFetchAlertsData,
+      visibleColumns,
+      'data-test-subj': 'internalAlertsState',
+      updatedAt,
+      browserFields,
+      onToggleColumn,
+      onResetColumns,
+      onChangeVisibleColumns,
+      onColumnResize,
+      query,
+      rowHeightsOptions,
+      renderCellValue,
+      gridStyle,
+      controls: persistentControls,
+      showInspectButton,
+      toolbarVisibility,
+      shouldHighlightRow,
+      dynamicRowHeight,
+      featureIds,
+    }),
+    [
+      alertsTableConfiguration,
+      memoizedCases,
+      memoizedMaintenanceWindows,
+      columns,
+      pagination.pageSize,
+      id,
+      leadingControlColumns,
+      showAlertStatusWithFlapping,
+      useFetchAlertsData,
+      visibleColumns,
+      updatedAt,
+      browserFields,
+      onToggleColumn,
+      onResetColumns,
+      onChangeVisibleColumns,
+      onColumnResize,
+      query,
+      rowHeightsOptions,
+      renderCellValue,
+      gridStyle,
+      persistentControls,
+      showInspectButton,
+      toolbarVisibility,
+      shouldHighlightRow,
+      dynamicRowHeight,
+      featureIds,
+    ]
+  );
+
+  if (!hasAlertsTableConfiguration) {
+    return (
+      <EuiEmptyPrompt
+        data-test-subj="alertsTableNoConfiguration"
+        iconType="watchesApp"
+        title={<h2>{ALERTS_TABLE_CONF_ERROR_TITLE}</h2>}
+        body={<p>{ALERTS_TABLE_CONF_ERROR_MESSAGE}</p>}
+      />
+    );
+  }
+
+  return (
+    <AlertsTableContext.Provider
+      value={{
+        mutedAlerts: mutedAlerts ?? {},
+        bulkActions: initialBulkActionsState,
+      }}
+    >
+      {!isLoading && alertsCount === 0 && (
+        <InspectButtonContainer>
+          <EmptyState
+            controls={persistentControls}
+            getInspectQuery={getInspectQuery}
+            showInpectButton={showInspectButton}
+          />
+        </InspectButtonContainer>
+      )}
+      {(isLoading || isBrowserFieldDataLoading) && (
+        <EuiProgress size="xs" color="accent" data-test-subj="internalAlertsPageLoading" />
+      )}
+      {alertsCount !== 0 && isCasesContextAvailable && (
+        <CasesContext
+          owner={alertsTableConfiguration.cases?.owner ?? []}
+          permissions={casesPermissions}
+          features={{ alerts: { sync: alertsTableConfiguration.cases?.syncAlerts ?? false } }}
+        >
+          <AlertsTable {...tableProps} />
+        </CasesContext>
+      )}
+      {alertsCount !== 0 && !isCasesContextAvailable && <AlertsTable {...tableProps} />}
+    </AlertsTableContext.Provider>
+  );
+};
+>>>>>>> main
 
 export { AlertsTableState };
 // eslint-disable-next-line import/no-default-export
