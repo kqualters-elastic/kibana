@@ -174,9 +174,7 @@ export const RenderCellValue: React.FC<EuiDataGridCellProps['cellContext']> = me
       columnHeaders,
     ]);
 
-    return columnId === SIGNAL_RULE_NAME_FIELD_NAME &&
-      actualSuppressionCount &&
-      actualSuppressionCount > 0 ? (
+    return columnId === SIGNAL_RULE_NAME_FIELD_NAME && actualSuppressionCount ? (
       <EuiFlexGroup gutterSize="xs">
         <EuiFlexItem grow={false}>
           <EuiToolTip position="top" content={SUPPRESSED_ALERT_TOOLTIP(actualSuppressionCount)}>

@@ -17,6 +17,7 @@ import {
   EuiButton,
   EuiCode,
   EuiCopy,
+  EuiDataGridControlColumn,
 } from '@elastic/eui';
 import type { MappingRuntimeFields } from '@elastic/elasticsearch/lib/api/typesWithBodyKey';
 import { ALERT_CASE_IDS, ALERT_MAINTENANCE_WINDOW_IDS } from '@kbn/rule-data-utils';
@@ -89,7 +90,8 @@ export type AlertsTableStateProps = {
    */
   dynamicRowHeight?: boolean;
   lastReloadRequestTime?: number;
-} & Partial<EuiDataGridProps>;
+  renderCellPopover?: AlertsTableProps['renderCellPopover'];
+} & Omit<Partial<EuiDataGridProps>, 'renderCellPopover'>;
 
 export interface AlertsTableStorage {
   columns: EuiDataGridColumn[];
@@ -186,6 +188,8 @@ const AlertsTableState = memo((props: AlertsTableStateProps) => {
 
 AlertsTableState.displayName = 'AlertsTableState';
 
+const DEFAULT_LEADING_CONTROL_COLUMNS: EuiDataGridControlColumn[] = [];
+
 const AlertsTableStateWithQueryProvider = memo(
   ({
     alertsTableConfigurationRegistry,
@@ -194,7 +198,7 @@ const AlertsTableStateWithQueryProvider = memo(
     featureIds,
     query,
     pageSize,
-    leadingControlColumns,
+    leadingControlColumns = DEFAULT_LEADING_CONTROL_COLUMNS,
     trailingControlColumns,
     rowHeightsOptions,
     cellContext,
