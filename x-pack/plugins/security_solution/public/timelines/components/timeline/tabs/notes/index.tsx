@@ -17,11 +17,12 @@ import {
   EuiHorizontalRule,
 } from '@elastic/eui';
 
-import React, { Fragment, useCallback, useMemo, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 
 import type { EuiTheme } from '@kbn/react-kibana-context-styled';
+import type { Note } from '../../../../../common/lib/note';
 import { useSourcererDataView } from '../../../../../sourcerer/containers';
 import { SourcererScopeName } from '../../../../../sourcerer/store/model';
 import { timelineActions } from '../../../../store';
@@ -31,7 +32,7 @@ import {
 } from '../../../../../common/hooks/use_selector';
 import { TimelineTabs } from '../../../../../../common/types/timeline';
 import { TimelineStatus } from '../../../../../../common/api/timeline';
-import { appSelectors } from '../../../../../common/store/app';
+import { appActions, appSelectors } from '../../../../../common/store/app';
 import { AddNote } from '../../../notes/add_note';
 import { CREATED_BY, NOTES } from '../../../notes/translations';
 import { PARTICIPANTS } from '../../translations';
@@ -158,10 +159,29 @@ const NotesTabContentComponent: React.FC<NotesTabContentProps> = ({ timelineId }
     return [...noteIds, ...eventNoteIds];
   }, [noteIds, eventIdToNoteIds]);
 
-  const notes = useMemo(
-    () => appNotes.filter((appNote) => allTimelineNoteIds.includes(appNote?.noteId ?? '-1')),
-    [appNotes, allTimelineNoteIds]
+  useEffect(() => {
+    dispatch(appActions.fetchNotesBySavedObjectRequest({ savedObjectId: timelineId }));
+  }, [dispatch, timelineId]);
+  const notesById: { [id: string]: Note } = useSelector((state) => appSelectors.selectById(state));
+  const noteIdsBySavedObjectId: { [documentId: string]: string[] } = useSelector((state) =>
+    appSelectors.selectIdsBySavedObjectId(state)
   );
+  const newNotes: Note[] =
+    noteIdsBySavedObjectId[timelineId]?.map((noteId) => notesById[noteId]) ?? [];
+
+  console.log('appNotes', appNotes);
+  console.log(
+    'filteredAppNotes',
+    appNotes.filter((appNote) => allTimelineNoteIds.includes(appNote?.noteId ?? '-1'))
+  );
+  console.log('newNotes', newNotes);
+
+  const notes = useMemo(() => {
+    const filteredAppNotes = appNotes.filter((appNote) =>
+      allTimelineNoteIds.includes(appNote?.noteId ?? '-1')
+    );
+    return [...filteredAppNotes, ...newNotes];
+  }, [appNotes, newNotes, allTimelineNoteIds]);
 
   // filter for savedObjectId to make sure we don't display `elastic` user while saving the note
   const participants = useMemo(() => uniqBy('updatedBy', filter('savedObjectId', notes)), [notes]);

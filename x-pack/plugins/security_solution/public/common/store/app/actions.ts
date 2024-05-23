@@ -7,6 +7,8 @@
 
 import actionCreatorFactory from 'typescript-fsa';
 
+import type { BareNote } from '../../../../common/api/timeline';
+import type { NormalizedEntities, NormalizedEntity } from './model';
 import type { Note } from '../../lib/note';
 
 const actionCreator = actionCreatorFactory('x-pack/security_solution/local/app');
@@ -34,6 +36,92 @@ export const setNonTimelineEventNotesLoading = actionCreator<{ isLoading: boolea
 export const serverReturnedNonAssociatedNotes = actionCreator<{ notes: Note[] }>(
   'SERVER_RETURNED_NON_ASSOCIATED_NOTES'
 );
+
+export const fetchNotesByDocumentRequest = actionCreator<{ documentId: string }>(
+  'FETCH_NOTES_BY_DOCUMENT_ID_REQUEST'
+);
+
+export const fetchNotesByDocumentSuccess = actionCreator<{
+  documentId: string;
+  data: NormalizedEntities<Note>;
+}>('FETCH_NOTES_BY_DOCUMENT_ID_SUCCESS');
+
+export const fetchNotesByDocumentFailure = actionCreator('FETCH_NOTES_BY_DOCUMENT_ID_FAILURE');
+
+export const fetchNotesByDocumentsRequest = actionCreator<{ documentIds: string[] }>(
+  'FETCH_NOTES_BY_DOCUMENT_IDS_REQUEST'
+);
+
+export const fetchNotesByDocumentsSuccess = actionCreator<{
+  documentIds: string[];
+  data: NormalizedEntities<Note>;
+}>('FETCH_NOTES_BY_DOCUMENT_IDS_SUCCESS');
+
+export const fetchNotesByDocumentsFailure = actionCreator('FETCH_NOTES_BY_DOCUMENT_IDS_FAILURE');
+
+export const fetchNotesBySavedObjectRequest = actionCreator<{ savedObjectId: string }>(
+  'FETCH_NOTES_BY_SAVED_OBJECT_ID_REQUEST'
+);
+
+export const fetchNotesBySavedObjectSuccess = actionCreator<{
+  savedObjectId: string;
+  data: NormalizedEntities<Note>;
+}>('FETCH_NOTES_BY_SAVED_OBJECT_ID_SUCCESS');
+
+export const fetchNotesBySavedObjectFailure = actionCreator(
+  'FETCH_NOTES_BY_SAVED_OBJECT_ID_FAILURE'
+);
+
+export const createNoteForDocumentRequest = actionCreator<{ documentId: string; note: BareNote }>(
+  'CREATE_NOTE_FOR_DOCUMENT_REQUEST'
+);
+
+export const createNoteForDocumentSuccess = actionCreator<{
+  documentId: string;
+  data: NormalizedEntity<Note>;
+}>('CREATE_NOTE_FOR_DOCUMENT_SUCCESS');
+
+export const createNoteForDocumentFailure = actionCreator('CREATE_NOTE_FOR_DOCUMENT_FAILURE');
+
+export const createNoteForTimelineRequest = actionCreator<{
+  savedObjectId: string;
+  note: BareNote;
+}>('CREATE_NOTE_FOR_TIMELINE_REQUEST');
+
+export const createNoteForTimelineSuccess = actionCreator<{
+  savedObjectId: string;
+  data: NormalizedEntity<Note>;
+}>('CREATE_NOTE_FOR_TIMELINE_SUCCESS');
+
+export const createNoteForTimelineFailure = actionCreator('CREATE_NOTE_FOR_TIMELINE_FAILURE');
+
+export const createNoteForDocumentAndTimelineRequest = actionCreator<{
+  documentId: string;
+  savedObjectId: string;
+  note: BareNote;
+}>('CREATE_NOTE_FOR_DOCUMENT_AND_TIMELINE_REQUEST');
+
+export const createNoteForDocumentAndTimelineSuccess = actionCreator<{
+  documentId: string;
+  savedObjectId: string;
+  data: NormalizedEntity<Note>;
+}>('CREATE_NOTE_FOR_DOCUMENT_AND_TIMELINE_SUCCESS');
+
+export const createNoteForDocumentAndTimelineFailure = actionCreator(
+  'CREATE_NOTE_FOR_DOCUMENT_AND_TIMELINE_FAILURE'
+);
+
+export const deleteNoteRequest = actionCreator<{
+  note: Note;
+}>('DELETE_NOTE_REQUEST');
+
+export const deleteNoteSuccess = actionCreator<{
+  noteId: string;
+  documentId: string;
+  savedObjectId: string;
+}>('DELETE_NOTE_SUCCESS');
+
+export const deleteNoteFailure = actionCreator<{ noteId: string }>('DELETE_NOTE_FAILURE');
 
 export const addErrorHash = actionCreator<{
   id: string;

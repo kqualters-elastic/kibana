@@ -361,6 +361,12 @@ export const StatefulOpenTimelineComponent = React.memo<OpenTimelineOwnProps>(
           closeModalTimeline();
         }
 
+        console.log('openTimeline');
+        console.log('duplicate', duplicate);
+        console.log('onOpenTimeline', onOpenTimeline);
+        console.log('timelineId', timelineId);
+        console.log('timelineTypeToOpen', timelineTypeToOpen);
+        console.log('unifiedComponentsInTimelineEnabled', unifiedComponentsInTimelineEnabled);
         queryTimelineById({
           duplicate,
           onOpenTimeline,

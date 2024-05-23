@@ -14,8 +14,11 @@ import {
 } from '@elastic/eui';
 import React, { useCallback, useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
+import { timelineSelectors } from '../../../store';
+import { TimelineId } from '../../../../../common/types';
+import { useIsExperimentalFeatureEnabled } from '../../../../common/hooks/use_experimental_features';
 import { appActions } from '../../../../common/store/app';
 import type { Note } from '../../../../common/lib/note';
 import { useCurrentUser } from '../../../../common/lib/kibana';
@@ -54,6 +57,7 @@ export const AddNote = React.memo<{
   updateNewNote: UpdateInternalNewNote;
   autoFocusDisabled?: boolean;
 }>(({ associateNote, newNote, onCancelAddNote, updateNewNote, autoFocusDisabled = false }) => {
+  const notesEnabled = useIsExperimentalFeatureEnabled('notesEnabled');
   const dispatch = useDispatch();
   const authenticatedUser = useCurrentUser();
   const [isMarkdownInvalid, setIsMarkdownInvalid] = useState(false);
@@ -61,19 +65,48 @@ export const AddNote = React.memo<{
     (note: Note) => dispatch(appActions.updateNote({ note })),
     [dispatch]
   );
+  const activeTimeline = useSelector((state) =>
+    timelineSelectors.selectTimelineById(state, TimelineId.active)
+  );
 
   const handleClick = useCallback(() => {
     const user = authenticatedUser?.username;
     if (user) {
-      updateAndAssociateNode({
-        associateNote,
-        newNote,
-        updateNewNote,
-        updateNote,
-        user,
-      });
+      if (notesEnabled) {
+        dispatch(
+          appActions.createNoteForTimelineRequest({
+            savedObjectId: activeTimeline.id,
+            note: {
+              timelineId: activeTimeline.id,
+              eventId: '',
+              note: newNote,
+              created: new Date().getTime(),
+              createdBy: user,
+              updated: null,
+              updatedBy: null,
+            },
+          })
+        );
+      } else {
+        updateAndAssociateNode({
+          associateNote,
+          newNote,
+          updateNewNote,
+          updateNote,
+          user,
+        });
+      }
     }
-  }, [associateNote, newNote, updateNewNote, updateNote, authenticatedUser]);
+  }, [
+    authenticatedUser?.username,
+    associateNote,
+    newNote,
+    updateNewNote,
+    updateNote,
+    notesEnabled,
+    dispatch,
+    activeTimeline.id,
+  ]);
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
