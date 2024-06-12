@@ -43,11 +43,51 @@ export const deleteNote = async (noteId: string) => {
   return response;
 };
 
+export const bulkDeleteNotes = async (noteIds: string[]) => {
+  const response = await KibanaServices.get().http.delete<Note[]>(NOTE_URL, {
+    body: JSON.stringify({ noteIds }),
+    version: '2023-10-31',
+  });
+  return response;
+};
+
 export const getNotesByIds = async (documentIds: string[]) => {
   const response = await KibanaServices.get().http.get<Note[]>(NOTE_URL, {
     query: { alertIds: documentIds },
     version: '2023-10-31',
   });
+  return response;
+};
+
+export const fetchNotesPaginatedAndSorted = async ({
+  page,
+  perPage,
+  sortField,
+  sortOrder,
+  filter,
+  search,
+}: {
+  page: number;
+  perPage: number;
+  sortField: string;
+  sortOrder: string;
+  filter: string;
+  search: string;
+}) => {
+  const response = await KibanaServices.get().http.get<{ totalCount: number; notes: Note[] }>(
+    NOTE_URL,
+    {
+      query: {
+        page,
+        perPage,
+        sortField,
+        sortOrder,
+        filter,
+        search,
+      },
+      version: '2023-10-31',
+    }
+  );
   return response;
 };
 

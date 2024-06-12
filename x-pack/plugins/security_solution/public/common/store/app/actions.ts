@@ -8,7 +8,7 @@
 import actionCreatorFactory from 'typescript-fsa';
 
 import type { BareNote } from '../../../../common/api/timeline';
-import type { NormalizedEntities, NormalizedEntity } from './model';
+import type { NormalizedEntities, NormalizedEntity } from '../../../timelines/store/normalize';
 import type { Note } from '../../lib/note';
 
 const actionCreator = actionCreatorFactory('x-pack/security_solution/local/app');
@@ -129,3 +129,29 @@ export const addErrorHash = actionCreator<{
   title: string;
   message: string[];
 }>('ADD_ERROR_HASH');
+
+export const notesTableChange = actionCreator<{
+  page: { index: number; size: number };
+  sort: {
+    field: string;
+    direction: 'asc' | 'desc';
+  };
+}>('NOTES_TABLE_CHANGE');
+
+export const setNotesTableSelectedItems = actionCreator<{ selectedItems: string[] }>(
+  'SET_NOTES_TABLE_SELECTED_ITEMS'
+);
+
+export const setNotesTableSelectAll = actionCreator<{ isSelected: boolean }>(
+  'SET_NOTES_TABLE_SELECT_ALL'
+);
+
+export const notesTableInitialize = actionCreator('NOTES_TABLE_INITIALIZE');
+
+export const fetchNotesPaginatedSuccess = actionCreator<{ totalCount: number; notes: Note[] }>(
+  'FETCH_NOTES_PAGINATED_SUCCESS'
+);
+
+export const fetchNotesPaginatedFailure = actionCreator('FETCH_NOTES_PAGINATED_FAILURE');
+
+export const bulkDeleteNotes = actionCreator<{ noteIds: string[] }>('BULK_DELETE_NOTES');

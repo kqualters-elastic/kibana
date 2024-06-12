@@ -77,6 +77,31 @@ export const selectById = createSelector(byId, (notes) => notes);
 const allIds = (state: State): string[] => state.app.allIds;
 export const selectAllIds = createSelector(allIds, (ids) => ids);
 
+const notesPagination = (state: State): { index: number; size: number } =>
+  state.app.notesTablePagination;
+
+export const selectNotesPagination = createSelector(notesPagination, (pagination) => pagination);
+
+const notesTableSort = (state: State): { field: string; direction: string } =>
+  state.app.notesTableSort;
+
+export const selectNotesTableSort = createSelector(notesTableSort, (sort) => sort);
+
+const notesSelectedItems = (state: State): string[] => state.app.notesTableSelectedItems;
+
+export const selectNotesSelectedItems = createSelector(notesSelectedItems, (items) => items);
+
+const notesTableCurrentPageItems = (state: State): Note[] => state.app.notesTableCurrentPageItems;
+
+export const selectNotesTableCurrentPageItems = createSelector(
+  notesTableCurrentPageItems,
+  (items) => items
+);
+
+const notesTableTotalItems = (state: State): number => state.app.totalCount;
+
+export const selectNotesTableTotalItems = createSelector(notesTableTotalItems, (total) => total);
+
 const idsByDocumentId = (state: State): { [documentId: string]: string[] } =>
   state.app.idsByDocumentId;
 export const selectIdsByDocumentId = createSelector(idsByDocumentId, (ids) => ids);

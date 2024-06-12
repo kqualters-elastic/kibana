@@ -69,7 +69,7 @@ interface OwnProps<TCache = object> {
 export type OpenTimelineOwnProps = OwnProps &
   Pick<
     OpenTimelineProps,
-    'defaultPageSize' | 'title' | 'importDataModalToggle' | 'setImportDataModalToggle'
+    'defaultPageSize' | 'title' | 'importDataModalToggle' | 'setImportDataModalToggle' | 'tabName'
   >;
 
 /** Returns a collection of selected timeline ids */
@@ -131,6 +131,7 @@ export const StatefulOpenTimelineComponent = React.memo<OpenTimelineOwnProps>(
     onOpenTimeline,
     setImportDataModalToggle,
     title,
+    tabName,
   }) => {
     const dispatch = useDispatch();
     const { startTransaction } = useStartTransaction();
@@ -426,6 +427,7 @@ export const StatefulOpenTimelineComponent = React.memo<OpenTimelineOwnProps>(
         timelineFilter={timelineTabs}
         title={title}
         totalSearchResultsCount={totalCount}
+        tabName={tabName}
       />
     ) : (
       <OpenTimelineModalBody

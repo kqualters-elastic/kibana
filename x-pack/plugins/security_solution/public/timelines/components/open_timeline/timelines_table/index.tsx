@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import { EuiBasicTable as _EuiBasicTable } from '@elastic/eui';
+import { EuiBasicTable } from '@elastic/eui';
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
 
@@ -29,9 +29,8 @@ import { getIconHeaderColumns } from './icon_header_columns';
 import type { TimelineTypeLiteralWithNull } from '../../../../../common/api/timeline';
 import { TimelineStatus, TimelineType } from '../../../../../common/api/timeline';
 import { useUserPrivileges } from '../../../../common/components/user_privileges';
-// there are a number of type mismatches across this file
-const EuiBasicTable: any = _EuiBasicTable; // eslint-disable-line @typescript-eslint/no-explicit-any
 
+// @ts-expect-error TS2769
 const BasicTable = styled(EuiBasicTable)`
   .euiTableCellContent {
     animation: none; /* Prevents applying max-height from animation */
@@ -123,8 +122,7 @@ export interface TimelinesTableProps {
   sortDirection: 'asc' | 'desc';
   sortField: string;
   timelineType: TimelineTypeLiteralWithNull;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tableRef?: React.MutableRefObject<_EuiBasicTable<any> | undefined>;
+  tableRef?: React.MutableRefObject<EuiBasicTable<OpenTimelineResult> | undefined>;
   totalSearchResultsCount: number;
 }
 
@@ -157,32 +155,39 @@ export const TimelinesTable = React.memo<TimelinesTableProps>(
     timelineType,
     totalSearchResultsCount,
   }) => {
-    const pagination = {
-      showPerPageOptions: showExtendedColumns,
-      pageIndex,
-      pageSize,
-      pageSizeOptions: [
-        Math.floor(Math.max(defaultPageSize, 1) / 2),
-        defaultPageSize,
-        defaultPageSize * 2,
-      ],
-      totalItemCount: totalSearchResultsCount,
-    };
+    const pagination = useMemo(() => {
+      return {
+        showPerPageOptions: showExtendedColumns,
+        pageIndex,
+        pageSize,
+        pageSizeOptions: [
+          Math.floor(Math.max(defaultPageSize, 1) / 2),
+          defaultPageSize,
+          defaultPageSize * 2,
+        ],
+        totalItemCount: totalSearchResultsCount,
+      };
+    }, [defaultPageSize, pageIndex, pageSize, showExtendedColumns, totalSearchResultsCount]);
 
-    const sorting = {
-      sort: {
-        field: sortField as keyof OpenTimelineResult,
-        direction: sortDirection,
-      },
-    };
+    const sorting = useMemo(() => {
+      return {
+        sort: {
+          field: sortField as keyof OpenTimelineResult,
+          direction: sortDirection,
+        },
+      };
+    }, [sortField, sortDirection]);
 
-    const selection = {
-      selectable: (timelineResult: OpenTimelineResult) =>
-        timelineResult.savedObjectId != null && timelineResult.status !== TimelineStatus.immutable,
-      selectableMessage: (selectable: boolean) =>
-        !selectable ? i18n.MISSING_SAVED_OBJECT_ID : undefined,
-      onSelectionChange,
-    };
+    const selection = useMemo(() => {
+      return {
+        selectable: (timelineResult: OpenTimelineResult) =>
+          timelineResult.savedObjectId != null &&
+          timelineResult.status !== TimelineStatus.immutable,
+        selectableMessage: (selectable: boolean) =>
+          !selectable ? i18n.MISSING_SAVED_OBJECT_ID : undefined,
+        onSelectionChange,
+      };
+    }, [onSelectionChange]);
     const basicTableProps = tableRef != null ? { ref: tableRef } : {};
     const { kibanaSecuritySolutionsPrivileges } = useUserPrivileges();
     const columns = useMemo(

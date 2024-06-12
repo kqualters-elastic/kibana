@@ -22,6 +22,7 @@ import { useIsTimelineFlyoutOpen } from '../../shared/hooks/use_is_timeline_flyo
 import { useCurrentUser } from '../../../../common/lib/kibana';
 import { appActions } from '../../../../common/store/app';
 import { timelineSelectors } from '../../../../timelines/store';
+import { MarkdownEditor } from '../../../../common/components/markdown_editor';
 
 export interface AddNewNoteProps {
   /**
@@ -88,14 +89,20 @@ export const AddNewNote = memo(({ eventId }: AddNewNoteProps) => {
     <>
       <EuiCommentList>
         <EuiComment username="">
-          <EuiMarkdownEditor
+          <MarkdownEditor
+            value={editorValue}
+            onChange={setEditorValue}
+            ariaLabel={'fake label'}
+            setIsMarkdownInvalid={() => {}}
+          />
+          {/* <EuiMarkdownEditor 
             placeholder="Add a note..."
             value={editorValue}
             onChange={setEditorValue}
             readOnly={false}
             initialViewMode="editing"
             markdownFormatProps={{ textSize: 's' }}
-          />
+          /> */}
         </EuiComment>
       </EuiCommentList>
       <EuiSpacer />

@@ -4,14 +4,13 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-
+/* eslint-disable complexity */
 import type { Action, Middleware } from 'redux';
 import type { CoreStart } from '@kbn/core/public';
 
 import type { NormalizedEntities, NormalizedEntity } from '../normalize';
-import { normalizeEntity } from '../normalize';
-import { normalizeEntities } from '../normalize';
-import { appActions } from '../../../common/store/app';
+import { normalizeEntity, normalizeEntities } from '../normalize';
+import { appActions, appSelectors } from '../../../common/store/app';
 import type { State } from '../../../common/store/types';
 import type { Note } from '../../../common/lib/note';
 import {
@@ -21,13 +20,46 @@ import {
   fetchNotesBySavedObjectIdId,
   getNotesByIds,
   persistNote,
+  fetchNotesPaginatedAndSorted,
+  bulkDeleteNotes,
 } from '../../containers/notes/api';
 
 export const displayUnassociatedNotesMiddleware: (kibana: CoreStart) => Middleware<{}, State> =
   (kibana: CoreStart) => (store) => (next) => async (action: Action) => {
     // perform the action
     const ret = next(action);
-
+    const state = store.getState();
+    if (
+      action.type === appActions.notesTableInitialize.type ||
+      action.type === appActions.notesTableChange.type
+    ) {
+      const pagination = appSelectors.selectNotesPagination(state);
+      const sort = appSelectors.selectNotesTableSort(state);
+      try {
+        const response = await fetchNotesPaginatedAndSorted({
+          // eui operates on 0-based index, saved objects api is 1-based
+          page: pagination.index + 1,
+          perPage: pagination.size,
+          sortField: sort.field,
+          sortOrder: sort.direction,
+          filter: '',
+          search: '',
+        });
+        store.dispatch(appActions.fetchNotesPaginatedSuccess(response));
+      } catch (error) {
+        store.dispatch(appActions.fetchNotesPaginatedFailure(error));
+        console.log('middleware - error fetching notes:', error);
+      }
+    }
+    if (action.type === appActions.bulkDeleteNotes.type) {
+      const noteIds = action.payload.noteIds;
+      try {
+        await bulkDeleteNotes(noteIds);
+      } catch (error) {
+        console.log(error);
+      }
+      store.dispatch(appActions.notesTableInitialize());
+    }
     if (action.type === appActions.setEventIdsToFetchNotesFor.type) {
       const eventIds = action.payload.eventIds;
       store.dispatch(appActions.setNonTimelineEventNotesLoading({ isLoading: true }));

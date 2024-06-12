@@ -50,4 +50,16 @@ export interface AppModel {
   errorCreateForDocumentAndForSavedObject: boolean;
   loadingDeleteNoteIds: string[];
   errorDelete: boolean;
+  notesTablePagination: {
+    index: number;
+    size: number;
+  };
+  notesTableSort: {
+    field: string;
+    direction: string;
+  };
+  notesTableSelectedItems: string[];
+  notesTableSelectAllSelected: boolean;
+  notesTableCurrentPageItems: Note[];
+  totalCount: number;
 }

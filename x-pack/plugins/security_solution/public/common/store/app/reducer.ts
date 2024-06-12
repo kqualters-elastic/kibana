@@ -38,6 +38,9 @@ import {
   fetchNotesByDocumentsRequest,
   fetchNotesByDocumentsSuccess,
   fetchNotesByDocumentsFailure,
+  notesTableChange,
+  setNotesTableSelectedItems,
+  fetchNotesPaginatedSuccess,
 } from './actions';
 import type { AppModel, NotesById } from './model';
 import { allowedExperimentalValues } from '../../../../common/experimental_features';
@@ -69,6 +72,18 @@ export const initialAppState: AppState = {
   nonTimelineEventNotesLoading: false,
   nonTimelineEventNotesError: null,
   nonAssociatedNotes: [],
+  notesTablePagination: {
+    index: 0,
+    size: 10,
+  },
+  notesTableSort: {
+    field: 'updated',
+    direction: 'desc',
+  },
+  notesTableSelectedItems: [],
+  notesTableSelectAllSelected: false,
+  notesTableCurrentPageItems: [],
+  totalCount: 0,
 };
 
 interface UpdateNotesByIdParams {
@@ -93,7 +108,7 @@ export const appReducer = reducerWithInitialState(initialAppState)
     return {
       ...state,
       byId: { ...state.byId, ...data.entities.notes },
-      allIds: [...state.allIds, ...data.result],
+      allIds: [...new Set([...state.allIds, data.result])],
       idsByDocumentId: { ...state.idsByDocumentId, [documentId]: data.result },
       loadingFetchByDocument: false,
       errorFetchByDocument: false,
@@ -123,7 +138,7 @@ export const appReducer = reducerWithInitialState(initialAppState)
     return {
       ...state,
       byId: { ...state.byId, ...data.entities.notes },
-      allIds: [...state.allIds, ...data.result],
+      allIds: [...new Set([...state.allIds, data.result])],
       idsByDocumentId,
       loadingFetchByDocument: false,
       errorFetchByDocument: false,
@@ -147,7 +162,7 @@ export const appReducer = reducerWithInitialState(initialAppState)
     return {
       ...state,
       byId: { ...state.byId, ...data.entities.notes },
-      allIds: [...state.allIds, ...data.result],
+      allIds: [...new Set([...state.allIds, data.result])],
       idsBySavedObjectId: { ...state.idsBySavedObjectId, [savedObjectId]: data.result },
       loadingFetchBySavedObject: false,
       errorFetchBySavedObject: false,
@@ -171,7 +186,7 @@ export const appReducer = reducerWithInitialState(initialAppState)
     return {
       ...state,
       byId: { ...state.byId, ...data.entities.notes },
-      allIds: [...state.allIds, data.result],
+      allIds: [...new Set([...state.allIds, data.result])],
       idsByDocumentId: {
         ...state.idsByDocumentId,
         [documentId]: [...(state.idsByDocumentId[documentId] || []), data.result],
@@ -198,7 +213,7 @@ export const appReducer = reducerWithInitialState(initialAppState)
     return {
       ...state,
       byId: { ...state.byId, ...data.entities.notes },
-      allIds: [...state.allIds, data.result],
+      allIds: [...new Set([...state.allIds, data.result])],
       idsBySavedObjectId: {
         ...state.idsBySavedObjectId,
         [savedObjectId]: [...(state.idsBySavedObjectId[savedObjectId] || []), data.result],
@@ -225,7 +240,7 @@ export const appReducer = reducerWithInitialState(initialAppState)
     return {
       ...state,
       byId: { ...state.byId, ...data.entities.notes },
-      allIds: [...state.allIds, data.result],
+      allIds: [...new Set([...state.allIds, data.result])],
       idsByDocumentId: {
         ...state.idsByDocumentId,
         [documentId]: [...(state.idsByDocumentId[documentId] || []), data.result],
@@ -355,6 +370,32 @@ export const appReducer = reducerWithInitialState(initialAppState)
     return {
       ...state,
       nonAssociatedNotes: notes,
+    };
+  })
+  .case(notesTableChange, (state, { page: { index, size }, sort: { field, direction } }) => {
+    return {
+      ...state,
+      notesTablePagination: {
+        index,
+        size,
+      },
+      notesTableSort: {
+        field,
+        direction,
+      },
+    };
+  })
+  .case(setNotesTableSelectedItems, (state, { selectedItems }) => {
+    return {
+      ...state,
+      notesTableSelectedItems: selectedItems,
+    };
+  })
+  .case(fetchNotesPaginatedSuccess, (state, { totalCount, notes }) => {
+    return {
+      ...state,
+      notesTableCurrentPageItems: notes,
+      totalCount,
     };
   })
   .build();
