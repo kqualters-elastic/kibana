@@ -4,6 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
+/* eslint-disable complexity */
 
 import { i18n } from '@kbn/i18n';
 
@@ -20,7 +21,8 @@ import { useColors } from './use_colors';
 export function useCubeAssets(
   id: string,
   cubeType: NodeDataStatus,
-  isProcessTrigger: boolean
+  isProcessTrigger: boolean,
+  isSecondaryTree = false
 ): NodeStyleConfig {
   const SymbolIds = useSymbolIDs({ id });
   const colorMap = useColors();
@@ -28,52 +30,58 @@ export function useCubeAssets(
   const nodeAssets: NodeStyleMap = useMemo(
     () => ({
       runningProcessCube: {
-        backingFill: colorMap.processBackingFill,
-        cubeSymbol: `#${SymbolIds.runningProcessCube}`,
+        backingFill: isSecondaryTree ? euiThemeVars.euiColorAccent : colorMap.processBackingFill,
+        cubeSymbol: isSecondaryTree
+          ? `#${SymbolIds.secondaryProcessCube}`
+          : `#${SymbolIds.runningProcessCube}`,
         descriptionFill: colorMap.descriptionText,
         descriptionText: i18n.translate('xpack.securitySolution.endpoint.resolver.runningProcess', {
           defaultMessage: 'Running Process',
         }),
         isLabelFilled: true,
-        labelButtonFill: 'primary',
-        strokeColor: euiThemeVars.euiColorPrimary,
+        labelButtonFill: isSecondaryTree ? 'accent' : 'primary',
+        strokeColor: isSecondaryTree ? euiThemeVars.euiColorAccent : euiThemeVars.euiColorPrimary,
       },
       loadingCube: {
-        backingFill: colorMap.processBackingFill,
+        backingFill: isSecondaryTree ? euiThemeVars.euiColorAccent : colorMap.processBackingFill,
         cubeSymbol: `#${SymbolIds.loadingCube}`,
         descriptionFill: colorMap.descriptionText,
         descriptionText: i18n.translate('xpack.securitySolution.endpoint.resolver.loadingProcess', {
           defaultMessage: 'Loading Process',
         }),
         isLabelFilled: false,
-        labelButtonFill: 'primary',
-        strokeColor: euiThemeVars.euiColorPrimary,
+        labelButtonFill: isSecondaryTree ? 'accent' : 'primary',
+        strokeColor: isSecondaryTree ? euiThemeVars.euiColorAccent : euiThemeVars.euiColorPrimary,
       },
       errorCube: {
-        backingFill: colorMap.processBackingFill,
+        backingFill: isSecondaryTree ? euiThemeVars.euiColorAccent : colorMap.processBackingFill,
         cubeSymbol: `#${SymbolIds.errorCube}`,
         descriptionFill: colorMap.descriptionText,
         descriptionText: i18n.translate('xpack.securitySolution.endpoint.resolver.errorProcess', {
           defaultMessage: 'Error Process',
         }),
         isLabelFilled: false,
-        labelButtonFill: 'primary',
-        strokeColor: euiThemeVars.euiColorPrimary,
+        labelButtonFill: isSecondaryTree ? 'accent' : 'primary',
+        strokeColor: isSecondaryTree ? euiThemeVars.euiColorAccent : euiThemeVars.euiColorPrimary,
       },
       runningTriggerCube: {
-        backingFill: colorMap.triggerBackingFill,
-        cubeSymbol: `#${SymbolIds.runningTriggerCube}`,
+        backingFill: isSecondaryTree ? euiThemeVars.euiColorAccent : colorMap.triggerBackingFill,
+        cubeSymbol: isSecondaryTree
+          ? `#${SymbolIds.secondaryTriggerCube}`
+          : `#${SymbolIds.runningTriggerCube}`,
         descriptionFill: colorMap.descriptionText,
         descriptionText: i18n.translate('xpack.securitySolution.endpoint.resolver.runningTrigger', {
           defaultMessage: 'Running Trigger',
         }),
         isLabelFilled: true,
-        labelButtonFill: 'danger',
-        strokeColor: euiThemeVars.euiColorDanger,
+        labelButtonFill: isSecondaryTree ? 'accent' : 'danger',
+        strokeColor: isSecondaryTree ? euiThemeVars.euiColorWarning : euiThemeVars.euiColorDanger,
       },
       terminatedProcessCube: {
-        backingFill: colorMap.processBackingFill,
-        cubeSymbol: `#${SymbolIds.terminatedProcessCube}`,
+        backingFill: isSecondaryTree ? euiThemeVars.euiColorAccent : colorMap.processBackingFill,
+        cubeSymbol: isSecondaryTree
+          ? `#${SymbolIds.secondaryProcessCube}`
+          : `#${SymbolIds.terminatedProcessCube}`,
         descriptionFill: colorMap.descriptionText,
         descriptionText: i18n.translate(
           'xpack.securitySolution.endpoint.resolver.terminatedProcess',
@@ -82,12 +90,14 @@ export function useCubeAssets(
           }
         ),
         isLabelFilled: false,
-        labelButtonFill: 'primary',
-        strokeColor: euiThemeVars.euiColorPrimary,
+        labelButtonFill: isSecondaryTree ? 'accent' : 'primary',
+        strokeColor: isSecondaryTree ? euiThemeVars.euiColorAccent : euiThemeVars.euiColorPrimary,
       },
       terminatedTriggerCube: {
-        backingFill: colorMap.triggerBackingFill,
-        cubeSymbol: `#${SymbolIds.terminatedTriggerCube}`,
+        backingFill: isSecondaryTree ? euiThemeVars.euiColorAccent : colorMap.triggerBackingFill,
+        cubeSymbol: isSecondaryTree
+          ? `#${SymbolIds.secondaryTriggerCube}`
+          : `#${SymbolIds.terminatedTriggerCube}`,
         descriptionFill: colorMap.descriptionText,
         descriptionText: i18n.translate(
           'xpack.securitySolution.endpoint.resolver.terminatedTrigger',
@@ -96,11 +106,11 @@ export function useCubeAssets(
           }
         ),
         isLabelFilled: false,
-        labelButtonFill: 'danger',
-        strokeColor: euiThemeVars.euiColorDanger,
+        labelButtonFill: isSecondaryTree ? 'accent' : 'danger',
+        strokeColor: isSecondaryTree ? euiThemeVars.euiColorWarning : euiThemeVars.euiColorDanger,
       },
     }),
-    [SymbolIds, colorMap]
+    [SymbolIds, colorMap, isSecondaryTree]
   );
 
   if (cubeType === 'terminated') {

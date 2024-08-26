@@ -31,6 +31,10 @@ import {
   serverReturnedCurrentRelatedEventData,
   serverFailedToReturnCurrentRelatedEventData,
   userOverrodeDateRange,
+  userToggledNodeCollpse,
+  userRequestedAdditionalTree,
+  serverReturnedAdditionalTreeData,
+  appRequestedAdditionalTreeData,
 } from './action';
 
 export const dataReducer = reducerWithInitialState(initialAnalyzerState)
@@ -298,6 +302,60 @@ export const dataReducer = reducerWithInitialState(initialAnalyzerState)
       draft[id].data.currentRelatedEvent = {
         loading: false,
         data: null,
+      };
+      return draft;
+    })
+  )
+  .withHandling(
+    immerCase(userToggledNodeCollpse, (draft, { id, nodeId }) => {
+      const state: Draft<DataState> = draft[id].data;
+      if (state.collapsedNodeIds.has(nodeId)) {
+        state.collapsedNodeIds.delete(nodeId);
+      } else {
+        state.collapsedNodeIds.add(nodeId);
+      }
+      return draft;
+    })
+  )
+  .withHandling(
+    immerCase(userRequestedAdditionalTree, (draft, { id, entityId, newEntityId, newAgentId }) => {
+      const state: Draft<DataState> = draft[id].data;
+      if (!state.tree?.lastResponse?.parameters) {
+        return draft;
+      }
+      state.additionalFetchParameters = {
+        databaseDocumentID: newEntityId,
+        indices: state.tree?.lastResponse?.parameters?.indices,
+        filters: state.tree?.lastResponse?.parameters?.filters,
+        agentId: newAgentId ?? state.tree?.lastResponse?.parameters?.agentId,
+      };
+      state.additionalTreeAttachmentNodeId = entityId;
+      state.additionalResult = undefined;
+      return draft;
+    })
+  )
+  .withHandling(
+    immerCase(
+      serverReturnedAdditionalTreeData,
+      (draft, { id, result, parameters, dataSource, schema }) => {
+        const state: Draft<DataState> = draft[id].data;
+        state.additionalResult = {
+          result,
+          dataSource,
+          schema,
+          successful: true,
+        };
+        return draft;
+      }
+    )
+  )
+  .withHandling(
+    immerCase(appRequestedAdditionalTreeData, (draft, { id, entityId, parameters }) => {
+      const state: Draft<DataState> = draft[id].data;
+      state.additionalTreeRequestStatus = {
+        loading: true,
+        entityId,
+        parameters,
       };
       return draft;
     })

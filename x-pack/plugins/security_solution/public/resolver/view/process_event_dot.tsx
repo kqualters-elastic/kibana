@@ -5,9 +5,19 @@
  * 2.0.
  */
 
-import React, { useCallback, useMemo, useContext } from 'react';
+import React, { useCallback, useMemo, useContext, useState } from 'react';
 import styled from 'styled-components';
-import { htmlIdGenerator, EuiButton, EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
+import {
+  htmlIdGenerator,
+  EuiButton,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiButtonIcon,
+  EuiPopover,
+  EuiContextMenuPanel,
+  EuiContextMenuItem,
+  EuiFieldText,
+} from '@elastic/eui';
 import { useSelector, useDispatch } from 'react-redux';
 import { FormattedMessage } from '@kbn/i18n-react';
 import { i18n } from '@kbn/i18n';
@@ -26,7 +36,11 @@ import { useSymbolIDs } from './use_symbol_ids';
 import { useColors } from './use_colors';
 import { useLinkProps } from './use_link_props';
 import { userSelectedResolverNode, userFocusedOnResolverNode } from '../store/actions';
-import { userReloadedResolverNode } from '../store/data/action';
+import {
+  userReloadedResolverNode,
+  userToggledNodeCollpse,
+  userRequestedAdditionalTree,
+} from '../store/data/action';
 import type { State } from '../../common/store/types';
 
 interface StyledActionsContainer {
@@ -276,6 +290,12 @@ const UnstyledProcessEventDot = React.memo(
       selectors.nodeDataStatus(state.analyzer[id])(nodeID)
     );
     const isNodeLoading = nodeState === 'loading';
+    const additionalTreeIds = useSelector((state: State) => {
+      return selectors.additionalTreeIds(state.analyzer[id]);
+    });
+    const isSecondaryTree = useMemo(() => {
+      return additionalTreeIds !== undefined && additionalTreeIds.has(nodeID);
+    }, [additionalTreeIds, nodeID]);
     const {
       backingFill,
       cubeSymbol,
@@ -288,7 +308,8 @@ const UnstyledProcessEventDot = React.memo(
       nodeState,
       /**
        * There is no definition for 'trigger process' yet. return false.
-       */ false
+       */ false,
+      isSecondaryTree
     );
 
     const labelHTMLID = useMemo(() => {
@@ -360,6 +381,89 @@ const UnstyledProcessEventDot = React.memo(
     const generatedNodeHTMLID = useMemo(() => {
       return nodeHTMLID(nodeID);
     }, [nodeHTMLID, nodeID]);
+
+    const toggleNodeCollapse = useCallback(() => {
+      dispatch(userToggledNodeCollpse({ id, nodeId: nodeID }));
+    }, [id, nodeID, dispatch]);
+
+    const processButtonStyle = useMemo(() => {
+      return {
+        maxHeight: `${Math.min(26 + xScale * 3, 32)}px`,
+        maxWidth: `${isShowingEventActions ? 400 : 210 * xScale}px`,
+      };
+    }, [isShowingEventActions, xScale]);
+
+    const labelStyle = useMemo(() => {
+      return {
+        backgroundColor: colorMap.resolverBackground,
+        alignSelf: 'flex-start',
+        padding: 0,
+        zIndex: 45,
+      };
+    }, [colorMap.resolverBackground]);
+
+    const [isPopoverOpen, setPopover] = useState(false);
+
+    const closePopover = useCallback(() => {
+      setPopover(false);
+    }, []);
+
+    const openPopover = useCallback(() => {
+      setPopover(true);
+    }, []);
+
+    const userRequestedAdditionalProcessTree = useCallback(
+      (analyzerId: string, nodeId: string, newId: string, newAgentId: string) => {
+        dispatch(
+          userRequestedAdditionalTree({
+            id: analyzerId,
+            entityId: nodeId,
+            newEntityId: newId,
+            newAgentId,
+          })
+        );
+      },
+      [dispatch]
+    );
+
+    const [newEntityId, setNewEntityId] = useState('');
+    const [newAgentId, setNewAgentId] = useState('');
+
+    const nodeActionItems = useMemo(() => {
+      return [
+        <EuiContextMenuItem key="copy" icon="copy" onClick={toggleNodeCollapse}>
+          {'Collapse/Expand Children'}
+        </EuiContextMenuItem>,
+        <EuiContextMenuItem
+          key="edit"
+          icon="pencil"
+          onClick={() => userRequestedAdditionalProcessTree(id, nodeID, newEntityId, newAgentId)}
+        >
+          {'Open Additional Process Analyzer'}
+          <EuiFieldText
+            placeholder="Enter new entity ID"
+            value={newEntityId}
+            onChange={(e) => setNewEntityId(e.target.value)}
+          />
+          <EuiFieldText
+            placeholder="Enter new agent ID"
+            value={newAgentId}
+            onChange={(e) => setNewAgentId(e.target.value)}
+          />
+        </EuiContextMenuItem>,
+      ];
+    }, [
+      toggleNodeCollapse,
+      id,
+      nodeID,
+      newEntityId,
+      userRequestedAdditionalProcessTree,
+      newAgentId,
+    ]);
+
+    const collapsedProcessNodes = useSelector((state: State) =>
+      selectors.collapsedNodeIds(state.analyzer[id])
+    );
 
     /* eslint-disable jsx-a11y/click-events-have-key-events */
     return (
@@ -477,43 +581,60 @@ const UnstyledProcessEventDot = React.memo(
             onClick={handleClick}
             onFocus={handleFocus}
             tabIndex={-1}
-            style={{
-              backgroundColor: colorMap.resolverBackground,
-              alignSelf: 'flex-start',
-              padding: 0,
-              zIndex: 45,
-            }}
+            style={labelStyle}
           >
-            <EuiButton
-              iconSide={isNodeLoading ? 'right' : 'left'}
-              isLoading={isNodeLoading}
-              color={labelButtonFill}
-              fill={isLabelFilled}
-              iconType={nodeState === 'error' ? 'refresh' : ''}
-              size="s"
-              style={{
-                maxHeight: `${Math.min(26 + xScale * 3, 32)}px`,
-                maxWidth: `${isShowingEventActions ? 400 : 210 * xScale}px`,
-              }}
-              tabIndex={-1}
-              title={processName}
-              data-test-subj="resolver:node:primary-button"
-              data-test-resolver-node-id={nodeID}
-            >
-              <StyledEuiButtonContent
-                isShowingIcon={nodeState === 'loading' || nodeState === 'error'}
-                className="eui-textTruncate"
-                data-test-subj={'euiButton__text'}
-              >
-                {i18n.translate('xpack.securitySolution.resolver.node_button_name', {
-                  defaultMessage: `{nodeState, select, error {Reload {nodeName}} other {{nodeName}}}`,
-                  values: {
-                    nodeState,
-                    nodeName: processName,
-                  },
-                })}
-              </StyledEuiButtonContent>
-            </EuiButton>
+            <EuiFlexGroup gutterSize="xs" justifyContent="spaceBetween">
+              <EuiFlexItem grow={false}>
+                <EuiButton
+                  iconSide={isNodeLoading ? 'right' : 'left'}
+                  isLoading={isNodeLoading}
+                  color={labelButtonFill}
+                  fill={isLabelFilled}
+                  iconType={nodeState === 'error' ? 'refresh' : ''}
+                  size="s"
+                  style={processButtonStyle}
+                  tabIndex={-1}
+                  title={processName}
+                  data-test-subj="resolver:node:primary-button"
+                  data-test-resolver-node-id={nodeID}
+                >
+                  <StyledEuiButtonContent
+                    isShowingIcon={nodeState === 'loading' || nodeState === 'error'}
+                    className="eui-textTruncate"
+                    data-test-subj={'euiButton__text'}
+                  >
+                    {i18n.translate('xpack.securitySolution.resolver.node_button_name', {
+                      defaultMessage: `{nodeState, select, error {Reload {nodeName}} other {{nodeName}}}`,
+                      values: {
+                        nodeState,
+                        nodeName: processName,
+                      },
+                    })}
+                  </StyledEuiButtonContent>
+                </EuiButton>
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiPopover
+                  id={'id'}
+                  button={
+                    <EuiButtonIcon
+                      display="base"
+                      size="s"
+                      iconType="boxesVertical"
+                      aria-label="Node actions"
+                      data-test-subj="resolver:node:collapse-button"
+                      onClick={openPopover}
+                    />
+                  }
+                  isOpen={isPopoverOpen}
+                  closePopover={closePopover}
+                  panelPaddingSize="none"
+                  anchorPosition="downLeft"
+                >
+                  <EuiContextMenuPanel size="s" items={nodeActionItems} />
+                </EuiPopover>
+              </EuiFlexItem>
+            </EuiFlexGroup>
           </div>
           <EuiFlexGroup
             justifyContent="flexStart"
@@ -536,6 +657,16 @@ const UnstyledProcessEventDot = React.memo(
                 />
               )}
             </EuiFlexItem>
+            {collapsedProcessNodes.has(nodeID) && (
+              <EuiFlexItem grow={false}>
+                <EuiButtonIcon
+                  iconType="plusInCircle"
+                  aria-label="Expand node"
+                  onClick={() => toggleNodeCollapse()}
+                  data-test-subj="resolver:node:expand-button"
+                />
+              </EuiFlexItem>
+            )}
           </EuiFlexGroup>
         </StyledActionsContainer>
       </div>

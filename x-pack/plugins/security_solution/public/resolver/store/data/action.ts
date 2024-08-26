@@ -45,6 +45,65 @@ export const serverReturnedResolverData = actionCreator<{
   detectedBounds?: TimeFilters;
 }>('SERVER_RETURNED_RESOLVER_DATA');
 
+export const serverReturnedAdditionalTreeData = actionCreator<{
+  id: string;
+
+  result: NewResolverTree;
+
+  dataSource: string;
+
+  schema: ResolverSchema;
+
+  parameters: TreeFetcherParameters;
+
+  detectedBounds?: TimeFilters;
+}>('SERVER_RETURNED_ADDITIONAL_TREE_DATA');
+
+export const appRequestedAdditionalTreeData = actionCreator<{
+  /**
+   * Id that identifies the scope of analyzer
+   */
+  readonly id: string;
+  /**
+   * The entity ID of the node for which additional tree data is requested
+   */
+  readonly entityId: string;
+  /**
+   * The parameters used to fetch the additional tree data
+   */
+  readonly parameters: TreeFetcherParameters;
+}>('APP_REQUESTED_ADDITIONAL_TREE_DATA');
+
+export const serverFailedToReturnAdditionalTreeData = actionCreator<{
+  /**
+   * Id that identifies the scope of analyzer
+   */
+  readonly id: string;
+  /**
+   * The entity ID of the node for which additional tree data request failed
+   */
+  readonly entityId: string;
+  /**
+   * The parameters that were used to fetch the additional tree data
+   */
+  readonly parameters: TreeFetcherParameters;
+}>('SERVER_FAILED_TO_RETURN_ADDITIONAL_TREE_DATA');
+
+export const appAbortedAdditionalTreeDataRequest = actionCreator<{
+  /**
+   * Id that identifies the scope of analyzer
+   */
+  readonly id: string;
+  /**
+   * The entity ID of the node for which additional tree data request was aborted
+   */
+  readonly entityId: string;
+  /**
+   * The parameters that were used to fetch the additional tree data
+   */
+  readonly parameters: TreeFetcherParameters;
+}>('APP_ABORTED_ADDITIONAL_TREE_DATA_REQUEST');
+
 export const appRequestedNodeEventsInCategory = actionCreator<{
   /**
    * Id that identify the scope of analyzer
@@ -232,3 +291,15 @@ export const serverReturnedCurrentRelatedEventData = actionCreator<{
   readonly id: string;
   readonly relatedEvent: SafeResolverEvent;
 }>('SERVER_RETURNED_CURRENT_RELATED_EVENT_DATA');
+
+export const userToggledNodeCollpse = actionCreator<{
+  readonly id: string;
+  readonly nodeId: string;
+}>('USER_TOGGLED_NODE_COLLAPSE');
+
+export const userRequestedAdditionalTree = actionCreator<{
+  readonly id: string;
+  readonly entityId: string;
+  readonly newEntityId: string;
+  readonly newAgentId: string;
+}>('USER_REQUESTED_ADDITIONAL_TREE');

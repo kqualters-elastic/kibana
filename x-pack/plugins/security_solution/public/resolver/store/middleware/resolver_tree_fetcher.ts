@@ -22,6 +22,10 @@ import {
   serverFailedToReturnResolverData,
   appAbortedResolverDataRequest,
   serverReturnedResolverData,
+  appRequestedAdditionalTreeData,
+  serverReturnedAdditionalTreeData,
+  serverFailedToReturnAdditionalTreeData,
+  appAbortedAdditionalTreeDataRequest,
 } from '../data/action';
 import type { State } from '../../../common/store/types';
 
@@ -81,7 +85,6 @@ export function ResolverTreeFetcher(
           name: dataSource,
           agentId: dataSourceAgentId,
         } = matchingEntities[0]);
-
         databaseParameters = {
           ...databaseParameters,
           agentId: dataSourceAgentId ?? '',
@@ -167,6 +170,103 @@ export function ResolverTreeFetcher(
             serverFailedToReturnResolverData({
               id,
               parameters: databaseParameters,
+            })
+          );
+        }
+      }
+    }
+  };
+}
+
+export function AdditionalTreeFetcher(
+  dataAccessLayer: DataAccessLayer,
+  api: MiddlewareAPI<Dispatch, State>
+): (id: string) => void {
+  let lastRequestAbortController: AbortController | undefined;
+
+  return async (id: string) => {
+    const state = api.getState();
+    const additionalTreeRequest = selectors.additionalTreeRequestParameters(state.analyzer[id]);
+    const additionalResult = selectors.additionalResult(state.analyzer[id]);
+    const additionalTreeRequestStatus = selectors.additionalTreeRequestStatus(state.analyzer[id]);
+    const schema = {
+      id: 'process.entity_id',
+      parent: 'process.parent.entity_id',
+      ancestry: 'process.Ext.ancestry',
+      name: 'process.name',
+      agentId: 'agent.id',
+    };
+
+    if (
+      additionalTreeRequest &&
+      additionalTreeRequest.entityId &&
+      additionalTreeRequest.agentId &&
+      !additionalResult &&
+      !additionalTreeRequestStatus
+    ) {
+      if (lastRequestAbortController) {
+        lastRequestAbortController.abort();
+      }
+
+      lastRequestAbortController = new AbortController();
+
+      try {
+        api.dispatch(
+          appRequestedAdditionalTreeData({
+            id,
+            entityId: additionalTreeRequest.entityId,
+            parameters: {
+              ...additionalTreeRequest,
+              databaseDocumentID: additionalTreeRequest.entityId,
+            },
+          })
+        );
+
+        const result = await dataAccessLayer.resolverTree({
+          ...additionalTreeRequest,
+          dataId: additionalTreeRequest.entityId,
+          schema,
+          ancestors: 50,
+          descendants: 500,
+        });
+
+        api.dispatch(
+          serverReturnedAdditionalTreeData({
+            id,
+            result: {
+              originID: additionalTreeRequest.entityId,
+              nodes: result,
+            },
+            // entityId: additionalTreeRequest.entityId,
+            parameters: {
+              ...additionalTreeRequest,
+              databaseDocumentID: additionalTreeRequest.entityId,
+            },
+            dataSource: 'endpoint',
+            schema,
+          })
+        );
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          api.dispatch(
+            appAbortedAdditionalTreeDataRequest({
+              id,
+              entityId: additionalTreeRequest.entityId,
+              parameters: {
+                ...additionalTreeRequest,
+                databaseDocumentID: additionalTreeRequest.entityId,
+              },
+            })
+          );
+        } else {
+          api.dispatch(
+            serverFailedToReturnAdditionalTreeData({
+              id,
+              entityId: additionalTreeRequest.entityId,
+              parameters: {
+                ...additionalTreeRequest,
+                databaseDocumentID: additionalTreeRequest.entityId,
+              },
             })
           );
         }

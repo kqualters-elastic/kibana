@@ -4,7 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-
+import _ from 'lodash';
 import type {
   IndexedProcessTree,
   Vector2,
@@ -22,47 +22,127 @@ import * as vector2 from '../vector2';
 import * as indexedProcessTreeModel from '.';
 import { getFriendlyElapsedTime as elapsedTime } from '../../lib/date';
 
+class DeepEqualMap<K, V> {
+  private map = new Map<string, { key: K; value: V }>();
+
+  set(key: K, value: V): void {
+    this.map.set(JSON.stringify(key), { key, value });
+  }
+
+  get(key: K): V | undefined {
+    for (const [, entry] of this.map) {
+      if (_.isEqual(entry.key, key)) {
+        return entry.value;
+      }
+    }
+    return undefined;
+  }
+  [Symbol.iterator](): Iterator<[K, V]> {
+    const entries = Array.from(this.map.values());
+    let index = 0;
+
+    return {
+      next: (): IteratorResult<[K, V]> => {
+        if (index < entries.length) {
+          const entry = entries[index++];
+          return { value: [entry.key, entry.value], done: false };
+        } else {
+          return { value: undefined, done: true };
+        }
+      },
+    };
+  }
+
+  // Additional useful methods
+  keys(): IterableIterator<K> {
+    return this.map
+      .values()
+      [Symbol.iterator]()
+      .map((entry) => entry.key);
+  }
+
+  values(): IterableIterator<V> {
+    return this.map
+      .values()
+      [Symbol.iterator]()
+      .map((entry) => entry.value);
+  }
+
+  entries(): IterableIterator<[K, V]> {
+    return this[Symbol.iterator]();
+  }
+
+  size(): number {
+    return this.map.size;
+  }
+
+  clear(): void {
+    this.map.clear();
+  }
+
+  delete(key: K): boolean {
+    for (const [strKey, entry] of this.map) {
+      if (_.isEqual(entry.key, key)) {
+        return this.map.delete(strKey);
+      }
+    }
+    return false;
+  }
+}
 /**
  * Graph the process tree
  */
 export function isometricTaxiLayoutFactory(
-  indexedProcessTree: IndexedProcessTree
+  indexedProcessTree: IndexedProcessTree,
+  collapsedIds: Set<string>
 ): IsometricTaxiLayout {
+  // Create a new tree with collapsed nodes removed
+  const collapsedTree = removeCollapsedNodes(indexedProcessTree, collapsedIds);
+
   /**
    * Walk the tree in reverse level order, calculating the 'width' of subtrees.
    */
+  const newSubTreeWidths: Map<ResolverNode, number> = calculateSubTreeWidths(collapsedTree);
   const subTreeWidths: Map<ResolverNode, number> = calculateSubTreeWidths(indexedProcessTree);
 
   /**
    * Walk the tree in level order. Using the precalculated widths, calculate the position of nodes.
    * Nodes are positioned relative to their parents and preceding siblings.
    */
+  const newNodePositions: Map<ResolverNode, Vector2> = calculateNodePositions(
+    collapsedTree,
+    subTreeWidths
+  );
   const nodePositions: Map<ResolverNode, Vector2> = calculateNodePositions(
     indexedProcessTree,
-    subTreeWidths
+    newSubTreeWidths
   );
 
   /**
    * With the widths and positions precalculated, we calculate edge line segments (arrays of vector2s)
    * which connect them in a 'pitchfork' design.
    */
+  const newEdgeLineSegments: EdgeLineSegment[] = calculateEdgeLineSegments(
+    collapsedTree,
+    newSubTreeWidths,
+    newNodePositions
+  );
   const edgeLineSegments: EdgeLineSegment[] = calculateEdgeLineSegments(
     indexedProcessTree,
     subTreeWidths,
     nodePositions
   );
-
   /**
    * Transform the positions of nodes and edges so they seem like they are on an isometric grid.
    */
   const transformedEdgeLineSegments: EdgeLineSegment[] = [];
   const transformedPositions = new Map<ResolverNode, Vector2>();
 
-  for (const [node, position] of nodePositions) {
+  for (const [node, position] of newNodePositions) {
     transformedPositions.set(node, vector2.applyMatrix3(position, isometricTransformMatrix));
   }
 
-  for (const edgeLineSegment of edgeLineSegments) {
+  for (const edgeLineSegment of newEdgeLineSegments) {
     const {
       points: [startPoint, endPoint],
     } = edgeLineSegment;
@@ -81,7 +161,42 @@ export function isometricTaxiLayoutFactory(
   return {
     processNodePositions: transformedPositions,
     edgeLineSegments: transformedEdgeLineSegments,
-    ariaLevels: ariaLevels(indexedProcessTree),
+    ariaLevels: ariaLevels(collapsedTree),
+  };
+}
+
+// Helper function to remove collapsed nodes and their children
+function removeCollapsedNodes(
+  tree: IndexedProcessTree,
+  collapsedIds: Set<string>
+): IndexedProcessTree {
+  if (collapsedIds.size === 0) {
+    return tree;
+  }
+  const collapsedSet = new Set(collapsedIds);
+  const newIdToNode = new Map<string, ResolverNode>();
+
+  for (const [id, node] of tree.idToNode) {
+    let currentNode: ResolverNode | undefined = node;
+    let shouldKeep = true;
+
+    while (currentNode) {
+      const currentId = nodeModel.nodeID(currentNode);
+      if (currentId && collapsedSet.has(currentId)) {
+        shouldKeep = false;
+        break;
+      }
+      currentNode = indexedProcessTreeModel.parent(tree, currentNode);
+    }
+
+    if (shouldKeep) {
+      newIdToNode.set(id, node);
+    }
+  }
+
+  return {
+    ...tree,
+    idToNode: newIdToNode,
   };
 }
 
@@ -148,7 +263,7 @@ function ariaLevels(indexedProcessTree: IndexedProcessTree): Map<ResolverNode, n
  *
  */
 function calculateSubTreeWidths(indexedProcessTree: IndexedProcessTree): ProcessWidths {
-  const widths = new Map<ResolverNode, number>();
+  const widths = new DeepEqualMap<ResolverNode, number>();
 
   if (indexedProcessTreeModel.size(indexedProcessTree) === 0) {
     return widths;
@@ -207,6 +322,7 @@ function calculateEdgeLineSegments(
       throw new Error('tried to graph a Resolver that had a node with without an id');
     }
     const edgeLineID = `edge:${parentID ?? 'undefined'}:${nodeID}`;
+    // console.log({position, parentPosition, node, parent, positions, widths});
 
     if (position === undefined || parentPosition === undefined) {
       /**
@@ -314,7 +430,7 @@ function calculateNodePositions(
   indexedProcessTree: IndexedProcessTree,
   widths: ProcessWidths
 ): NodePositions {
-  const positions = new Map<ResolverNode, Vector2>();
+  const positions = new DeepEqualMap<ResolverNode, Vector2>();
   /**
    * This algorithm iterates the tree in level order. It keeps counters that are reset for each parent.
    * By keeping track of the last parent node, we can know when we are dealing with a new set of siblings and
@@ -342,7 +458,6 @@ function calculateNodePositions(
       positions.set(node, [0, 0]);
     } else {
       const { node, parent, isOnlyChild, width, parentWidth } = metadata;
-
       // Reinit counters when parent changes
       if (lastProcessedParentNode !== parent) {
         numberOfPrecedingSiblings = 0;
@@ -353,7 +468,6 @@ function calculateNodePositions(
       }
 
       const parentPosition = positions.get(parent);
-
       if (parentPosition === undefined) {
         /**
          * Since this algorithm populates the `positions` map in level order,
@@ -362,6 +476,7 @@ function calculateNodePositions(
          *
          * This will never happen.
          */
+
         throw new Error();
       }
 

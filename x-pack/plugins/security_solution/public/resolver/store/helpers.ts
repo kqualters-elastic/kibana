@@ -24,6 +24,7 @@ export const EMPTY_RESOLVER: ResolverState = {
     resolverComponentInstanceID: undefined,
     indices: [],
     detectedBounds: undefined,
+    collapsedNodeIds: new Set(),
   },
   camera: {
     scalingFactor: scaleToZoom(1), // Defaulted to 1 to 1 scale

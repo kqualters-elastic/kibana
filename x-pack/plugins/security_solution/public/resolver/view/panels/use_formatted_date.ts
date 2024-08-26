@@ -4,7 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-
+import { useMemo } from 'react';
 import { i18n } from '@kbn/i18n';
 import moment from 'moment-timezone';
 import { useUiSetting } from '@kbn/kibana-react-plugin/public';
@@ -40,16 +40,19 @@ export function useFormattedDate(
 ): string | undefined {
   const dateFormatSetting: string = useUiSetting('dateFormat');
   const timezoneSetting: string = useUiSetting('dateFormat:tz');
-  const usableTimezoneSetting = timezoneSetting === 'Browser' ? moment.tz.guess() : timezoneSetting;
+  return useMemo(() => {
+    const usableTimezoneSetting =
+      timezoneSetting === 'Browser' ? moment.tz.guess() : timezoneSetting;
 
-  if (!timestamp) return undefined;
+    if (!timestamp) return undefined;
 
-  const date = new Date(timestamp);
-  if (date && Number.isFinite(date.getTime())) {
-    return dateFormatSetting
-      ? moment.tz(date, usableTimezoneSetting).format(dateFormatSetting)
-      : formatter.format(date);
-  }
+    const date = new Date(timestamp);
+    if (date && Number.isFinite(date.getTime())) {
+      return dateFormatSetting
+        ? moment.tz(date, usableTimezoneSetting).format(dateFormatSetting)
+        : formatter.format(date);
+    }
 
-  return invalidDateText;
+    return invalidDateText;
+  }, [timestamp, dateFormatSetting, timezoneSetting]);
 }

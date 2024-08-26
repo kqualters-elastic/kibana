@@ -119,6 +119,70 @@ export function factory(
 }
 
 /**
+ * Merge a second process tree into the current tree
+ */
+export function mergeTree(
+  baseTree: IndexedProcessTree,
+  newTree: IndexedProcessTree,
+  attachmentNodeId: string
+): IndexedProcessTree {
+  const mergedTree: IndexedProcessTree = {
+    idToChildren: new Map(baseTree.idToChildren),
+    idToNode: new Map(baseTree.idToNode),
+    originID: baseTree.originID,
+    generations: baseTree.generations,
+    descendants: baseTree.descendants,
+    ancestors: baseTree.ancestors,
+  };
+  const rootId = root(newTree)?.id;
+
+  // Merge idToChildren
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  for (const [parentId, children] of newTree.idToChildren) {
+    const existingChildren = mergedTree.idToChildren.get(parentId) || [];
+    const newChildren = [...new Set([...existingChildren, ...children].map((node) => node.id))]
+      .map(
+        (id) =>
+          existingChildren.find((node) => node.id === id) || children.find((node) => node.id === id)
+      )
+      .filter((node) => node !== undefined) as ResolverNode[];
+    mergedTree.idToChildren.set(parentId, newChildren);
+  }
+
+  // Merge idToNode
+  for (const [nodeId, node] of newTree.idToNode) {
+    mergedTree.idToNode.set(nodeId, node);
+  }
+  if (rootId) {
+    // Connect the new tree to the attachment point
+    const attachmentNode = mergedTree.idToNode.get(String(rootId));
+    if (attachmentNode) {
+      // Create a new node with updated parent instead of modifying the existing one
+      const updatedNewRootNode = {
+        ...attachmentNode,
+        parent: attachmentNodeId,
+      };
+
+      // Update the node in the idToNode map
+      mergedTree.idToNode.set(String(rootId), updatedNewRootNode);
+
+      // Add the updated new root as a child of the attachment node
+      const attachmentChildren = mergedTree.idToChildren.get(attachmentNodeId) || [];
+      const newAttachmentChildren = [...attachmentChildren, updatedNewRootNode];
+      mergedTree.idToChildren.set(attachmentNodeId, newAttachmentChildren);
+    }
+  }
+
+  // Recalculate generations, descendants, and ancestors
+  const recalculatedTree = factory(Array.from(mergedTree.idToNode.values()), mergedTree.originID);
+  mergedTree.generations = recalculatedTree.generations;
+  mergedTree.descendants = recalculatedTree.descendants;
+  mergedTree.ancestors = recalculatedTree.ancestors;
+
+  return mergedTree;
+}
+
+/**
  * Returns an array with any children `ProcessEvent`s of the passed in `process`
  */
 export function children(tree: IndexedProcessTree, parentID: string | undefined): ResolverNode[] {

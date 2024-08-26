@@ -381,6 +381,43 @@ export interface DataState {
    */
   readonly locationSearch?: string;
 
+  readonly collapsedNodeIds: Set<string>;
+
+  readonly additionalFetchParameters?: TreeFetcherParameters;
+
+  readonly additionalTreeAttachmentNodeId?: string;
+
+  readonly additionalResult?:
+    | {
+        /**
+         * If a response with a success code was received, this is `true`.
+         */
+        readonly successful: true;
+        /**
+         * The NewResolverTree parsed from the response.
+         */
+        readonly result: NewResolverTree;
+        /**
+         * The current data source (i.e. endpoint, winlogbeat, etc...)
+         */
+        readonly dataSource: string;
+        /**
+         * The Resolver Schema for the current data source
+         */
+        readonly schema: ResolverSchema;
+      }
+    | {
+        /**
+         * If the request threw an exception or the response had a failure code, this will be false.
+         */
+        readonly successful: false;
+      };
+  readonly additionalTreeRequestStatus?: {
+    readonly loading: boolean;
+    readonly entityId: string;
+    readonly parameters: TreeFetcherParameters;
+  };
+
   /**
    * The additional data for each node in the graph. For an Endpoint graph the data will be
    * process lifecycle events.

@@ -39,6 +39,8 @@ export const projectionMatrix = composeSelectors(
   cameraSelectors.projectionMatrix
 );
 
+export const collapsedNodeIds = composeSelectors(dataStateSelector, dataSelectors.collapsedNodeIds);
+
 export const translation = composeSelectors(cameraStateSelector, cameraSelectors.translation);
 
 export const detectedBounds = composeSelectors(dataStateSelector, dataSelectors.detectedBounds);
@@ -62,6 +64,25 @@ export const currentAppliedTimeRange = composeSelectors(
 export const inverseProjectionMatrix = composeSelectors(
   cameraStateSelector,
   cameraSelectors.inverseProjectionMatrix
+);
+
+export const additionalTreeRequestParameters = composeSelectors(
+  dataStateSelector,
+  dataSelectors.additionalTreeRequestParameters
+);
+
+export const additionalResult = composeSelectors(dataStateSelector, dataSelectors.additionalResult);
+
+export const additionalTreeRequestStatus = composeSelectors(
+  dataStateSelector,
+  dataSelectors.additionalTreeRequestStatus
+);
+
+export const mergedTree = composeSelectors(dataStateSelector, dataSelectors.tree);
+
+export const additionalTreeIds = composeSelectors(
+  dataStateSelector,
+  dataSelectors.additionalTreeIds
 );
 
 /**

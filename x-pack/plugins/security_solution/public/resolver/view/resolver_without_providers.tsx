@@ -72,6 +72,11 @@ export const ResolverWithoutProviders = React.memo(
       selectors.visibleNodesAndEdgeLines(state.analyzer[resolverComponentInstanceID])(timeAtRender)
     );
 
+    const mergedTree = useSelector((state: State) =>
+      selectors.mergedTree(state.analyzer[resolverComponentInstanceID])
+    );
+    // console.log('mergedTree', mergedTree);
+
     const {
       projectionMatrix,
       ref: cameraRef,

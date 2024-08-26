@@ -150,6 +150,10 @@ export interface ResolverNode {
   name?: string;
   stats: EventStats;
   agentId?: string;
+  // true if the process has children
+  isCollapsible?: boolean;
+  // true if the process is collapsed, defaults to false
+  isCollapsed?: boolean;
 }
 
 /**

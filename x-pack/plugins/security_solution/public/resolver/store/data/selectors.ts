@@ -182,7 +182,7 @@ export const graphableNodes = createSelector(resolverTreeResponse, function (tre
   }
 });
 
-const tree = createSelector(
+const baseTree = createSelector(
   graphableNodes,
   originID,
   function indexedProcessTree(
@@ -191,6 +191,114 @@ const tree = createSelector(
     currentOriginID
   ) {
     return indexedProcessTreeModel.factory(graphableNodes, currentOriginID);
+  }
+);
+
+/**
+ * Selector to retrieve the additional tree request parameters.
+ * This selector returns the parameters for fetching additional tree data,
+ * including the entity ID, data source, schema, and other necessary parameters.
+ */
+export const additionalTreeRequestParameters = createSelector(
+  (state: DataState) => state.additionalFetchParameters,
+  (parameters) => {
+    if (parameters) {
+      return {
+        entityId: parameters.databaseDocumentID,
+        indices: parameters.indices,
+        filters: parameters.filters,
+        agentId: parameters.agentId,
+      };
+    }
+    return null;
+  }
+);
+
+/**
+ * Selector to retrieve the status of the additional tree request.
+ * This selector returns information about the loading state, entity ID,
+ * and parameters of the ongoing additional tree data request.
+ */
+export const additionalTreeRequestStatus = createSelector(
+  (state: DataState) => state.additionalTreeRequestStatus,
+  (status) => {
+    if (status) {
+      return {
+        loading: status.loading,
+        entityId: status.entityId,
+        parameters: status.parameters,
+      };
+    }
+    return null;
+  }
+);
+
+/**
+ * Selector to retrieve the additional result data.
+ * This selector returns the additional tree data fetched for a specific entity,
+ * including the origin ID, nodes, parameters, data source, and schema.
+ */
+export const additionalResult = createSelector(
+  (state: DataState) => state.additionalResult,
+  additionalTreeRequestParameters,
+  (result, parameters) => {
+    if (result && result.successful) {
+      const {
+        // eslint-disable-next-line @typescript-eslint/no-shadow
+        result: { nodes, originID },
+      } = result;
+      return {
+        originID,
+        nodes,
+        // parameters,
+        // dataSource,
+        // schema,
+      };
+    }
+    return null;
+  }
+);
+
+const additionalTreeAttachmentNodeId = (state: DataState) => {
+  return state.additionalTreeAttachmentNodeId;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-shadow
+const additionalTree = createSelector(additionalResult, (additionalResult) => {
+  if (additionalResult) {
+    return indexedProcessTreeModel.factory(additionalResult.nodes, additionalResult.originID);
+  }
+  return null;
+});
+
+// eslint-disable-next-line @typescript-eslint/no-shadow
+export const baseTreeIds = createSelector(baseTree, (baseTree) => {
+  return baseTree.idToNode.keys();
+});
+
+// eslint-disable-next-line @typescript-eslint/no-shadow
+export const additionalTreeIds = createSelector(additionalTree, (additionalTree) => {
+  if (additionalTree) {
+    return new Set([...additionalTree?.idToNode.keys()]);
+  }
+  return new Set();
+});
+
+export const tree = createSelector(
+  baseTree,
+  additionalTree,
+  additionalTreeAttachmentNodeId,
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  (resolverTree, additionalTree, additionalTreeAttachmentNodeId) => {
+    if (additionalTree && additionalTreeAttachmentNodeId) {
+      const newTree = indexedProcessTreeModel.mergeTree(
+        resolverTree,
+        additionalTree,
+        additionalTreeAttachmentNodeId
+      );
+      return newTree;
+    }
+    return resolverTree;
   }
 );
 
@@ -365,12 +473,24 @@ export const eventIndices = createSelector(
   }
 );
 
+export const collapsedNodeIds = (state: DataState) => {
+  return state.collapsedNodeIds;
+};
+
 export const layout: (state: DataState) => IsometricTaxiLayout = createSelector(
   tree,
   originID,
-  function processNodePositionsAndEdgeLineSegments(indexedProcessTree, currentOriginID) {
+  collapsedNodeIds,
+  function processNodePositionsAndEdgeLineSegments(
+    indexedProcessTree,
+    currentOriginID,
+    collapsedIds
+  ) {
     // use the isometric taxi layout as a base
-    const taxiLayout = isometricTaxiLayoutModel.isometricTaxiLayoutFactory(indexedProcessTree);
+    const taxiLayout = isometricTaxiLayoutModel.isometricTaxiLayoutFactory(
+      indexedProcessTree,
+      collapsedIds
+    );
     if (!currentOriginID) {
       // no data has loaded.
       return taxiLayout;

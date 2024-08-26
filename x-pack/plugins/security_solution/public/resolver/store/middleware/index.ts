@@ -7,7 +7,7 @@
 
 import type { Dispatch, MiddlewareAPI, AnyAction } from 'redux';
 import type { DataAccessLayer } from '../../types';
-import { ResolverTreeFetcher } from './resolver_tree_fetcher';
+import { ResolverTreeFetcher, AdditionalTreeFetcher } from './resolver_tree_fetcher';
 import type { State } from '../../../common/store/types';
 import { RelatedEventsFetcher } from './related_events_fetcher';
 import { CurrentRelatedEventFetcher } from './current_related_event_fetcher';
@@ -52,7 +52,7 @@ export const resolverMiddlewareFactory: MiddlewareFactory = (dataAccessLayer: Da
     const relatedEventsFetcher = RelatedEventsFetcher(dataAccessLayer, api);
     const currentRelatedEventFetcher = CurrentRelatedEventFetcher(dataAccessLayer, api);
     const nodeDataFetcher = NodeDataFetcher(dataAccessLayer, api);
-
+    const additionalTreeFetcher = AdditionalTreeFetcher(dataAccessLayer, api);
     return async (action: AnyAction) => {
       next(action);
 
@@ -61,6 +61,7 @@ export const resolverMiddlewareFactory: MiddlewareFactory = (dataAccessLayer: Da
         relatedEventsFetcher(action.payload.id);
         nodeDataFetcher(action.payload.id);
         currentRelatedEventFetcher(action.payload.id);
+        additionalTreeFetcher(action.payload.id);
       }
     };
   };

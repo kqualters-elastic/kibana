@@ -20,6 +20,8 @@ export function useSymbolIDs({ id }: { id: string }) {
       runningTriggerCube: `${prefix}-runningTriggerCube`,
       terminatedProcessCube: `${prefix}-terminatedCube`,
       terminatedTriggerCube: `${prefix}-terminatedTriggerCube`,
+      secondaryProcessCube: `${prefix}-secondaryProcessCube`,
+      secondaryTriggerCube: `${prefix}-secondaryTriggerCube`,
       processCubeActiveBacking: `${prefix}-activeBacking`,
       loadingCube: `${prefix}-loadingCube`,
       errorCube: `${prefix}-errorCube`,

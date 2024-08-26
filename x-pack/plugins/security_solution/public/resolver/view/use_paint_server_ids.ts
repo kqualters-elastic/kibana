@@ -20,6 +20,8 @@ export function usePaintServerIDs({ id }: { id: string }) {
       runningTriggerCube: `${prefix}-psRunningTriggerCube`,
       terminatedProcessCube: `${prefix}-psTerminatedProcessCube`,
       terminatedTriggerCube: `${prefix}-psTerminatedTriggerCube`,
+      secondaryProcessCube: `${prefix}-psSecondaryProcessCube`,
+      secondaryTriggerCube: `${prefix}-psSecondaryTriggerCube`,
       loadingCube: `${prefix}-psLoadingCube`,
       errorCube: `${prefix}-psErrorCube`,
     };
