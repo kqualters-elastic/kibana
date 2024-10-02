@@ -200,16 +200,19 @@ export class Authorization {
   private async _ensureAuthorized(owners: string[], operation: OperationDetails) {
     const { securityAuth } = this;
     const areAllOwnersAvailable = owners.every((owner) => this.featureCaseOwners.has(owner));
+    console.log(areAllOwnersAvailable);
 
     if (securityAuth && this.shouldCheckAuthorization()) {
-      const requiredPrivileges: string[] = owners.map((owner) =>
-        securityAuth.actions.cases.get(owner, operation.name)
-      );
+      const requiredPrivileges: string[] = owners.map((owner) => {
+        console.log(securityAuth.actions.cases.get(owner, operation.name), owner, operation.name);
+        return securityAuth.actions.cases.get(owner, operation.name);
+      });
 
       const checkPrivileges = securityAuth.checkPrivilegesDynamicallyWithRequest(this.request);
       const { hasAllRequested } = await checkPrivileges({
         kibana: requiredPrivileges,
       });
+      console.log(hasAllRequested);
 
       if (!areAllOwnersAvailable) {
         /**

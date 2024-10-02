@@ -182,6 +182,14 @@ const CaseOperations = {
     docType: 'cases',
     savedObjectType: CASE_SAVED_OBJECT,
   },
+  [WriteOperations.ReopenCase]: {
+    ecsType: EVENT_TYPES.change,
+    name: WriteOperations.ReopenCase as const,
+    action: 'reopen_cases',
+    verbs: updateVerbs,
+    documentType: 'case',
+    savedObjectType: CASE_SAVED_OBJECT,
+  },
 };
 
 const ConfigurationOperations = {

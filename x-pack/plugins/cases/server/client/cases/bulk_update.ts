@@ -328,6 +328,7 @@ export const bulkUpdate = async (
   } = clientArgs;
 
   try {
+    console.log(cases.cases);
     const query = decodeWithExcessOrThrow(CasesPatchRequestRt)(cases);
     const caseIds = query.cases.map((q) => q.id);
     const myCases = await caseService.getCases({
@@ -349,10 +350,17 @@ export const bulkUpdate = async (
       query.cases
     );
 
-    await authorization.ensureAuthorized({
-      entities: casesToAuthorize,
-      operation: Operations.updateCase,
-    });
+    if (cases.cases.every((c) => c.status !== undefined)) {
+      await authorization.ensureAuthorized({
+        entities: casesToAuthorize,
+        operation: Operations.reopenCases,
+      });
+    } else {
+      await authorization.ensureAuthorized({
+        entities: casesToAuthorize,
+        operation: Operations.updateCase,
+      });
+    }
 
     if (nonExistingCases.length > 0) {
       throw Boom.notFound(

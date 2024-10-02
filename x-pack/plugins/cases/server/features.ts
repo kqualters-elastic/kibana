@@ -12,7 +12,14 @@ import { hiddenTypes as filesSavedObjectTypes } from '@kbn/files-plugin/server/s
 import { DEFAULT_APP_CATEGORIES } from '@kbn/core/server';
 
 import { KibanaFeatureScope } from '@kbn/features-plugin/common';
-import { APP_ID, FEATURE_ID } from '../common/constants';
+import {
+  APP_ID,
+  FEATURE_ID,
+  CASE_COMMENT_SAVED_OBJECT,
+  REOPEN_CASES_CAPABILITY,
+  COMMENT_CASES_CAPABILITY,
+  CASE_SAVED_OBJECT,
+} from '../common/constants';
 import { createUICapabilities, getApiTags } from '../common';
 
 /**
@@ -26,7 +33,7 @@ const FEATURE_ORDER = 3100;
 export const getCasesKibanaFeature = (): KibanaFeatureConfig => {
   const capabilities = createUICapabilities();
   const apiTags = getApiTags(APP_ID);
-
+  // TODO: first place cases perms are defined
   return {
     id: FEATURE_ID,
     name: i18n.translate('xpack.cases.features.casesFeatureName', {
@@ -124,6 +131,62 @@ export const getCasesKibanaFeature = (): KibanaFeatureConfig => {
                   settings: [APP_ID],
                 },
                 ui: capabilities.settings,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: i18n.translate('xpack.cases.features.addCommentsSubFeatureName', {
+          defaultMessage: 'Add comments',
+        }),
+        privilegeGroups: [
+          {
+            groupType: 'independent',
+            privileges: [
+              {
+                api: apiTags.addComment,
+                id: COMMENT_CASES_CAPABILITY,
+                name: i18n.translate('xpack.cases.features.addCommentsSubFeatureDetails', {
+                  defaultMessage: 'Add comments to cases',
+                }),
+                includeIn: 'all',
+                savedObject: {
+                  all: [CASE_COMMENT_SAVED_OBJECT],
+                  read: [CASE_COMMENT_SAVED_OBJECT],
+                },
+                cases: {
+                  delete: [APP_ID],
+                },
+                ui: capabilities.comment,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: i18n.translate('xpack.cases.features.reopenCasesSubFeatureName', {
+          defaultMessage: 'Change cases status',
+        }),
+        privilegeGroups: [
+          {
+            groupType: 'independent',
+            privileges: [
+              {
+                api: apiTags.changeStatus,
+                id: REOPEN_CASES_CAPABILITY,
+                name: i18n.translate('xpack.cases.features.reopenCasesSubFeatureDetails', {
+                  defaultMessage: 'Change the status of a case',
+                }),
+                includeIn: 'all',
+                savedObject: {
+                  all: [CASE_SAVED_OBJECT],
+                  read: [CASE_SAVED_OBJECT],
+                },
+                cases: {
+                  delete: [APP_ID],
+                },
+                ui: capabilities.reopen,
               },
             ],
           },

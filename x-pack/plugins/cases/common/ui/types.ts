@@ -305,6 +305,8 @@ export interface CasesPermissions {
   push: boolean;
   connectors: boolean;
   settings: boolean;
+  reopen: boolean;
+  comment: boolean;
 }
 
 export interface CasesCapabilities {
