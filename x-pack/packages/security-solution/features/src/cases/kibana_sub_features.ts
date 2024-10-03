@@ -44,7 +44,7 @@ export const getCasesSubFeaturesMap = ({
             name: i18n.translate(
               'securitySolutionPackages.features.featureRegistry.deleteSubFeatureDetails',
               {
-                defaultMessage: 'wtf lol Delete cases and comments',
+                defaultMessage: 'Delete cases and comments',
               }
             ),
             includeIn: 'all',
@@ -78,7 +78,7 @@ export const getCasesSubFeaturesMap = ({
             name: i18n.translate(
               'securitySolutionPackages.features.featureRegistry.casesSettingsSubFeatureDetails',
               {
-                defaultMessage: 'wtf Edit case settings',
+                defaultMessage: 'Edit case settings',
               }
             ),
             includeIn: 'all',
