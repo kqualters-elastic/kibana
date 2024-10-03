@@ -151,6 +151,14 @@ function mergeWithSubFeatures(
         mergedConfig.cases?.settings ?? [],
         subFeaturePrivilege.cases?.settings ?? []
       ),
+      createComment: mergeArrays(
+        mergedConfig.cases?.createComment ?? [],
+        subFeaturePrivilege.cases?.createComment ?? []
+      ),
+      reopen: mergeArrays(
+        mergedConfig.cases?.reopen ?? [],
+        subFeaturePrivilege.cases?.reopen ?? []
+      ),
     };
   }
   return mergedConfig;

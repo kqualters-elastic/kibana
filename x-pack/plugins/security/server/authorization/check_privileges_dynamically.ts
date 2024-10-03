@@ -27,7 +27,6 @@ export function checkPrivilegesDynamicallyWithRequestFactory(
       options?: CheckPrivilegesOptions
     ) {
       const spacesService = getSpacesService();
-      console.log(privileges);
       return spacesService
         ? await checkPrivileges.atSpace(spacesService.getSpaceId(request), privileges, options)
         : await checkPrivileges.globally(privileges, options);

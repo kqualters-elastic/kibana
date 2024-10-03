@@ -34,6 +34,7 @@ const readOperations = [
 const updateOperations = ['updateCase', 'updateComment'] as const;
 const deleteOperations = ['deleteCase', 'deleteComment'] as const;
 const settingsOperations = ['createConfiguration', 'updateConfiguration'] as const;
+const createCommentOperations = ['createComment'] as const;
 const allOperations = [
   ...pushOperations,
   ...createOperations,
@@ -41,6 +42,7 @@ const allOperations = [
   ...updateOperations,
   ...deleteOperations,
   ...settingsOperations,
+  ...createCommentOperations,
 ] as const;
 
 export class FeaturePrivilegeCasesBuilder extends BaseFeaturePrivilegeBuilder {
@@ -56,7 +58,6 @@ export class FeaturePrivilegeCasesBuilder extends BaseFeaturePrivilegeBuilder {
         operations.map((operation) => this.actions.cases.get(owner, operation))
       );
     };
-
     return uniq([
       ...getCasesPrivilege(allOperations, privilegeDefinition.cases?.all),
       ...getCasesPrivilege(pushOperations, privilegeDefinition.cases?.push),
@@ -65,6 +66,8 @@ export class FeaturePrivilegeCasesBuilder extends BaseFeaturePrivilegeBuilder {
       ...getCasesPrivilege(updateOperations, privilegeDefinition.cases?.update),
       ...getCasesPrivilege(deleteOperations, privilegeDefinition.cases?.delete),
       ...getCasesPrivilege(settingsOperations, privilegeDefinition.cases?.settings),
+      ...getCasesPrivilege(createCommentOperations, privilegeDefinition.cases?.createComment),
+      ...getCasesPrivilege(updateOperations, privilegeDefinition.cases?.reopen),
     ]);
   }
 }

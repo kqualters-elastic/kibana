@@ -187,7 +187,7 @@ const CaseOperations = {
     name: WriteOperations.ReopenCase as const,
     action: 'reopen_cases',
     verbs: updateVerbs,
-    documentType: 'case',
+    docType: 'case',
     savedObjectType: CASE_SAVED_OBJECT,
   },
 };

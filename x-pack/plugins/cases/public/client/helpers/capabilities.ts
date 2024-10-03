@@ -29,10 +29,18 @@ export const getUICapabilities = (
   const connectors = !!featureCapabilities?.[CASES_CONNECTORS_CAPABILITY];
   const settings = !!featureCapabilities?.[CASES_SETTINGS_CAPABILITY];
   const reopen = !!featureCapabilities?.[REOPEN_CASES_CAPABILITY];
-  const comment = !!featureCapabilities?.[COMMENT_CASES_CAPABILITY];
+  const createComment = !!featureCapabilities?.[COMMENT_CASES_CAPABILITY];
 
   const all =
-    create && read && update && deletePriv && push && connectors && settings && reopen && comment;
+    create &&
+    read &&
+    update &&
+    deletePriv &&
+    push &&
+    connectors &&
+    settings &&
+    reopen &&
+    createComment;
 
   return {
     all,
@@ -44,6 +52,6 @@ export const getUICapabilities = (
     connectors,
     settings,
     reopen,
-    comment,
+    createComment,
   };
 };

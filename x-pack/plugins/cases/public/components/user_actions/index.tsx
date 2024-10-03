@@ -111,7 +111,8 @@ export const UserActions = React.memo((props: UserActionTreeProps) => {
   const { permissions } = useCasesContext();
 
   // add-comment markdown is not visible in History filter
-  const showCommentEditor = permissions.create && userActivityQueryParams.type !== 'action';
+  const showCommentEditor =
+    (permissions.create && userActivityQueryParams.type !== 'action') || permissions.createComment;
 
   const {
     commentRefs,

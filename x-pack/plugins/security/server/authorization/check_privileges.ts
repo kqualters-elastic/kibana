@@ -106,8 +106,11 @@ export function checkPrivilegesFactory(
         privileges.kibana ?? [],
         { requireLoginAction }
       );
-
+      // console.log(applicationPrivilegesCheck);
       const clusterClient = await getClusterClient();
+      console.log({
+        applicationPrivilegesCheck,
+      });
       const body = await clusterClient.asScoped(request).asCurrentUser.security.hasPrivileges({
         body: {
           cluster: privileges.elasticsearch?.cluster as estypes.SecurityClusterPrivilege[],
@@ -129,7 +132,7 @@ export function checkPrivilegesFactory(
         applicationPrivilegesCheck.privileges,
         resources
       );
-
+      // console.log(applicationPrivilegesCheck.privileges, hasPrivilegesResponse);
       const applicationPrivilegesResponse = hasPrivilegesResponse.application[applicationName];
 
       const clusterPrivilegesResponse = hasPrivilegesResponse.cluster ?? {};

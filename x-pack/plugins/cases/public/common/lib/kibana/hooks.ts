@@ -194,7 +194,7 @@ export const useApplicationCapabilities = (): UseApplicationCapabilities => {
         connectors: permissions.connectors,
         settings: permissions.settings,
         reopen: permissions.reopen,
-        comment: permissions.comment,
+        createComment: permissions.createComment,
       },
       visualize: { crud: !!capabilities.visualize?.save, read: !!capabilities.visualize?.show },
       dashboard: {
@@ -218,7 +218,7 @@ export const useApplicationCapabilities = (): UseApplicationCapabilities => {
       permissions.connectors,
       permissions.settings,
       permissions.reopen,
-      permissions.comment,
+      permissions.createComment,
     ]
   );
 };

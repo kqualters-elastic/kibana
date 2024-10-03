@@ -15,10 +15,8 @@ import { KibanaFeatureScope } from '@kbn/features-plugin/common';
 import {
   APP_ID,
   FEATURE_ID,
-  CASE_COMMENT_SAVED_OBJECT,
   REOPEN_CASES_CAPABILITY,
   COMMENT_CASES_CAPABILITY,
-  CASE_SAVED_OBJECT,
 } from '../common/constants';
 import { createUICapabilities, getApiTags } from '../common';
 
@@ -145,20 +143,20 @@ export const getCasesKibanaFeature = (): KibanaFeatureConfig => {
             groupType: 'independent',
             privileges: [
               {
-                api: apiTags.addComment,
+                api: apiTags.all,
                 id: COMMENT_CASES_CAPABILITY,
                 name: i18n.translate('xpack.cases.features.addCommentsSubFeatureDetails', {
                   defaultMessage: 'Add comments to cases',
                 }),
                 includeIn: 'all',
                 savedObject: {
-                  all: [CASE_COMMENT_SAVED_OBJECT],
-                  read: [CASE_COMMENT_SAVED_OBJECT],
+                  all: [],
+                  read: [],
                 },
                 cases: {
-                  delete: [APP_ID],
+                  create: [APP_ID],
                 },
-                ui: capabilities.comment,
+                ui: capabilities.createComment,
               },
             ],
           },
@@ -166,25 +164,25 @@ export const getCasesKibanaFeature = (): KibanaFeatureConfig => {
       },
       {
         name: i18n.translate('xpack.cases.features.reopenCasesSubFeatureName', {
-          defaultMessage: 'Change cases status',
+          defaultMessage: 'Reopen Closed Cases',
         }),
         privilegeGroups: [
           {
             groupType: 'independent',
             privileges: [
               {
-                api: apiTags.changeStatus,
+                api: apiTags.all,
                 id: REOPEN_CASES_CAPABILITY,
                 name: i18n.translate('xpack.cases.features.reopenCasesSubFeatureDetails', {
-                  defaultMessage: 'Change the status of a case',
+                  defaultMessage: 'Reopen closed cases',
                 }),
                 includeIn: 'all',
                 savedObject: {
-                  all: [CASE_SAVED_OBJECT],
-                  read: [CASE_SAVED_OBJECT],
+                  all: [],
+                  read: [],
                 },
                 cases: {
-                  delete: [APP_ID],
+                  update: [APP_ID],
                 },
                 ui: capabilities.reopen,
               },

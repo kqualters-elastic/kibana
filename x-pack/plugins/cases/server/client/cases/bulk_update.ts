@@ -328,8 +328,8 @@ export const bulkUpdate = async (
   } = clientArgs;
 
   try {
-    console.log(cases.cases);
-    const query = decodeWithExcessOrThrow(CasesPatchRequestRt)(cases);
+    //const query = decodeWithExcessOrThrow(CasesPatchRequestRt)(cases);
+    const query = cases;
     const caseIds = query.cases.map((q) => q.id);
     const myCases = await caseService.getCases({
       caseIds,
@@ -349,7 +349,6 @@ export const bulkUpdate = async (
       casesMap,
       query.cases
     );
-
     if (cases.cases.every((c) => c.status !== undefined)) {
       await authorization.ensureAuthorized({
         entities: casesToAuthorize,
@@ -370,13 +369,13 @@ export const bulkUpdate = async (
       );
     }
 
-    if (conflictedCases.length > 0) {
-      throw Boom.conflict(
-        `These cases ${conflictedCases
-          .map((c) => c.id)
-          .join(', ')} has been updated. Please refresh before saving additional updates.`
-      );
-    }
+    // if (conflictedCases.length > 0) {
+    //   throw Boom.conflict(
+    //     `These cases ${conflictedCases
+    //       .map((c) => c.id)
+    //       .join(', ')} has been updated. Please refresh before saving additional updates.`
+    //   );
+    // }
 
     const configurations = await casesClient.configure.get();
     const customFieldsConfigurationMap: Map<string, CustomFieldsConfiguration> = new Map(
