@@ -8,7 +8,7 @@
 import util from 'util';
 import { isEqual, isEqualWith } from 'lodash';
 import expect from '@kbn/expect';
-import { RawKibanaPrivileges } from '@kbn/security-plugin/common/model';
+import { RawKibanaPrivileges } from '@kbn/security-plugin-types-common';
 import { FtrProviderContext } from '../../ftr_provider_context';
 
 export default function ({ getService }: FtrProviderContext) {
@@ -32,6 +32,16 @@ export default function ({ getService }: FtrProviderContext) {
         'create_comment',
         'case_reopen',
       ],
+      generalCasesV2: [
+        'all',
+        'read',
+        'minimal_all',
+        'minimal_read',
+        'cases_delete_v2',
+        'cases_settings_v2',
+        'create_comment',
+        'case_reopen',
+      ],
       observabilityCases: [
         'all',
         'read',
@@ -39,6 +49,16 @@ export default function ({ getService }: FtrProviderContext) {
         'minimal_read',
         'cases_delete',
         'cases_settings',
+        'create_comment',
+        'case_reopen',
+      ],
+      observabilityCasesV2: [
+        'all',
+        'read',
+        'minimal_all',
+        'minimal_read',
+        'cases_delete_v2',
+        'cases_settings_v2',
         'create_comment',
         'case_reopen',
       ],
@@ -94,6 +114,16 @@ export default function ({ getService }: FtrProviderContext) {
         'create_comment',
         'case_reopen',
       ],
+      securitySolutionCasesV2: [
+        'all',
+        'read',
+        'minimal_all',
+        'minimal_read',
+        'cases_delete_v2',
+        'cases_settings_v2',
+        'create_comment',
+        'case_reopen',
+      ],
       infrastructure: ['all', 'read', 'minimal_all', 'minimal_read'],
       logs: ['all', 'read', 'minimal_all', 'minimal_read'],
       apm: ['all', 'read', 'minimal_all', 'minimal_read'],
@@ -118,7 +148,7 @@ export default function ({ getService }: FtrProviderContext) {
       advancedSettings: ['all', 'read', 'minimal_all', 'minimal_read'],
       indexPatterns: ['all', 'read', 'minimal_all', 'minimal_read'],
       savedObjectsManagement: ['all', 'read', 'minimal_all', 'minimal_read'],
-      savedQueryManagement: ['all', 'minimal_all'],
+      savedQueryManagement: ['all', 'read', 'minimal_all', 'minimal_read'],
       osquery: [
         'all',
         'read',

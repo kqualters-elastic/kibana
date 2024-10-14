@@ -14,9 +14,10 @@ import { DEFAULT_APP_CATEGORIES } from '@kbn/core/server';
 import { KibanaFeatureScope } from '@kbn/features-plugin/common';
 import {
   APP_ID,
-  FEATURE_ID,
   CASES_REOPEN_CAPABILITY,
   CREATE_COMMENT_CAPABILITY,
+  FEATURE_ID,
+  FEATURE_ID_V2,
 } from '../common/constants';
 import { createUICapabilities, getApiTags } from '../common';
 
@@ -33,9 +34,20 @@ export const getCasesKibanaFeature = (): KibanaFeatureConfig => {
   const apiTags = getApiTags(APP_ID);
 
   return {
+    deprecated: {
+      // TODO: Add docLinks to link to documentation about the deprecation
+      notice: i18n.translate('xpack.cases.features.casesFeature.deprecationMessage', {
+        defaultMessage:
+          'The {currentId} permissions are deprecated, please see {casesFeatureIdV2}.',
+        values: {
+          currentId: FEATURE_ID,
+          casesFeatureIdV2: FEATURE_ID_V2,
+        },
+      }),
+    },
     id: FEATURE_ID,
-    name: i18n.translate('xpack.cases.features.casesFeatureName', {
-      defaultMessage: 'Cases',
+    name: i18n.translate('xpack.cases.features.casesFeatureNameDeprecated', {
+      defaultMessage: 'Cases (Deprecated)',
     }),
     category: DEFAULT_APP_CATEGORIES.management,
     scope: [KibanaFeatureScope.Spaces, KibanaFeatureScope.Security],
@@ -62,6 +74,7 @@ export const getCasesKibanaFeature = (): KibanaFeatureConfig => {
           read: [...filesSavedObjectTypes],
         },
         ui: capabilities.all,
+        replacedBy: [{ feature: FEATURE_ID_V2, privileges: ['all'] }],
       },
       read: {
         api: apiTags.read,
@@ -76,6 +89,7 @@ export const getCasesKibanaFeature = (): KibanaFeatureConfig => {
           read: [...filesSavedObjectTypes],
         },
         ui: capabilities.read,
+        replacedBy: [{ feature: FEATURE_ID_V2, privileges: ['read'] }],
       },
     },
     subFeatures: [
@@ -102,6 +116,7 @@ export const getCasesKibanaFeature = (): KibanaFeatureConfig => {
                   delete: [APP_ID],
                 },
                 ui: capabilities.delete,
+                replacedBy: [{ feature: FEATURE_ID_V2, privileges: ['cases_delete_v2'] }],
               },
             ],
           },
@@ -129,6 +144,7 @@ export const getCasesKibanaFeature = (): KibanaFeatureConfig => {
                   settings: [APP_ID],
                 },
                 ui: capabilities.settings,
+                replacedBy: [{ feature: FEATURE_ID_V2, privileges: ['cases_settings_v2'] }],
               },
             ],
           },

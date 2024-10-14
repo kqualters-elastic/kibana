@@ -5,10 +5,12 @@
  * 2.0.
  */
 
+import type { SuperTest } from 'supertest';
+
 import expect from '@kbn/expect';
-import { SuperTest } from 'supertest';
+
 import { getTestScenariosForSpace } from '../lib/space_test_utils';
-import { DescribeFn, TestDefinitionAuthentication } from '../lib/types';
+import type { DescribeFn, TestDefinitionAuthentication } from '../lib/types';
 
 interface GetAllTest {
   statusCode: number;
@@ -78,10 +80,10 @@ const ALL_SPACE_RESULTS: Space[] = [
       'inventory',
       'logs',
       'observabilityAIAssistant',
-      'observabilityCases',
+      'observabilityCasesV2',
       'securitySolutionAssistant',
       'securitySolutionAttackDiscovery',
-      'securitySolutionCases',
+      'securitySolutionCasesV2',
       'siem',
       'slo',
       'uptime',
