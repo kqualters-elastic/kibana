@@ -409,6 +409,18 @@ export const AlertsTableComponent: FC<Omit<DetectionEngineAlertTableProps, 'serv
     [isEventRenderedView]
   );
 
+  const services = useMemo(() => {
+    return {
+      data,
+      http,
+      notifications,
+      fieldFormats,
+      application,
+      licensing,
+      settings,
+    };
+  }, [data, http, notifications, fieldFormats, application, licensing, settings]);
+
   if (isLoading) {
     return null;
   }
@@ -458,15 +470,7 @@ export const AlertsTableComponent: FC<Omit<DetectionEngineAlertTableProps, 'serv
               }
               cellActionsOptions={cellActionsOptions}
               showInspectButton
-              services={{
-                data,
-                http,
-                notifications,
-                fieldFormats,
-                application,
-                licensing,
-                settings,
-              }}
+              services={services}
               {...tablePropsOverrides}
             />
           </EuiDataGridContainer>

@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { EuiButtonIcon, EuiToolTip } from '@elastic/eui';
 import styled from 'styled-components';
@@ -56,6 +56,38 @@ const ActionsContainer = styled.div`
 `;
 
 const emptyNotes: string[] = [];
+
+const OnboardingWrapper: React.FC<{
+  isTourAnchor: boolean;
+  onExpandEvent: () => void;
+  ariaRowindex: number;
+  columnValues: string;
+}> = memo(({ isTourAnchor, ariaRowindex, columnValues, onExpandEvent }) => {
+  return (
+    <GuidedOnboardingTourStep
+      isTourAnchor={isTourAnchor}
+      onClick={onExpandEvent}
+      step={AlertsCasesTourSteps.expandEvent}
+      tourId={SecurityStepId.alertsCases}
+    >
+      <div key="expand-event">
+        <EventsTdContent textAlign="center" width={DEFAULT_ACTION_BUTTON_WIDTH}>
+          <EuiToolTip data-test-subj="expand-event-tool-tip" content={i18n.VIEW_DETAILS}>
+            <EuiButtonIcon
+              aria-label={i18n.VIEW_DETAILS_FOR_ROW({ ariaRowindex, columnValues })}
+              data-test-subj="expand-event"
+              iconType="expand"
+              onClick={onExpandEvent}
+              size="s"
+            />
+          </EuiToolTip>
+        </EventsTdContent>
+      </div>
+    </GuidedOnboardingTourStep>
+  );
+});
+
+OnboardingWrapper.displayName = 'OnboardingWrapper';
 
 const ActionsComponent: React.FC<ActionProps> = ({
   ariaRowindex,
@@ -317,26 +349,12 @@ const ActionsComponent: React.FC<ActionProps> = ({
     <ActionsContainer data-test-subj="actions-container">
       <>
         {!disableExpandAction && (
-          <GuidedOnboardingTourStep
+          <OnboardingWrapper
             isTourAnchor={isTourAnchor}
-            onClick={onExpandEvent}
-            step={AlertsCasesTourSteps.expandEvent}
-            tourId={SecurityStepId.alertsCases}
-          >
-            <div key="expand-event">
-              <EventsTdContent textAlign="center" width={DEFAULT_ACTION_BUTTON_WIDTH}>
-                <EuiToolTip data-test-subj="expand-event-tool-tip" content={i18n.VIEW_DETAILS}>
-                  <EuiButtonIcon
-                    aria-label={i18n.VIEW_DETAILS_FOR_ROW({ ariaRowindex, columnValues })}
-                    data-test-subj="expand-event"
-                    iconType="expand"
-                    onClick={onExpandEvent}
-                    size="s"
-                  />
-                </EuiToolTip>
-              </EventsTdContent>
-            </div>
-          </GuidedOnboardingTourStep>
+            onExpandEvent={onExpandEvent}
+            ariaRowindex={ariaRowindex}
+            columnValues={columnValues}
+          />
         )}
         <>
           {timelineId !== TimelineId.active && (

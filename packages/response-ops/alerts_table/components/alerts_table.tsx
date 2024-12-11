@@ -310,6 +310,7 @@ const AlertsTableContent = typedForwardRef(
       data,
       ...queryParams,
     });
+    // these should be defined in the hooks, not directly in the render
     const {
       alerts = [],
       oldAlertsData = [],

@@ -63,14 +63,16 @@ export const useSourcererDataView = (
     [fetchIndexReturn, indexPatternsLoading]
   );
 
-  useEffect(() => {
-    if (selectedDataView == null || missingPatterns.length > 0) {
-      // old way of fetching indices, legacy timeline
-      setLegacyPatterns(selectedPatterns);
-    } else {
-      setLegacyPatterns([]);
-    }
-  }, [missingPatterns, selectedDataView, selectedPatterns]);
+  // useEffect(() => {
+  //   if (selectedDataView == null || missingPatterns.length > 0) {
+  //     // old way of fetching indices, legacy timeline
+  //     console.log('set selected patterns');
+  //     setLegacyPatterns(selectedPatterns);
+  //   } else {
+  //     console.log('set empty legacy patterns');
+  //     setLegacyPatterns([]);
+  //   }
+  // }, [missingPatterns, selectedDataView, selectedPatterns]);
 
   const sourcererDataView = useMemo(() => {
     const _dv =

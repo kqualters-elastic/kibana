@@ -49,7 +49,11 @@ export class RenderingService {
     const chromeHeader = chrome.getHeaderComponent();
     const appComponent = application.getComponent();
     const bannerComponent = overlays.banners.getComponent();
-
+    // const whyDidYouRender = require('@welldone-software/why-did-you-render');
+    // whyDidYouRender(React, {
+    //   trackAllPureComponents: true,
+    //   exclude: [/^Eui/, /^SharingMetaFields/],
+    // });
     const body = document.querySelector('body')!;
     chrome
       .getBodyClasses$()

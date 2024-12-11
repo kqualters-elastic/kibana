@@ -56,17 +56,17 @@ export const validateSelectedPatterns = (
   const dataView = state.kibanaDataViews.find((p) => p.id === rest.selectedDataViewId);
   // dedupe because these could come from a silly url or pre 8.0 timeline
   const dedupePatterns = ensurePatternFormat(rest.selectedPatterns);
-  let missingPatterns: string[] = [];
+  const missingPatterns: string[] = [];
   // check for missing patterns against default data view only
   if (dataView == null || dataView.id === state.defaultDataView.id) {
     const dedupeAllDefaultPatterns = ensurePatternFormat(
       (dataView ?? state.defaultDataView).title.split(',')
     );
-    missingPatterns = dedupePatterns.filter(
-      (pattern) => !dedupeAllDefaultPatterns.includes(pattern)
+    missingPatterns.concat(
+      dedupePatterns.filter((pattern) => !dedupeAllDefaultPatterns.includes(pattern))
     );
   }
-  let selectedPatterns =
+  const selectedPatterns =
     // shouldValidateSelectedPatterns is false when upgrading from
     // legacy pre-8.0 timeline index patterns to data view.
     shouldValidateSelectedPatterns &&
@@ -87,14 +87,14 @@ export const validateSelectedPatterns = (
         // or its a legacy pre-8.0 timeline
         dedupePatterns;
   const signalIndexName = state.signalIndexName;
-  selectedPatterns = getPatternListFromScope(id, selectedPatterns, signalIndexName);
+  const scopeSelectedPatterns = getPatternListFromScope(id, selectedPatterns, signalIndexName);
 
   return {
     [id]: {
       ...state.sourcererScopes[id],
       ...rest,
       selectedDataViewId: dataView?.id ?? null,
-      selectedPatterns,
+      selectedPatterns: scopeSelectedPatterns,
       missingPatterns,
       // if in timeline, allow for empty in case pattern was deleted
       // need flow for this

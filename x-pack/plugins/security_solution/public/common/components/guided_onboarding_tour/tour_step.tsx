@@ -67,7 +67,70 @@ export const SecurityTourStep = React.memo(
     // If we mount this step, we know we need to render it
     // we are also managing the context on the siem end in the background
     const overrideContext = isStepExternallyMounted(tourId, step);
-
+    const commonProps = useMemo(() => {
+      if (tourStep == null) {
+        return {
+          content: null,
+          title: '',
+          step: 0,
+          onFinish: () => null,
+          stepsTotal: 0,
+        };
+      }
+      const {
+        anchor,
+        content,
+        imageConfig,
+        dataTestSubj,
+        hideNextButton = false,
+        ...rest
+      } = tourStep;
+      const footerAction: EuiTourStepProps['footerAction'] = !hideNextButton ? (
+        <EuiButtonEmpty
+          onClick={onClickNext}
+          onKeyDown={onKeyDown}
+          size="xs"
+          color="text"
+          flush="right"
+          data-test-subj="onboarding--securityTourNextStepButton"
+          tour-step="nextButton"
+        >
+          <FormattedMessage
+            id="xpack.securitySolution.guided_onboarding.nextStep.buttonLabel"
+            defaultMessage="Next"
+          />
+        </EuiButtonEmpty>
+      ) : (
+        <>
+          {/* Passing empty element instead of undefined. If undefined "Skip tour" button is shown, we do not want that*/}
+        </>
+      );
+      return {
+        ...rest,
+        content: (
+          <>
+            <EuiText size="s">
+              <p>{content}</p>
+            </EuiText>
+            {imageConfig && (
+              <>
+                <EuiSpacer size="m" />
+                <EuiImage alt={imageConfig.altText} src={imageConfig.src} size="fullWidth" />
+              </>
+            )}
+          </>
+        ),
+        footerAction,
+        // we would not have mounted this component if it was not open
+        isStepOpen: true,
+        // guided onboarding does not allow skipping tour through the steps
+        onFinish: () => null,
+        stepsTotal: securityTourConfig[tourId].length,
+        panelProps: {
+          'data-test-subj': dataTestSubj,
+        },
+      };
+    }, [tourId, tourStep, onClickNext, onKeyDown]);
     if (
       tourStep == null ||
       ((step !== activeStep || !isTourShown(tourId)) && !overrideContext) ||
@@ -75,66 +138,12 @@ export const SecurityTourStep = React.memo(
     ) {
       return children ? children : null;
     }
-    const {
-      anchor,
-      content,
-      imageConfig,
-      dataTestSubj,
-      hideNextButton = false,
-      ...rest
-    } = tourStep;
-    const footerAction: EuiTourStepProps['footerAction'] = !hideNextButton ? (
-      <EuiButtonEmpty
-        onClick={onClickNext}
-        onKeyDown={onKeyDown}
-        size="xs"
-        color="text"
-        flush="right"
-        data-test-subj="onboarding--securityTourNextStepButton"
-        tour-step="nextButton"
-      >
-        <FormattedMessage
-          id="xpack.securitySolution.guided_onboarding.nextStep.buttonLabel"
-          defaultMessage="Next"
-        />
-      </EuiButtonEmpty>
-    ) : (
-      <>
-        {/* Passing empty element instead of undefined. If undefined "Skip tour" button is shown, we do not want that*/}
-      </>
-    );
-
-    const commonProps = {
-      ...rest,
-      content: (
-        <>
-          <EuiText size="s">
-            <p>{content}</p>
-          </EuiText>
-          {imageConfig && (
-            <>
-              <EuiSpacer size="m" />
-              <EuiImage alt={imageConfig.altText} src={imageConfig.src} size="fullWidth" />
-            </>
-          )}
-        </>
-      ),
-      footerAction,
-      // we would not have mounted this component if it was not open
-      isStepOpen: true,
-      // guided onboarding does not allow skipping tour through the steps
-      onFinish: () => null,
-      stepsTotal: securityTourConfig[tourId].length,
-      panelProps: {
-        'data-test-subj': dataTestSubj,
-      },
-    };
 
     // tour step either needs children or an anchor element
     //  see type EuiTourStepAnchorProps
-    return anchor != null ? (
+    return tourStep && tourStep.anchor != null ? (
       <>
-        <StyledTourStep tourId={tourId} {...commonProps} anchor={anchor} />
+        <StyledTourStep tourId={tourId} {...commonProps} anchor={tourStep.anchor} />
         <>{children}</>
       </>
     ) : children != null ? (

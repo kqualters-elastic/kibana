@@ -6,12 +6,17 @@
  */
 
 import { EuiIcon, EuiToolTip, EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
+import type { EuiDataGridSetCellProps } from '@elastic/eui';
 import React, { useMemo, memo } from 'react';
 import { find, getOr } from 'lodash/fp';
 import type { TimelineNonEcsData } from '@kbn/timelines-plugin/common';
 import { tableDefaults, dataTableSelectors } from '@kbn/securitysolution-data-table';
+import type { EcsSecurityExtension as Ecs } from '@kbn/securitysolution-ecs';
 import { useLicense } from '../../../common/hooks/use_license';
 import { useDeepEqualSelector } from '../../../common/hooks/use_selector';
+import type { RowRenderer, ColumnHeaderOptions } from '../../../../common/types/timeline';
+import type { BrowserFields } from '../../../../common/search_strategy';
+import type { AlertsUserProfilesData } from './fetch_page_context';
 import { defaultRowRenderers } from '../../../timelines/components/timeline/body/renderers';
 import { GuidedOnboardingTourStep } from '../../../common/components/guided_onboarding_tour/tour_step';
 import { isDetectionsAlertsTable } from '../../../common/components/top_n/helpers';
@@ -29,6 +34,85 @@ import { getAllFieldsByName } from '../../../common/containers/source';
 import { eventRenderedViewColumns, getColumns } from './columns';
 import type { GetSecurityAlertsTableProp } from '../../components/alerts_table/types';
 
+const OnboardingWrapper: React.FC<{
+  isTourAnchor: boolean;
+  browserFields?: BrowserFields;
+  columnId: string;
+  finalData: TimelineNonEcsData[];
+  ecsAlert: Ecs;
+  eventId: string;
+  myHeader: ColumnHeaderOptions;
+  isDetails: boolean;
+  isDraggable: boolean;
+  isExpandable: boolean;
+  isExpanded: boolean;
+  linkValues: string[];
+  localLinkValues: string[];
+  rowIndex: number;
+  colIndex: number;
+  rowRenderers: RowRenderer[];
+  setCellProps: (props: EuiDataGridSetCellProps) => void;
+  scopeId: string;
+  truncate: boolean;
+  context?: AlertsUserProfilesData;
+}> = memo(
+  ({
+    isTourAnchor,
+    browserFields,
+    columnId,
+    finalData,
+    ecsAlert,
+    eventId,
+    myHeader,
+    isDetails,
+    isDraggable,
+    isExpandable,
+    isExpanded,
+    linkValues,
+    localLinkValues,
+    rowIndex,
+    colIndex,
+    rowRenderers,
+    setCellProps,
+    scopeId,
+    truncate,
+    context,
+  }) => {
+    return (
+      <GuidedOnboardingTourStep
+        isTourAnchor={isTourAnchor}
+        step={AlertsCasesTourSteps.pointToAlertName}
+        tourId={SecurityStepId.alertsCases}
+      >
+        <DefaultCellRenderer
+          browserFields={browserFields}
+          columnId={columnId}
+          data={finalData}
+          ecsData={ecsAlert}
+          eventId={eventId}
+          header={myHeader}
+          isDetails={isDetails}
+          isDraggable={isDraggable}
+          isExpandable={isExpandable}
+          isExpanded={isExpanded}
+          linkValues={linkValues ?? localLinkValues}
+          rowIndex={rowIndex}
+          colIndex={colIndex}
+          rowRenderers={rowRenderers ?? defaultRowRenderers}
+          setCellProps={setCellProps}
+          scopeId={scopeId}
+          truncate={truncate}
+          asPlainText={false}
+          context={context}
+        />
+      </GuidedOnboardingTourStep>
+    );
+  }
+);
+
+OnboardingWrapper.displayName = 'OnboardingWrapper';
+
+const EMPTY_LOCAL_LINK_VALUES: string[] = [];
 /**
  * This implementation of `EuiDataGrid`'s `renderCellValue`
  * accepts `EuiDataGridCellValueElementProps`, plus `data`
@@ -93,17 +177,20 @@ export const CellValue: GetSecurityAlertsTableProp<'renderCellValue'> = memo(
      */
 
     const finalData = useMemo(() => {
-      return (legacyAlert as TimelineNonEcsData[]).map((field) => {
+      if (!legacyAlert) return [];
+
+      return (legacyAlert as TimelineNonEcsData[]).reduce((acc, field) => {
         if (['_id', '_index'].includes(field.field)) {
           const newValue = field.value ?? '';
-          return {
+          acc.push({
             field: field.field,
             value: Array.isArray(newValue) ? newValue : [newValue],
-          };
+          });
         } else {
-          return field;
+          acc.push(field);
         }
-      });
+        return acc;
+      }, [] as TimelineNonEcsData[]);
     }, [legacyAlert]);
 
     const actualSuppressionCount = useMemo(() => {
@@ -118,46 +205,46 @@ export const CellValue: GetSecurityAlertsTableProp<'renderCellValue'> = memo(
       return ecsSuppressionCount ? parseInt(ecsSuppressionCount, 10) : dataSuppressionCount;
     }, [ecsAlert, legacyAlert]);
 
-    const Renderer = useMemo(() => {
-      const myHeader = header ?? { id: columnId, ...browserFieldsByName[columnId] };
+    const myHeader = useMemo(() => {
+      return header ?? { id: columnId, ...browserFieldsByName[columnId] };
+    }, [header, columnId, browserFieldsByName]);
+
+    const localLinkValues = useMemo(() => {
       const colHeader = columnHeaders.find((col) => col.id === columnId);
-      const localLinkValues = getOr([], colHeader?.linkField ?? '', ecsAlert);
+      return getOr(EMPTY_LOCAL_LINK_VALUES, colHeader?.linkField ?? '', ecsAlert);
+    }, [ecsAlert, columnId, columnHeaders]);
+
+    const Renderer = useMemo(() => {
       return (
-        <GuidedOnboardingTourStep
+        <OnboardingWrapper
           isTourAnchor={isTourAnchor}
-          step={AlertsCasesTourSteps.pointToAlertName}
-          tourId={SecurityStepId.alertsCases}
-        >
-          <DefaultCellRenderer
-            browserFields={browserFields}
-            columnId={columnId}
-            data={finalData}
-            ecsData={ecsAlert}
-            eventId={eventId}
-            header={myHeader}
-            isDetails={isDetails}
-            isDraggable={isDraggable}
-            isExpandable={isExpandable}
-            isExpanded={isExpanded}
-            linkValues={linkValues ?? localLinkValues}
-            rowIndex={rowIndex}
-            colIndex={colIndex}
-            rowRenderers={rowRenderers ?? defaultRowRenderers}
-            setCellProps={setCellProps}
-            scopeId={scopeId}
-            truncate={truncate}
-            asPlainText={false}
-            context={context}
-          />
-        </GuidedOnboardingTourStep>
+          browserFields={browserFields}
+          columnId={columnId}
+          finalData={finalData}
+          ecsAlert={ecsAlert}
+          eventId={eventId}
+          myHeader={myHeader}
+          isDetails={isDetails}
+          isDraggable={isDraggable}
+          isExpandable={isExpandable}
+          isExpanded={isExpanded}
+          linkValues={linkValues}
+          localLinkValues={localLinkValues}
+          rowIndex={rowIndex}
+          colIndex={colIndex}
+          rowRenderers={rowRenderers}
+          setCellProps={setCellProps}
+          scopeId={scopeId}
+          truncate={truncate}
+          context={context}
+        />
       );
     }, [
-      header,
+      myHeader,
       columnId,
-      browserFieldsByName,
-      columnHeaders,
       ecsAlert,
       isTourAnchor,
+      localLinkValues,
       browserFields,
       finalData,
       eventId,

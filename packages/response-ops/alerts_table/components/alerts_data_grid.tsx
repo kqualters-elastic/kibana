@@ -136,13 +136,17 @@ export const AlertsDataGrid = typedMemo(
       clearSelection();
     }, [clearSelection, refreshQueries]);
 
+    const columnIds = useMemo(() => {
+      return columns.map((column) => column.id);
+    }, [columns]);
+
     const toolbarVisibility = useGetToolbarVisibility({
       bulkActions,
       alertsCount,
       rowSelection: bulkActionsState.rowSelection,
       alerts,
       isLoading,
-      columnIds: columns.map((column) => column.id),
+      columnIds,
       onToggleColumn,
       onResetColumns,
       browserFields,
@@ -159,6 +163,7 @@ export const AlertsDataGrid = typedMemo(
 
     const customActionsColumn: EuiDataGridControlColumn | undefined = useMemo(() => {
       if (ActionsCell) {
+        // should not define this in the render function, as it will cause the column to be recreated on every render.
         const RowCellRender: EuiDataGridControlColumn['rowCellRender'] = (_props) => {
           const idx = _props.rowIndex - _props.pageSize * _props.pageIndex;
           const alert = _props.alerts[idx];

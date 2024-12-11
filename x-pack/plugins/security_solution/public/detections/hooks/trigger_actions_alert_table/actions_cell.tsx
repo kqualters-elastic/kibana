@@ -6,7 +6,7 @@
  */
 
 import type { EcsSecurityExtension as Ecs } from '@kbn/securitysolution-ecs';
-import React, { memo, useContext } from 'react';
+import React, { memo, useContext, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { TableId } from '@kbn/securitysolution-data-table';
 import { StatefulEventContext } from '../../../common/components/events_viewer/stateful_event_context';
@@ -17,6 +17,8 @@ import { getAlertsDefaultModel } from '../../components/alerts_table/default_con
 import type { State } from '../../../common/store';
 import { RowAction } from '../../../common/components/control_columns/row_action';
 import type { GetSecurityAlertsTableProp } from '../../components/alerts_table/types';
+
+const setEventsDeleted = () => {};
 
 export const ActionsCellComponent: GetSecurityAlertsTableProp<'renderActionsCell'> = ({
   tableType = TableId.alertsOnAlertsPage,
@@ -44,12 +46,25 @@ export const ActionsCellComponent: GetSecurityAlertsTableProp<'renderActionsCell
   } = useSelector((state: State) => eventsViewerSelector(state, tableType));
   const eventContext = useContext(StatefulEventContext);
 
-  const timelineItem: TimelineItem = {
-    _id: (alert as Ecs)._id,
-    _index: (alert as Ecs)._index,
-    ecs: alert as Ecs,
-    data: legacyAlert as unknown as TimelineItem['data'],
-  };
+  const timelineItem: TimelineItem = useMemo(() => {
+    return {
+      _id: (alert as Ecs)._id,
+      _index: (alert as Ecs)._index,
+      ecs: alert as Ecs,
+      data: legacyAlert as unknown as TimelineItem['data'],
+    };
+  }, [alert, legacyAlert]);
+
+  const setEventsLoading = useCallback(
+    ({ isLoading }: { isLoading: boolean }) => {
+      if (!isLoading) {
+        clearSelection();
+        return;
+      }
+      if (setIsActionLoading) setIsActionLoading(isLoading);
+    },
+    [clearSelection, setIsActionLoading]
+  );
 
   return (
     <RowAction
@@ -64,7 +79,7 @@ export const ActionsCellComponent: GetSecurityAlertsTableProp<'renderActionsCell
       isEventViewer={false}
       isExpandable={isExpandable}
       loadingEventIds={loadingEventIds}
-      onRowSelected={() => {}}
+      onRowSelected={setEventsDeleted}
       rowIndex={rowIndex}
       colIndex={colIndex}
       pageRowIndex={rowIndex}
@@ -75,14 +90,8 @@ export const ActionsCellComponent: GetSecurityAlertsTableProp<'renderActionsCell
       tabType={'query'}
       tableId={tableType}
       width={0}
-      setEventsLoading={({ isLoading }) => {
-        if (!isLoading) {
-          clearSelection();
-          return;
-        }
-        if (setIsActionLoading) setIsActionLoading(isLoading);
-      }}
-      setEventsDeleted={() => {}}
+      setEventsLoading={setEventsLoading}
+      setEventsDeleted={setEventsDeleted}
       refetch={alertsTableRefresh}
     />
   );
