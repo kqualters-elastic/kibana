@@ -4,7 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-import React, { useCallback, useEffect, useMemo, useReducer } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import {
   EuiButtonEmpty,
   EuiEmptyPrompt,
@@ -13,6 +13,7 @@ import {
   EuiLoadingLogo,
   EuiSpacer,
   EuiText,
+  EuiButton,
 } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
 import { css } from '@emotion/react';
@@ -179,22 +180,46 @@ export const EntityAnalyticsPrivilegedUserMonitoringPage = () => {
 
   const linkInfo = useLinkInfo(SecurityPageName.entityAnalyticsPrivilegedUserMonitoring);
   const updateLinkConfig = useUpdateLinkConfig();
-
+  const [hideTimeline, setHideTimeline] = useState(false);
   // Update UrlParam to add hideTimeline to the URL when the onboarding is loaded and removes it when dashboard is loaded
-  useEffect(() => {
-    // do not change the link config when the engine status is being fetched
-    if (state.type === 'fetchingEngineStatus') {
-      return;
-    }
+  // useEffect(() => {
+  //   // do not change the link config when the engine status is being fetched
+  //   if (state.type === 'fetchingEngineStatus') {
+  //     return;
+  //   }
 
-    const hideTimeline = ['onboarding', 'initializingEngine'].includes(state.type);
-    // update the hideTimeline property in the link config. This call triggers expensive operations, use with love
-    const hideTimelineConfig = linkInfo?.hideTimeline ?? false;
+  //   const hideTimeline = ['onboarding', 'initializingEngine'].includes(state.type);
+  //   // update the hideTimeline property in the link config. This call triggers expensive operations, use with love
+  //   const hideTimelineConfig = linkInfo?.hideTimeline ?? false;
 
-    if (hideTimeline !== hideTimelineConfig) {
-      updateLinkConfig(SecurityPageName.entityAnalyticsPrivilegedUserMonitoring, { hideTimeline });
+  //   if (hideTimeline !== hideTimelineConfig) {
+  //     updateLinkConfig(SecurityPageName.entityAnalyticsPrivilegedUserMonitoring, { hideTimeline });
+  //   }
+  // }, [linkInfo?.hideTimeline, state.type, updateLinkConfig]);
+
+  const updateLinkConfigCallback = useCallback(() => {
+    setHideTimeline(!hideTimeline);
+    updateLinkConfig(SecurityPageName.entityAnalyticsPrivilegedUserMonitoring, { hideTimeline });
+  }, [updateLinkConfig, hideTimeline]);
+
+  const hideTimelineViaCss = useCallback(() => {
+    const element = document.querySelector(
+      '[data-test-subj="timeline-bottom-bar-container"]'
+    ) as HTMLElement | null;
+    if (element) {
+      if (hideTimeline) {
+        element.style.display = 'none';
+      } else {
+        element.style.display = 'block';
+      }
     }
-  }, [linkInfo?.hideTimeline, state.type, updateLinkConfig]);
+    setHideTimeline(!hideTimeline);
+    return () => {
+      if (element) {
+        element.style.display = 'block';
+      }
+    };
+  }, [hideTimeline]);
 
   const fullHeightCSS = css`
     min-height: calc(100vh - 240px);
@@ -206,6 +231,8 @@ export const EntityAnalyticsPrivilegedUserMonitoringPage = () => {
 
   return (
     <>
+      <EuiButton onClick={updateLinkConfigCallback}>Update Link Config</EuiButton>
+      <EuiButton onClick={hideTimelineViaCss}>Hide Timeline</EuiButton>
       {state.type === 'dashboard' && (
         <FiltersGlobal>
           <SiemSearchBar id={InputsModelId.global} sourcererDataView={sourcererDataView} />
