@@ -59,3 +59,17 @@ export const REPROCESS_FAILED_ARIA_LABEL = i18n.translate(
     defaultMessage: 'Reprocess failed rules',
   }
 );
+
+export const CLEAR_SELECT_ALL = i18n.translate(
+  'xpack.securitySolution.siemMigrations.rules.table.clearSelectAllButton',
+  {
+    defaultMessage: 'Clear select all',
+  }
+);
+
+export const CLEAR_SELECT_ALL_ARIA_LABEL = i18n.translate(
+  'xpack.securitySolution.siemMigrations.rules.table.clearSelectAllButtonAriaLabel',
+  {
+    defaultMessage: 'Clear select all',
+  }
+);

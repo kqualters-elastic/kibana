@@ -15,8 +15,10 @@ import {
   EuiSpacer,
   EuiBasicTable,
   EuiButton,
+  EuiDataGrid,
+  type RenderCellValue,
 } from '@elastic/eui';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { RuleMigrationFilters } from '../../../../../common/siem_migrations/types';
 import { useIsOpenState } from '../../../../common/hooks/use_is_open_state';
@@ -46,6 +48,8 @@ import { MigrationRulesFilter } from './filters';
 import { convertFilterOptions } from './utils/filters';
 import { SiemTranslatedRulesTour } from '../tours/translation_guide';
 import { StartRuleMigrationModal } from './start_rule_migration_modal';
+import { IntegrationsColumn } from '../rules_table_columns/integrations';
+import { ActionName } from '../rules_table_columns/actions';
 
 const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_SORT_FIELD = 'translation_result';
@@ -72,6 +76,123 @@ export interface MigrationRulesTableProps {
    */
   migrationStats: RuleMigrationStats;
 }
+
+const dataGridColumns = [
+  {
+    id: 'updated_at',
+    display: <div>{'Updated'}</div>,
+    isSortable: true,
+    initialWidth: 200,
+  },
+  {
+    id: 'name',
+    display: <div>{'Name'}</div>,
+    isSortable: true,
+    initialWidth: 200,
+  },
+  {
+    id: 'status',
+    display: <div>{'Status'}</div>,
+    isSortable: true,
+    initialWidth: 200,
+  },
+  {
+    id: 'risk_score',
+    display: <div>{'Risk Score'}</div>,
+    isSortable: true,
+    initialWidth: 200,
+  },
+  {
+    id: 'severity',
+    display: <div>{'Severity'}</div>,
+    isSortable: true,
+    initialWidth: 200,
+  },
+  {
+    id: 'author',
+    display: <div>{'Author'}</div>,
+    isSortable: true,
+    initialWidth: 200,
+  },
+  {
+    id: 'integrations',
+    display: <div>{'Integrations'}</div>,
+    isSortable: true,
+    initialWidth: 200,
+  },
+  {
+    id: 'actions',
+    display: <div>{'Actions'}</div>,
+    isSortable: false,
+    initialWidth: 200,
+  },
+];
+
+// eslint-disable-next-line react/display-name
+const RenderCellValue: RenderCellValue = memo(
+  ({
+    rowIndex,
+    columnId,
+    migrationRules,
+    getMigrationRuleData,
+    disableActions,
+    openMigrationRuleDetails,
+    installMigrationRule,
+  }: {
+    rowIndex: number;
+    columnId: string;
+    migrationRules?: RuleMigrationRule[];
+    getMigrationRuleData?: (ruleId: string) =>
+      | {
+          relatedIntegrations?: RelatedIntegration[];
+          isIntegrationsLoading?: boolean;
+        }
+      | undefined;
+    disableActions?: boolean;
+    openMigrationRuleDetails?: (migrationRule: RuleMigrationRule) => void;
+    installMigrationRule?: (migrationRule: RuleMigrationRule, enable?: boolean) => void;
+  }) => {
+    const migrationRule = migrationRules && migrationRules[rowIndex];
+    if (columnId === 'updated_at') {
+      return <div>{migrationRule && migrationRule['@timestamp']}</div>;
+    }
+    if (columnId === 'name') {
+      return <div>{migrationRule?.elastic_rule?.title}</div>;
+    }
+    if (columnId === 'status') {
+      return <div>{migrationRule?.status}</div>;
+    }
+    if (columnId === 'risk_score') {
+      return <div>{migrationRule?.elastic_rule?.risk_score}</div>;
+    }
+    if (columnId === 'severity') {
+      return <div>{migrationRule?.elastic_rule?.severity}</div>;
+    }
+    if (columnId === 'author') {
+      return <div>{migrationRule?.created_by}</div>;
+    }
+    if (columnId === 'integrations' && migrationRule && getMigrationRuleData) {
+      return (
+        <IntegrationsColumn rule={migrationRule} getMigrationRuleData={getMigrationRuleData} />
+      );
+    }
+    if (
+      columnId === 'actions' &&
+      migrationRule &&
+      openMigrationRuleDetails &&
+      installMigrationRule
+    ) {
+      return (
+        <ActionName
+          disableActions={disableActions}
+          migrationRule={migrationRule}
+          openMigrationRuleDetails={openMigrationRuleDetails}
+          installMigrationRule={installMigrationRule}
+        />
+      );
+    }
+  }
+);
 
 /**
  * Table Component for displaying SIEM rules migrations
@@ -114,6 +235,27 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
     });
 
     const [selectedMigrationRules, setSelectedMigrationRules] = useState<RuleMigrationRule[]>([]);
+    const [isSelectAllSelected, setIsSelectAllSelected] = useState(false);
+    const selectableRules = useMemo(() => {
+      return migrationRules.filter((rule) => !rule.elastic_rule?.id && rule.translation_result === RuleTranslationResult.FULL);
+    }, [migrationRules]);
+
+    const userSelectedAll = useCallback((userSelected: boolean) => {
+      console.log('userSelected', userSelected);
+      if (!userSelected) {
+        setIsSelectAllSelected(false);
+        setSelectedMigrationRules([]);
+      } else {
+        setSelectedMigrationRules(selectableRules);
+        setIsSelectAllSelected(true);
+      }
+    }, [selectableRules]);
+
+    const onSelectionChange = useCallback((selectedRules: RuleMigrationRule[]) => {
+      setSelectedMigrationRules(selectedRules);
+      setIsSelectAllSelected(false);
+    }, []);
+
     const tableSelection: EuiTableSelectionType<RuleMigrationRule> = useMemo(
       () => ({
         selectable: (item: RuleMigrationRule) => {
@@ -127,10 +269,10 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
             ? i18n.ALREADY_TRANSLATED_RULE_TOOLTIP
             : i18n.NOT_FULLY_TRANSLATED_RULE_TOOLTIP;
         },
-        onSelectionChange: setSelectedMigrationRules,
+        onSelectionChange,
         selected: selectedMigrationRules,
       }),
-      [selectedMigrationRules]
+      [selectedMigrationRules, onSelectionChange]
     );
 
     const pagination = useMemo(() => {
@@ -161,6 +303,8 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
           setSortField(field);
           setSortDirection(direction);
         }
+        setIsSelectAllSelected(false);
+        setSelectedMigrationRules([]);
       },
       []
     );
@@ -334,6 +478,17 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
       getMigrationRuleData,
     });
 
+    const [visibleColumns, setVisibleColumns] = useState(dataGridColumns.map(({ id }) => id));
+    const cellContext = useMemo(() => {
+      return {
+        migrationRules,
+        disableActions: isTableLoading,
+        openMigrationRuleDetails: openRulePreview,
+        installMigrationRule: installSingleRule,
+        getMigrationRuleData,
+      };
+    }, [migrationRules, isTableLoading, openRulePreview, installSingleRule, getMigrationRuleData]);
+
     return (
       <>
         {isReprocessFailedRulesModalVisible && (
@@ -366,15 +521,6 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
                   justifyContent="flexEnd"
                   wrap
                 >
-                  <EuiFlexItem>
-                    <SearchField initialValue={searchTerm} onSearch={handleOnSearch} />
-                  </EuiFlexItem>
-                  <EuiFlexItem grow={false}>
-                    <MigrationRulesFilter
-                      filterOptions={filterOptions}
-                      onFilterOptionsChanged={setFilterOptions}
-                    />
-                  </EuiFlexItem>
                   <EuiFlexItem grow={false}>
                     <BulkActions
                       isTableLoading={isRulesLoading}
@@ -384,6 +530,18 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
                       installTranslatedRule={installTranslatedRules}
                       installSelectedRule={installSelectedRule}
                       reprocessFailedRules={showReprocessFailedRulesModal}
+                      isSelectAllSelected={isSelectAllSelected}
+                      userSelectedAll={userSelectedAll}
+                      numberOfTotalRules={total}
+                    />
+                  </EuiFlexItem>
+                  <EuiFlexItem>
+                    <SearchField initialValue={searchTerm} onSearch={handleOnSearch} />
+                  </EuiFlexItem>
+                  <EuiFlexItem grow={false}>
+                    <MigrationRulesFilter
+                      filterOptions={filterOptions}
+                      onFilterOptionsChanged={setFilterOptions}
                     />
                   </EuiFlexItem>
                 </EuiFlexGroup>
@@ -398,6 +556,15 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
                   itemId={'id'}
                   data-test-subj={'rules-translation-table'}
                   columns={rulesColumns}
+                />
+                <EuiSpacer size="m" />
+                <EuiDataGrid
+                  rowCount={migrationRules.length}
+                  columns={dataGridColumns}
+                  renderCellValue={RenderCellValue}
+                  cellContext={cellContext}
+                  aria-label="Rules translation table"
+                  columnVisibility={{ visibleColumns, setVisibleColumns }}
                 />
               </>
             )

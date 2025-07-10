@@ -12,15 +12,19 @@ import { SiemMigrationStatus } from '../../../../../common/siem_migrations/const
 import * as i18n from './translations';
 import { COLUMN_EMPTY_VALUE, type TableColumn } from './constants';
 
+export const RiskScoreColumn = (riskScore: number, rule: RuleMigrationRule) => {
+  return (
+    <EuiText data-test-subj="riskScore" size="s">
+      {rule.status === SiemMigrationStatus.FAILED ? COLUMN_EMPTY_VALUE : riskScore}
+    </EuiText>
+  );
+};
+
 export const createRiskScoreColumn = (): TableColumn => {
   return {
     field: 'elastic_rule.risk_score',
     name: i18n.COLUMN_RISK_SCORE,
-    render: (riskScore, rule: RuleMigrationRule) => (
-      <EuiText data-test-subj="riskScore" size="s">
-        {rule.status === SiemMigrationStatus.FAILED ? COLUMN_EMPTY_VALUE : riskScore}
-      </EuiText>
-    ),
+    render: RiskScoreColumn,
     sortable: true,
     truncateText: true,
     width: '10%',

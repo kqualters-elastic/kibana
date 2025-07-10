@@ -27,7 +27,7 @@ interface ActionNameProps {
   installMigrationRule: (migrationRule: RuleMigrationRule, enable?: boolean) => void;
 }
 
-const ActionName = ({
+export const ActionName = ({
   disableActions,
   migrationRule,
   openMigrationRuleDetails,

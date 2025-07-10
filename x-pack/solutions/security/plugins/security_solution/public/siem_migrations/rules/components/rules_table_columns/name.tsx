@@ -17,7 +17,7 @@ interface NameProps {
   openMigrationRuleDetails: (rule: RuleMigrationRule) => void;
 }
 
-const Name = ({ rule, openMigrationRuleDetails }: NameProps) => {
+export const Name = ({ rule, openMigrationRuleDetails }: NameProps) => {
   if (rule.status === SiemMigrationStatus.FAILED) {
     return (
       <EuiText data-test-subj="ruleName" color="danger" size="s">

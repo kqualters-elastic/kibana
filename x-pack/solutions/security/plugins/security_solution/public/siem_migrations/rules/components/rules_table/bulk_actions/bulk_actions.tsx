@@ -15,9 +15,12 @@ export interface BulkActionsProps {
   numberOfFailedRules: number;
   numberOfTranslatedRules: number;
   numberOfSelectedRules: number;
+  numberOfTotalRules: number;
   installTranslatedRule?: () => void;
   installSelectedRule?: () => void;
   reprocessFailedRules?: () => void;
+  isSelectAllSelected: boolean;
+  userSelectedAll: (userSelected: boolean) => void;
 }
 
 /**
@@ -29,15 +32,52 @@ export const BulkActions: React.FC<BulkActionsProps> = React.memo(
     numberOfFailedRules,
     numberOfTranslatedRules,
     numberOfSelectedRules,
+    numberOfTotalRules,
     installTranslatedRule,
     installSelectedRule,
     reprocessFailedRules,
+    isSelectAllSelected,
+    userSelectedAll,
   }) => {
     const disableInstallTranslatedRulesButton = isTableLoading || !numberOfTranslatedRules;
     const showInstallSelectedRulesButton = numberOfSelectedRules > 0;
     const showRetryFailedRulesButton = numberOfFailedRules > 0;
     return (
       <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false} wrap={true}>
+        {
+          isSelectAllSelected && (
+            <EuiFlexItem grow={false}>
+              <EuiButtonEmpty
+                iconType="plusInCircle"
+                color={'primary'}
+                onClick={() => userSelectedAll(false)}
+                disabled={isTableLoading}
+                isLoading={isTableLoading}
+                data-test-subj="clearSelectAllButton"
+                aria-label={i18n.CLEAR_SELECT_ALL_ARIA_LABEL}
+              >
+                {i18n.CLEAR_SELECT_ALL}
+              </EuiButtonEmpty>
+            </EuiFlexItem>
+          )
+        }
+        {
+          numberOfSelectedRules > 0 && (
+            <EuiFlexItem grow={false}>
+              <EuiButtonEmpty
+                iconType="plusInCircle"
+                color={'primary'}
+                onClick={() => userSelectedAll(true)}
+                disabled={isTableLoading}
+                isLoading={isTableLoading}
+                data-test-subj="selectAllButton"
+                aria-label={'todo'}
+              >
+                {`Select all ${numberOfTotalRules} rules`}
+              </EuiButtonEmpty>
+            </EuiFlexItem>
+          )
+        }
         {showInstallSelectedRulesButton && (
           <EuiFlexItem grow={false}>
             <EuiButtonEmpty

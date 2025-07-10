@@ -11,13 +11,15 @@ import type { RuleMigrationRule } from '../../../../../common/siem_migrations/mo
 import * as i18n from './translations';
 import type { TableColumn } from './constants';
 
+export const UpdatedColumn = (value: RuleMigrationRule['updated_at']) => (
+  <FormattedRelativePreferenceDate value={value} dateFormat="M/D/YY" />
+);
+
 export const createUpdatedColumn = (): TableColumn => {
   return {
     field: 'updated_at',
     name: i18n.COLUMN_UPDATED,
-    render: (value: RuleMigrationRule['updated_at']) => (
-      <FormattedRelativePreferenceDate value={value} dateFormat="M/D/YY" />
-    ),
+    render: UpdatedColumn,
     sortable: true,
     truncateText: true,
     align: 'center',

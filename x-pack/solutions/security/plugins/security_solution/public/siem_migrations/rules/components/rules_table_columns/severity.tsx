@@ -16,6 +16,14 @@ import { COLUMN_EMPTY_VALUE, type TableColumn } from './constants';
 import * as i18n from './translations';
 import { TableHeader } from './header';
 
+const SeverityColumn = (value: Severity, rule: RuleMigrationRule) => {
+  return rule.status === SiemMigrationStatus.FAILED ? (
+    <>{COLUMN_EMPTY_VALUE}</>
+  ) : (
+    <SeverityBadge value={value} />
+  );
+};
+
 export const createSeverityColumn = (): TableColumn => {
   return {
     field: 'elastic_rule.severity',
@@ -40,12 +48,7 @@ export const createSeverityColumn = (): TableColumn => {
         }
       />
     ),
-    render: (value: Severity, rule: RuleMigrationRule) =>
-      rule.status === SiemMigrationStatus.FAILED ? (
-        <>{COLUMN_EMPTY_VALUE}</>
-      ) : (
-        <SeverityBadge value={value} />
-      ),
+    render: SeverityColumn,
     sortable: true,
     truncateText: true,
     width: '12%',

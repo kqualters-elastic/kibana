@@ -15,6 +15,29 @@ import * as i18n from './translations';
 import type { TableColumn } from './constants';
 import { TableHeader } from './header';
 
+export const IntegrationsColumn = ({
+  rule,
+  getMigrationRuleData,
+}: {
+  rule: RuleMigrationRule;
+  getMigrationRuleData: (ruleId: string) =>
+    | {
+        relatedIntegrations?: RelatedIntegration[];
+        isIntegrationsLoading?: boolean;
+      }
+    | undefined;
+}) => {
+  const migrationRuleData = getMigrationRuleData(rule.id);
+  if (migrationRuleData?.isIntegrationsLoading) {
+    return <EuiLoadingSpinner />;
+  }
+  const relatedIntegrations = migrationRuleData?.relatedIntegrations;
+  if (relatedIntegrations == null || relatedIntegrations.length === 0) {
+    return null;
+  }
+  return <IntegrationsPopover relatedIntegrations={relatedIntegrations} />;
+};
+
 export const createIntegrationsColumn = ({
   getMigrationRuleData,
 }: {
@@ -46,15 +69,7 @@ export const createIntegrationsColumn = ({
       />
     ),
     render: (_, rule: RuleMigrationRule) => {
-      const migrationRuleData = getMigrationRuleData(rule.id);
-      if (migrationRuleData?.isIntegrationsLoading) {
-        return <EuiLoadingSpinner />;
-      }
-      const relatedIntegrations = migrationRuleData?.relatedIntegrations;
-      if (relatedIntegrations == null || relatedIntegrations.length === 0) {
-        return null;
-      }
-      return <IntegrationsPopover relatedIntegrations={relatedIntegrations} />;
+      return <IntegrationsColumn rule={rule} getMigrationRuleData={getMigrationRuleData} />;
     },
     truncateText: true,
     width: '143px',
