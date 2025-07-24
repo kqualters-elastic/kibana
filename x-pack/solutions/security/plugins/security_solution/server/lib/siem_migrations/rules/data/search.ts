@@ -57,4 +57,7 @@ export const conditions = {
   isNotFailed(): QueryDslQueryContainer {
     return { bool: { must_not: conditions.isFailed() } };
   },
+  hasPlaceholder(): QueryDslQueryContainer {
+    return { wildcard: { 'elastic_rule.query': '*FROM [indexPattern]*' } };
+  },
 };

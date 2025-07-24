@@ -240,6 +240,7 @@ export class RuleMigrationsDataRulesClient extends RuleMigrationsDataBaseClient 
           result: { terms: { field: 'translation_result' } },
           installable: { filter: { bool: { must: searchConditions.isInstallable() } } },
           prebuilt: { filter: searchConditions.isPrebuilt() },
+          hasPlaceholder: { filter: searchConditions.hasPlaceholder() },
         },
       },
       failed: { filter: { term: { status: SiemMigrationStatus.FAILED } } },
@@ -265,6 +266,7 @@ export class RuleMigrationsDataRulesClient extends RuleMigrationsDataBaseClient 
           result: this.translationResultAggCount(translationResultsAgg),
           installable: (successAgg.installable as AggregationsFilterAggregate)?.doc_count ?? 0,
           prebuilt: (successAgg.prebuilt as AggregationsFilterAggregate)?.doc_count ?? 0,
+          hasPlaceholder: (aggs.hasPlaceholder as AggregationsFilterAggregate)?.doc_count ?? 0,
         },
         failed: (aggs.failed as AggregationsFilterAggregate)?.doc_count ?? 0,
       },
@@ -310,6 +312,7 @@ export class RuleMigrationsDataRulesClient extends RuleMigrationsDataBaseClient 
           status: { terms: { field: 'status' } },
           createdAt: { min: { field: '@timestamp' } },
           lastUpdatedAt: { max: { field: 'updated_at' } },
+          hasPlaceholder: { filter: searchConditions.hasPlaceholder() },
         },
       },
     };
@@ -366,6 +369,7 @@ export class RuleMigrationsDataRulesClient extends RuleMigrationsDataBaseClient 
     statusAgg: AggregationsStringTermsAggregate
   ): Record<SiemMigrationStatus, number> {
     const buckets = statusAgg.buckets as AggregationsStringTermsBucket[];
+
     return {
       [SiemMigrationStatus.PENDING]:
         buckets.find(({ key }) => key === SiemMigrationStatus.PENDING)?.doc_count ?? 0,
@@ -375,6 +379,8 @@ export class RuleMigrationsDataRulesClient extends RuleMigrationsDataBaseClient 
         buckets.find(({ key }) => key === SiemMigrationStatus.COMPLETED)?.doc_count ?? 0,
       [SiemMigrationStatus.FAILED]:
         buckets.find(({ key }) => key === SiemMigrationStatus.FAILED)?.doc_count ?? 0,
+      ['hasPlaceholder']:
+        buckets.find(({ key }) => key === SiemMigrationStatus.HAS_PLACEHOLDER)?.doc_count ?? 0,
     };
   }
 

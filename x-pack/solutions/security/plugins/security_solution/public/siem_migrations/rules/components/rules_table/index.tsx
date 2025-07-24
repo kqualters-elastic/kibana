@@ -15,10 +15,9 @@ import {
   EuiSpacer,
   EuiBasicTable,
   EuiButton,
-  EuiDataGrid,
   type RenderCellValue,
 } from '@elastic/eui';
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 
 import type { RuleMigrationFilters } from '../../../../../common/siem_migrations/types';
 import { useIsOpenState } from '../../../../common/hooks/use_is_open_state';
@@ -237,19 +236,24 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
     const [selectedMigrationRules, setSelectedMigrationRules] = useState<RuleMigrationRule[]>([]);
     const [isSelectAllSelected, setIsSelectAllSelected] = useState(false);
     const selectableRules = useMemo(() => {
-      return migrationRules.filter((rule) => !rule.elastic_rule?.id && rule.translation_result === RuleTranslationResult.FULL);
+      return migrationRules.filter(
+        (rule) => !rule.elastic_rule?.id && rule.translation_result === RuleTranslationResult.FULL
+      );
     }, [migrationRules]);
 
-    const userSelectedAll = useCallback((userSelected: boolean) => {
-      console.log('userSelected', userSelected);
-      if (!userSelected) {
-        setIsSelectAllSelected(false);
-        setSelectedMigrationRules([]);
-      } else {
-        setSelectedMigrationRules(selectableRules);
-        setIsSelectAllSelected(true);
-      }
-    }, [selectableRules]);
+    const userSelectedAll = useCallback(
+      (userSelected: boolean) => {
+        console.log('userSelected', userSelected);
+        if (!userSelected) {
+          setIsSelectAllSelected(false);
+          setSelectedMigrationRules([]);
+        } else {
+          setSelectedMigrationRules(selectableRules);
+          setIsSelectAllSelected(true);
+        }
+      },
+      [selectableRules]
+    );
 
     const onSelectionChange = useCallback((selectedRules: RuleMigrationRule[]) => {
       setSelectedMigrationRules(selectedRules);
@@ -341,6 +345,7 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
         try {
           await installMigrationRules({
             ids: selectedMigrationRules.map((rule) => rule.id),
+            isSelectAll: isSelectAllSelected,
             enabled,
           });
         } catch (error) {
@@ -350,7 +355,7 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
           setSelectedMigrationRules([]);
         }
       },
-      [addError, installMigrationRules, selectedMigrationRules]
+      [addError, installMigrationRules, selectedMigrationRules, isSelectAllSelected]
     );
 
     const installTranslatedRules = useCallback(
@@ -478,17 +483,6 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
       getMigrationRuleData,
     });
 
-    const [visibleColumns, setVisibleColumns] = useState(dataGridColumns.map(({ id }) => id));
-    const cellContext = useMemo(() => {
-      return {
-        migrationRules,
-        disableActions: isTableLoading,
-        openMigrationRuleDetails: openRulePreview,
-        installMigrationRule: installSingleRule,
-        getMigrationRuleData,
-      };
-    }, [migrationRules, isTableLoading, openRulePreview, installSingleRule, getMigrationRuleData]);
-
     return (
       <>
         {isReprocessFailedRulesModalVisible && (
@@ -521,6 +515,24 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
                   justifyContent="flexEnd"
                   wrap
                 >
+                  <EuiFlexItem>
+                    <SearchField initialValue={searchTerm} onSearch={handleOnSearch} />
+                  </EuiFlexItem>
+                  <EuiFlexItem grow={false}>
+                    <MigrationRulesFilter
+                      filterOptions={filterOptions}
+                      onFilterOptionsChanged={setFilterOptions}
+                    />
+                  </EuiFlexItem>
+                </EuiFlexGroup>
+                <EuiSpacer size="s" />
+                <EuiFlexGroup
+                  data-test-subj="siemMigrationsRulesTableBulkActions"
+                  gutterSize="m"
+                  justifyContent="spaceBetween"
+                  alignItems="center"
+                  wrap
+                >
                   <EuiFlexItem grow={false}>
                     <BulkActions
                       isTableLoading={isRulesLoading}
@@ -535,15 +547,6 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
                       numberOfTotalRules={total}
                     />
                   </EuiFlexItem>
-                  <EuiFlexItem>
-                    <SearchField initialValue={searchTerm} onSearch={handleOnSearch} />
-                  </EuiFlexItem>
-                  <EuiFlexItem grow={false}>
-                    <MigrationRulesFilter
-                      filterOptions={filterOptions}
-                      onFilterOptionsChanged={setFilterOptions}
-                    />
-                  </EuiFlexItem>
                 </EuiFlexGroup>
                 <EuiSpacer size="m" />
                 <EuiBasicTable<RuleMigrationRule>
@@ -556,15 +559,6 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
                   itemId={'id'}
                   data-test-subj={'rules-translation-table'}
                   columns={rulesColumns}
-                />
-                <EuiSpacer size="m" />
-                <EuiDataGrid
-                  rowCount={migrationRules.length}
-                  columns={dataGridColumns}
-                  renderCellValue={RenderCellValue}
-                  cellContext={cellContext}
-                  aria-label="Rules translation table"
-                  columnVisibility={{ visibleColumns, setVisibleColumns }}
                 />
               </>
             )
