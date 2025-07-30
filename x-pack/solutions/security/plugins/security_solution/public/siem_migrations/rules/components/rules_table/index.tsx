@@ -15,9 +15,8 @@ import {
   EuiSpacer,
   EuiBasicTable,
   EuiButton,
-  type RenderCellValue,
 } from '@elastic/eui';
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import type { RuleMigrationFilters } from '../../../../../common/siem_migrations/types';
 import { useIsOpenState } from '../../../../common/hooks/use_is_open_state';
@@ -31,6 +30,7 @@ import { useMigrationRuleDetailsFlyout } from '../../hooks/use_migration_rule_pr
 import { useInstallMigrationRule } from '../../logic/use_install_migration_rule';
 import { useInstallMigrationRules } from '../../logic/use_install_migration_rules';
 import { useGetMigrationRules } from '../../logic/use_get_migration_rules';
+import { useUpdateMigration } from '../../logic/use_update_migration';
 import { useGetMigrationTranslationStats } from '../../logic/use_get_migration_translation_stats';
 import { useGetMigrationPrebuiltRules } from '../../logic/use_get_migration_prebuilt_rules';
 import * as logicI18n from '../../logic/translations';
@@ -47,8 +47,8 @@ import { MigrationRulesFilter } from './filters';
 import { convertFilterOptions } from './utils/filters';
 import { SiemTranslatedRulesTour } from '../tours/translation_guide';
 import { StartRuleMigrationModal } from './start_rule_migration_modal';
-import { IntegrationsColumn } from '../rules_table_columns/integrations';
-import { ActionName } from '../rules_table_columns/actions';
+import { useDataViewListItems } from '../../../../detection_engine/rule_creation_ui/components/data_view_selector_field/use_data_view_list_items';
+import { UpdateIndexPatternForm } from './update_index_pattern';
 
 const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_SORT_FIELD = 'translation_result';
@@ -76,123 +76,6 @@ export interface MigrationRulesTableProps {
   migrationStats: RuleMigrationStats;
 }
 
-const dataGridColumns = [
-  {
-    id: 'updated_at',
-    display: <div>{'Updated'}</div>,
-    isSortable: true,
-    initialWidth: 200,
-  },
-  {
-    id: 'name',
-    display: <div>{'Name'}</div>,
-    isSortable: true,
-    initialWidth: 200,
-  },
-  {
-    id: 'status',
-    display: <div>{'Status'}</div>,
-    isSortable: true,
-    initialWidth: 200,
-  },
-  {
-    id: 'risk_score',
-    display: <div>{'Risk Score'}</div>,
-    isSortable: true,
-    initialWidth: 200,
-  },
-  {
-    id: 'severity',
-    display: <div>{'Severity'}</div>,
-    isSortable: true,
-    initialWidth: 200,
-  },
-  {
-    id: 'author',
-    display: <div>{'Author'}</div>,
-    isSortable: true,
-    initialWidth: 200,
-  },
-  {
-    id: 'integrations',
-    display: <div>{'Integrations'}</div>,
-    isSortable: true,
-    initialWidth: 200,
-  },
-  {
-    id: 'actions',
-    display: <div>{'Actions'}</div>,
-    isSortable: false,
-    initialWidth: 200,
-  },
-];
-
-// eslint-disable-next-line react/display-name
-const RenderCellValue: RenderCellValue = memo(
-  ({
-    rowIndex,
-    columnId,
-    migrationRules,
-    getMigrationRuleData,
-    disableActions,
-    openMigrationRuleDetails,
-    installMigrationRule,
-  }: {
-    rowIndex: number;
-    columnId: string;
-    migrationRules?: RuleMigrationRule[];
-    getMigrationRuleData?: (ruleId: string) =>
-      | {
-          relatedIntegrations?: RelatedIntegration[];
-          isIntegrationsLoading?: boolean;
-        }
-      | undefined;
-    disableActions?: boolean;
-    openMigrationRuleDetails?: (migrationRule: RuleMigrationRule) => void;
-    installMigrationRule?: (migrationRule: RuleMigrationRule, enable?: boolean) => void;
-  }) => {
-    const migrationRule = migrationRules && migrationRules[rowIndex];
-    if (columnId === 'updated_at') {
-      return <div>{migrationRule && migrationRule['@timestamp']}</div>;
-    }
-    if (columnId === 'name') {
-      return <div>{migrationRule?.elastic_rule?.title}</div>;
-    }
-    if (columnId === 'status') {
-      return <div>{migrationRule?.status}</div>;
-    }
-    if (columnId === 'risk_score') {
-      return <div>{migrationRule?.elastic_rule?.risk_score}</div>;
-    }
-    if (columnId === 'severity') {
-      return <div>{migrationRule?.elastic_rule?.severity}</div>;
-    }
-    if (columnId === 'author') {
-      return <div>{migrationRule?.created_by}</div>;
-    }
-    if (columnId === 'integrations' && migrationRule && getMigrationRuleData) {
-      return (
-        <IntegrationsColumn rule={migrationRule} getMigrationRuleData={getMigrationRuleData} />
-      );
-    }
-    if (
-      columnId === 'actions' &&
-      migrationRule &&
-      openMigrationRuleDetails &&
-      installMigrationRule
-    ) {
-      return (
-        <ActionName
-          disableActions={disableActions}
-          migrationRule={migrationRule}
-          openMigrationRuleDetails={openMigrationRuleDetails}
-          installMigrationRule={installMigrationRule}
-        />
-      );
-    }
-  }
-);
-
 /**
  * Table Component for displaying SIEM rules migrations
  */
@@ -206,6 +89,7 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
     const [sortField, setSortField] = useState<keyof RuleMigrationRule>(DEFAULT_SORT_FIELD);
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(DEFAULT_SORT_DIRECTION);
     const [searchTerm, setSearchTerm] = useState<string | undefined>();
+    const [isMissingIndexPatternFlyoutOpen, setIsMissingIndexPatternFlyoutOpen] = useState(false);
 
     // Filters
     const [filterOptions, setFilterOptions] = useState<FilterOptions | undefined>();
@@ -243,7 +127,6 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
 
     const userSelectedAll = useCallback(
       (userSelected: boolean) => {
-        console.log('userSelected', userSelected);
         if (!userSelected) {
           setIsSelectAllSelected(false);
           setSelectedMigrationRules([]);
@@ -339,6 +222,21 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
       [addError, installMigrationRule]
     );
 
+    const { mutateAsync: updateMigration } = useUpdateMigration(migrationId);
+
+    const setMissingIndexPattern = useCallback(async () => {
+      setTableLoading(true);
+      try {
+        await updateMigration({
+          index_pattern: 'test',
+        });
+      } catch (error) {
+        addError(error, { title: logicI18n.INSTALL_MIGRATION_RULES_FAILURE });
+      } finally {
+        setTableLoading(false);
+      }
+    }, [addError, updateMigration]);
+
     const installSelectedRule = useCallback(
       async (enabled?: boolean) => {
         setTableLoading(true);
@@ -386,6 +284,8 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
       }),
       [migrationStats.last_execution]
     );
+
+    const { data: dataViews, isFetching: areDataViewsFetching } = useDataViewListItems();
 
     const {
       isOpen: isReprocessFailedRulesModalVisible,
@@ -539,6 +439,10 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
                       numberOfFailedRules={translationStats.rules.failed}
                       numberOfTranslatedRules={translationStats.rules.success.installable}
                       numberOfSelectedRules={selectedMigrationRules.length}
+                      numberOfRulesWithMissingIndex={translationStats.rules.success.missingIndex}
+                      setMissingIndexPatternFlyoutOpen={() =>
+                        setIsMissingIndexPatternFlyoutOpen(true)
+                      }
                       installTranslatedRule={installTranslatedRules}
                       installSelectedRule={installSelectedRule}
                       reprocessFailedRules={showReprocessFailedRulesModal}
@@ -564,6 +468,12 @@ export const MigrationRulesTable: React.FC<MigrationRulesTableProps> = React.mem
             )
           }
         />
+        {isMissingIndexPatternFlyoutOpen && (
+          <UpdateIndexPatternForm
+            onClose={() => setIsMissingIndexPatternFlyoutOpen(false)}
+            onSubmit={setMissingIndexPattern}
+          />
+        )}
         {rulePreviewFlyout}
       </>
     );

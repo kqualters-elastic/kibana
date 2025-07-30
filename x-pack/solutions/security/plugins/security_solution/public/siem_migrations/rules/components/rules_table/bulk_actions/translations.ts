@@ -73,3 +73,34 @@ export const CLEAR_SELECT_ALL_ARIA_LABEL = i18n.translate(
     defaultMessage: 'Clear select all',
   }
 );
+
+export const UPDATE_INDEX_PATTERN_OF_SELECTED_RULES = (numberOfSelectedRules: number) =>
+  i18n.translate(
+    'xpack.securitySolution.siemMigrations.rules.table.updateIndexPatternOfSelectedRules',
+    {
+      defaultMessage:
+        'Update index pattern of {numberOfSelectedRules, plural, one {rule} other {rules}} ({numberOfSelectedRules})',
+      values: { numberOfSelectedRules },
+    }
+  );
+
+export const UPDATE_INDEX_PATTERN_OF_SELECTED_RULES_ARIA_LABEL = i18n.translate(
+  'xpack.securitySolution.siemMigrations.rules.table.updateIndexPatternOfSelectedRulesButtonAriaLabel',
+  {
+    defaultMessage: 'Update index pattern of selected rules',
+  }
+);
+
+export const UPDATE_INDEX_PATTERN_ALL_RULES_WITH_MISSING_INDEX_PATTERN = i18n.translate(
+  'xpack.securitySolution.siemMigrations.rules.table.updateIndexPatternOfAllRulesWithMissingIndexPattern',
+  {
+    defaultMessage: 'Update index pattern of all rules with missing index pattern',
+  }
+);
+
+export const UPDATE_INDEX_PATTERN_ALL_RULES_WITH_MISSING_INDEX_PATTERN_ARIA_LABEL = i18n.translate(
+  'xpack.securitySolution.siemMigrations.rules.table.updateIndexPatternOfAllRulesWithMissingIndexPatternButtonAriaLabel',
+  {
+    defaultMessage: 'Update index pattern of all rules with missing index pattern',
+  }
+);

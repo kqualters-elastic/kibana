@@ -23,6 +23,8 @@ export interface BulkActionsProps {
   numberOfTranslatedRules: number;
   numberOfSelectedRules: number;
   numberOfTotalRules: number;
+  numberOfRulesWithMissingIndex: number;
+  setMissingIndexPatternFlyoutOpen?: () => void;
   installTranslatedRule?: () => void;
   installSelectedRule?: () => void;
   reprocessFailedRules?: () => void;
@@ -40,7 +42,9 @@ export const BulkActions: React.FC<BulkActionsProps> = React.memo(
     numberOfTranslatedRules,
     numberOfSelectedRules,
     numberOfTotalRules,
+    numberOfRulesWithMissingIndex,
     installTranslatedRule,
+    setMissingIndexPatternFlyoutOpen,
     installSelectedRule,
     reprocessFailedRules,
     isSelectAllSelected,
@@ -58,6 +62,17 @@ export const BulkActions: React.FC<BulkActionsProps> = React.memo(
           <UtilityBarSection>
             <UtilityBarGroup>
               <UtilityBarText>{'Bulk actions'}</UtilityBarText>
+              {numberOfRulesWithMissingIndex > 0 && (
+                <UtilityBarAction
+                  iconType="plusInCircle"
+                  color={'primary'}
+                  onClick={() => setMissingIndexPatternFlyoutOpen?.()}
+                  disabled={disableInstallTranslatedRulesButton}
+                  dataTestSubj="updateIndexPatternOfSelectedRulesButton"
+                >
+                  {i18n.UPDATE_INDEX_PATTERN_OF_SELECTED_RULES(numberOfSelectedRules)}
+                </UtilityBarAction>
+              )}
               {numberOfTranslatedRules > 0 && (
                 <UtilityBarAction
                   iconType="plusInCircle"

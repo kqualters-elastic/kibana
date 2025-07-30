@@ -119,11 +119,12 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - name
               properties:
                 name:
                   description: The rule migration name
+                  $ref: '../../../../../common/api/model/primitives.schema.yaml#/components/schemas/NonEmptyString'
+                index_pattern:
+                  description: The index pattern to update
                   $ref: '../../../../../common/api/model/primitives.schema.yaml#/components/schemas/NonEmptyString'
       responses:
         200:

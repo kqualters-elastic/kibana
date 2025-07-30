@@ -327,7 +327,11 @@ export const UpdateRuleMigrationRequestBody = z.object({
   /**
    * The rule migration name
    */
-  name: NonEmptyString,
+  name: NonEmptyString.optional(),
+  /**
+   * The index pattern to update
+   */
+  index_pattern: NonEmptyString.optional(),
 });
 export type UpdateRuleMigrationRequestBodyInput = z.input<typeof UpdateRuleMigrationRequestBody>;
 

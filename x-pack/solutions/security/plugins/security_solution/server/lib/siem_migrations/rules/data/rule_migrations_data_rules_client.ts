@@ -228,6 +228,24 @@ export class RuleMigrationsDataRulesClient extends RuleMigrationsDataBaseClient 
     });
   }
 
+  async updateMissingIndex(migrationId: string, indexPattern: string): Promise<void> {
+    const index = await this.getIndexName();
+    await this.esClient
+      .update({
+        index,
+        id: migrationId,
+        doc: {
+          elastic_rule: {
+            query: `FROM ${indexPattern}`,
+          },
+        },
+      })
+      .catch((error) => {
+        this.logger.error(`Error updating rule migration missing index: ${error.message}`);
+        throw error;
+      });
+  }
+
   /** Retrieves the translation stats for the rule migrations with the provided id */
   async getTranslationStats(migrationId: string): Promise<RuleMigrationTranslationStats> {
     const index = await this.getIndexName();
@@ -266,7 +284,7 @@ export class RuleMigrationsDataRulesClient extends RuleMigrationsDataBaseClient 
           result: this.translationResultAggCount(translationResultsAgg),
           installable: (successAgg.installable as AggregationsFilterAggregate)?.doc_count ?? 0,
           prebuilt: (successAgg.prebuilt as AggregationsFilterAggregate)?.doc_count ?? 0,
-          hasPlaceholder: (aggs.hasPlaceholder as AggregationsFilterAggregate)?.doc_count ?? 0,
+          missingIndex: (successAgg.hasPlaceholder as AggregationsFilterAggregate)?.doc_count ?? 0,
         },
         failed: (aggs.failed as AggregationsFilterAggregate)?.doc_count ?? 0,
       },
@@ -379,8 +397,6 @@ export class RuleMigrationsDataRulesClient extends RuleMigrationsDataBaseClient 
         buckets.find(({ key }) => key === SiemMigrationStatus.COMPLETED)?.doc_count ?? 0,
       [SiemMigrationStatus.FAILED]:
         buckets.find(({ key }) => key === SiemMigrationStatus.FAILED)?.doc_count ?? 0,
-      ['hasPlaceholder']:
-        buckets.find(({ key }) => key === SiemMigrationStatus.HAS_PLACEHOLDER)?.doc_count ?? 0,
     };
   }
 
