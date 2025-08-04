@@ -12,6 +12,8 @@ import type { AuthenticatedUser } from '@kbn/security-plugin-types-common';
 import type IndexApi from '@elastic/elasticsearch/lib/api/api';
 import type GetApi from '@elastic/elasticsearch/lib/api/api/get';
 import type SearchApi from '@elastic/elasticsearch/lib/api/api/search';
+import type UpdateByQueryApi from '@elastic/elasticsearch/lib/api/api/update_by_query';
+import type { Script } from '@elastic/elasticsearch/lib/api/types';
 import type { SiemMigrationsClientDependencies } from '../../common/types';
 
 describe('RuleMigrationsDataMigrationClient', () => {
@@ -274,6 +276,188 @@ describe('RuleMigrationsDataMigrationClient', () => {
         },
         retry_on_conflict: 1,
       });
+    });
+  });
+
+  describe('updateIndexPattern', () => {
+    const index = '.kibana-siem-rule-migrations';
+    const migrationId = 'test-migration-id';
+    const newIndexPattern = 'new-index-pattern';
+    const translatedRuleIds = ['rule-1', 'rule-2'];
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should update index pattern for migration without translated rule IDs', async () => {
+      const expectedQuery = {
+        bool: {
+          filter: [
+            {
+              terms: {
+                migration_id: migrationId,
+              },
+            },
+            {
+              wildcard: {
+                'elastic_rule.query': '*FROM [indexPattern]*',
+              },
+            },
+          ],
+        },
+      };
+
+      const mockResponse = { updated: 5 };
+      esClient.asInternalUser.updateByQuery = jest.fn().mockResolvedValue(mockResponse);
+
+      const result = await ruleMigrationsDataMigrationClient.updateIndexPattern(
+        migrationId,
+        newIndexPattern
+      );
+
+      expect(result).toBe(5);
+      expect(esClient.asInternalUser.updateByQuery).toHaveBeenCalledWith({
+        index,
+        script: {
+          source: expect.stringContaining('def originalQuery = ctx._source.elastic_rule.query'),
+          lang: 'painless',
+          params: {
+            new_index: newIndexPattern,
+          },
+        },
+        query: expectedQuery,
+      });
+    });
+
+    it('should update index pattern for specific translated rule IDs', async () => {
+      const expectedQuery = {
+        bool: {
+          filter: [
+            {
+              terms: {
+                'elastic_rule.id': translatedRuleIds,
+              },
+            },
+            {
+              wildcard: {
+                'elastic_rule.query': '*FROM [indexPattern]*',
+              },
+            },
+          ],
+        },
+      };
+
+      const mockResponse = { updated: 3 };
+      esClient.asInternalUser.updateByQuery = jest.fn().mockResolvedValue(mockResponse);
+
+      const result = await ruleMigrationsDataMigrationClient.updateIndexPattern(
+        migrationId,
+        newIndexPattern,
+        translatedRuleIds
+      );
+
+      expect(result).toBe(3);
+      expect(esClient.asInternalUser.updateByQuery).toHaveBeenCalledWith({
+        index,
+        script: {
+          source: expect.stringContaining('def originalQuery = ctx._source.elastic_rule.query'),
+          lang: 'painless',
+          params: {
+            new_index: newIndexPattern,
+          },
+        },
+        query: expectedQuery,
+      });
+    });
+
+    it('should handle empty translated rule IDs array', async () => {
+      const expectedQuery = {
+        bool: {
+          filter: [
+            {
+              terms: {
+                'elastic_rule.id': [],
+              },
+            },
+            {
+              wildcard: {
+                'elastic_rule.query': '*FROM [indexPattern]*',
+              },
+            },
+          ],
+        },
+      };
+
+      const mockResponse = { updated: 0 };
+      esClient.asInternalUser.updateByQuery = jest.fn().mockResolvedValue(mockResponse);
+
+      const result = await ruleMigrationsDataMigrationClient.updateIndexPattern(
+        migrationId,
+        newIndexPattern,
+        []
+      );
+
+      expect(result).toBe(0);
+      expect(esClient.asInternalUser.updateByQuery).toHaveBeenCalledWith({
+        index,
+        script: {
+          source: expect.stringContaining('def originalQuery = ctx._source.elastic_rule.query'),
+          lang: 'painless',
+          params: {
+            new_index: newIndexPattern,
+          },
+        },
+        query: expectedQuery,
+      });
+    });
+
+    it('should return undefined when no documents are updated', async () => {
+      const mockResponse = { updated: 0 };
+      esClient.asInternalUser.updateByQuery = jest.fn().mockResolvedValue(mockResponse);
+
+      const result = await ruleMigrationsDataMigrationClient.updateIndexPattern(
+        migrationId,
+        newIndexPattern
+      );
+
+      expect(result).toBe(0);
+    });
+
+    it('should throw an error and log it when updateByQuery fails', async () => {
+      const error = new Error('Elasticsearch update failed');
+      esClient.asInternalUser.updateByQuery = jest.fn().mockRejectedValue(error);
+
+      await expect(
+        ruleMigrationsDataMigrationClient.updateIndexPattern(migrationId, newIndexPattern)
+      ).rejects.toThrow('Elasticsearch update failed');
+
+      expect(logger.error).toHaveBeenCalledWith(
+        `Error updating index pattern for migration ${migrationId}: ${error}`
+      );
+    });
+
+    it('should verify the painless script content', async () => {
+      const mockResponse = { updated: 1 };
+      esClient.asInternalUser.updateByQuery = jest.fn().mockResolvedValue(mockResponse);
+
+      await ruleMigrationsDataMigrationClient.updateIndexPattern(migrationId, newIndexPattern);
+
+      const updateByQueryCall = (
+        esClient.asInternalUser.updateByQuery as unknown as jest.MockedFn<typeof UpdateByQueryApi>
+      ).mock.calls[0][0];
+      expect((updateByQueryCall.script as Script).source).toContain(
+        'def originalQuery = ctx._source.elastic_rule.query'
+      );
+      expect((updateByQueryCall.script as Script).source).toContain(
+        'def newIndex = params.new_index'
+      );
+      expect((updateByQueryCall.script as Script).source).toContain(
+        "def newQuery = originalQuery.replace('FROM [indexPattern]', 'FROM ' + newIndex)"
+      );
+      expect((updateByQueryCall.script as Script).source).toContain(
+        'ctx._source.elastic_rule.query = newQuery'
+      );
+      expect((updateByQueryCall.script as Script).lang).toBe('painless');
     });
   });
 });

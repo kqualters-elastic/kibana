@@ -335,6 +335,40 @@ export const UpdateRuleMigrationRequestBody = z.object({
 });
 export type UpdateRuleMigrationRequestBodyInput = z.input<typeof UpdateRuleMigrationRequestBody>;
 
+export type UpdateRuleMigrationIndexPatternRequestParams = z.infer<
+  typeof UpdateRuleMigrationIndexPatternRequestParams
+>;
+export const UpdateRuleMigrationIndexPatternRequestParams = z.object({
+  migration_id: NonEmptyString,
+});
+export type UpdateRuleMigrationIndexPatternRequestParamsInput = z.input<
+  typeof UpdateRuleMigrationIndexPatternRequestParams
+>;
+
+export type UpdateRuleMigrationIndexPatternRequestBody = z.infer<
+  typeof UpdateRuleMigrationIndexPatternRequestBody
+>;
+export const UpdateRuleMigrationIndexPatternRequestBody = z.object({
+  ids: z.array(NonEmptyString).optional(),
+  /**
+   * The index pattern to update
+   */
+  index_pattern: NonEmptyString,
+});
+export type UpdateRuleMigrationIndexPatternRequestBodyInput = z.input<
+  typeof UpdateRuleMigrationIndexPatternRequestBody
+>;
+
+export type UpdateRuleMigrationIndexPatternResponse = z.infer<
+  typeof UpdateRuleMigrationIndexPatternResponse
+>;
+export const UpdateRuleMigrationIndexPatternResponse = z.object({
+  /**
+   * Indicates the number of rules that have been updated.
+   */
+  updated: z.number(),
+});
+
 export type UpdateRuleMigrationRulesRequestParams = z.infer<
   typeof UpdateRuleMigrationRulesRequestParams
 >;

@@ -167,4 +167,68 @@ export class RuleMigrationsDataMigrationClient extends SiemMigrationsDataBaseCli
         throw error;
       });
   }
+
+  async updateIndexPattern(
+    id: string,
+    indexPattern: string,
+    translatedRuleIds?: string[]
+  ): Promise<number | undefined> {
+    const index = await this.getIndexName();
+    const query = translatedRuleIds
+      ? {
+          bool: {
+            filter: [
+              {
+                terms: {
+                  'elastic_rule.id': translatedRuleIds,
+                },
+              },
+              {
+                wildcard: {
+                  'elastic_rule.query': '*FROM [indexPattern]*',
+                },
+              },
+            ],
+          },
+        }
+      : {
+          bool: {
+            filter: [
+              {
+                terms: {
+                  migration_id: id,
+                },
+              },
+              {
+                wildcard: {
+                  'elastic_rule.query': '*FROM [indexPattern]*',
+                },
+              },
+            ],
+          },
+        };
+    const result = await this.esClient
+      .updateByQuery({
+        index,
+        script: {
+          source: `
+                def originalQuery = ctx._source.elastic_rule.query;
+                def newIndex = params.new_index;
+                def newQuery = originalQuery.replace('FROM [indexPattern]', 'FROM ' + newIndex);
+                ctx._source.elastic_rule.query = newQuery;
+              `,
+          lang: 'painless',
+          params: {
+            new_index: indexPattern,
+          },
+        },
+        query,
+      })
+      .catch((error) => {
+        this.logger.error(`Error updating index pattern for migration ${id}: ${error}`);
+        throw error;
+      });
+
+    return result.updated;
+  }
 }
