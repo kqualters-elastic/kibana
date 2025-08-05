@@ -18,12 +18,12 @@ import { authz } from '../../common/utils/authz';
 import { withLicense } from '../../common/utils/with_license';
 import { withExistingMigration } from './util/with_existing_migration_id';
 
-export const registerSiemRuleMigrationsStatsRoute = (
+export const registerSiemRuleMigrationsUpdateIndexPatternRoute = (
   router: SecuritySolutionPluginRouter,
   logger: Logger
 ) => {
   router.versioned
-    .get({
+    .post({
       path: SIEM_RULE_MIGRATION_UPDATE_INDEX_PATTERN_PATH,
       access: 'internal',
       security: { authz },
@@ -52,7 +52,7 @@ export const registerSiemRuleMigrationsStatsRoute = (
               const ctx = await context.resolve(['securitySolution']);
               const ruleMigrationsClient = ctx.securitySolution.siemMigrations.getRulesClient();
 
-              const stats = await ruleMigrationsClient.data.migrations.updateIndexPattern(
+              const stats = await ruleMigrationsClient.data.rules.updateIndexPattern(
                 migrationId,
                 indexPattern,
                 ids
