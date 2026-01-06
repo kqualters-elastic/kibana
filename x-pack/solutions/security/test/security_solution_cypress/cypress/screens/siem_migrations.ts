@@ -108,3 +108,11 @@ export const ONBOARDING_MIGRATION_ACTIONS = {
   RENAME_INPUT: getDataTestSubjectSelector('euiInlineEditModeInput'),
   RENAME_CONFIRM: getDataTestSubjectSelector('euiInlineEditModeSaveButton'),
 };
+
+export const MIGRATION_SOURCE_DROPDOWN = getDataTestSubjectSelector('migrationSourceDropdown');
+
+export const ENHANCEMENT_TYPE_SELECT = getDataTestSubjectSelector('enhancementTypeSelect');
+export const ENHANCEMENT_FILE_PICKER = getDataTestSubjectSelector('enhancementFilePicker');
+export const ADD_ENHANCEMENT_BUTTON = getDataTestSubjectSelector('addEnhancementButton');
+export const ENHANCEMENTS_STEP_NUMBER = getDataTestSubjectSelector('enhancementsStepNumber');
+export const ENHANCEMENTS_TITLE = getDataTestSubjectSelector('enhancementsTitle');

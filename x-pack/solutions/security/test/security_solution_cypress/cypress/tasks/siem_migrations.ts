@@ -165,3 +165,32 @@ export const renameMigration = (newName: string) => {
   cy.get(SELECTORS.ONBOARDING_MIGRATION_ACTIONS.RENAME_INPUT).type(newName);
   cy.get(SELECTORS.ONBOARDING_MIGRATION_ACTIONS.RENAME_CONFIRM).click();
 };
+
+export const selectQRadarMigrationSource = () => {
+  cy.get(SELECTORS.MIGRATION_SOURCE_DROPDOWN).should('be.visible');
+  cy.get(SELECTORS.MIGRATION_SOURCE_DROPDOWN).click();
+  cy.get('button').contains('QRadar').click();
+};
+
+export const uploadQRadarRules = (xmlContent: string) => {
+  cy.get(SELECTORS.UPLOAD_RULES_FILE_PICKER).selectFile({
+    contents: Cypress.Buffer.from(xmlContent),
+    fileName: 'rules.xml',
+    mimeType: 'application/xml',
+  });
+  cy.get(SELECTORS.UPLOAD_FILE_BTN).should('not.be.disabled').click();
+};
+
+export const uploadMitreMappings = (jsonContent: object) => {
+  cy.get(SELECTORS.ENHANCEMENT_FILE_PICKER).selectFile({
+    contents: Cypress.Buffer.from(JSON.stringify(jsonContent)),
+    fileName: 'mitre_mappings.json',
+    mimeType: 'application/json',
+  });
+  cy.get(SELECTORS.ADD_ENHANCEMENT_BUTTON).should('not.be.disabled').click();
+};
+
+export const navigateToEnhancementsStep = () => {
+  cy.get(SELECTORS.ENHANCEMENTS_STEP_NUMBER).should('be.visible');
+  cy.get(SELECTORS.ENHANCEMENTS_TITLE).should('be.visible');
+};

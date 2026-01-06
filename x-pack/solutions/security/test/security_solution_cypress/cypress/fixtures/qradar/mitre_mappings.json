@@ -1,0 +1,93 @@
+{
+  "Test Rule 1 - Authentication Event": {
+    "id": "100001",
+    "has_ibm_default": true,
+    "last_updated": 1719987711695,
+    "mapping": {
+      "initial-access": {
+        "enabled": true,
+        "name": "Initial Access",
+        "confidence": "high",
+        "user_override": false,
+        "ibm_default": true,
+        "techniques": {
+          "T1078": {
+            "enabled": true,
+            "id": "T1078",
+            "confidence": "high"
+          },
+          "T1078.001": {
+            "enabled": true,
+            "id": "T1078.001",
+            "confidence": "medium"
+          }
+        }
+      },
+      "credential-access": {
+        "enabled": true,
+        "name": "Credential Access",
+        "confidence": "medium",
+        "user_override": false,
+        "ibm_default": false,
+        "techniques": {
+          "T1110": {
+            "enabled": true,
+            "id": "T1110",
+            "confidence": "medium"
+          }
+        }
+      }
+    },
+    "min-mitre-version": 14
+  },
+  "Test Rule 2 - IP Filter": {
+    "id": "100002",
+    "has_ibm_default": false,
+    "last_updated": 1719987711695,
+    "mapping": {
+      "defense-evasion": {
+        "enabled": true,
+        "name": "Defense Evasion",
+        "confidence": "low",
+        "user_override": true,
+        "ibm_default": false,
+        "techniques": {
+          "T1070": {
+            "enabled": true,
+            "id": "T1070",
+            "confidence": "low"
+          }
+        }
+      }
+    },
+    "min-mitre-version": 14
+  },
+  "Test Rule 3 - Failed Login Attempt": {
+    "id": "100003",
+    "has_ibm_default": true,
+    "last_updated": 1719987711695,
+    "mapping": {
+      "credential-access": {
+        "enabled": true,
+        "name": "Credential Access",
+        "confidence": "high",
+        "user_override": false,
+        "ibm_default": true,
+        "techniques": {
+          "T1110": {
+            "enabled": true,
+            "id": "T1110",
+            "confidence": "high"
+          },
+          "T1110.001": {
+            "enabled": true,
+            "id": "T1110.001",
+            "confidence": "medium"
+          }
+        }
+      }
+    },
+    "min-mitre-version": 14
+  }
+}
+
