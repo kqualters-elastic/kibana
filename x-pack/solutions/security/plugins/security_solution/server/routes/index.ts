@@ -94,7 +94,7 @@ export const initRoutes = (
     isServerless
   );
 
-  registerResolverRoutes(router, getStartServices, config);
+  registerResolverRoutes(router, getStartServices, config, logger);
 
   registerTimelineRoutes(router, config, getStartServices);
 

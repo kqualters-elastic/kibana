@@ -209,6 +209,7 @@ export class Fetcher {
        */
       ancestors.push(...results);
       numLevelsLeft -= results.length;
+      console.log('ancestors fetched, numLevelsLeft:', numLevelsLeft);
       nodes = Fetcher.getNextAncestorsToFind(results, options.schema, numLevelsLeft);
     }
     return ancestors;
@@ -241,6 +242,7 @@ export class Fetcher {
         return descendants;
       }
 
+      console.log('descendants fetched, numNodesLeftToRequest:', numNodesLeftToRequest);
       nodes = getLeafNodes(results, nodes, options.schema);
 
       numNodesLeftToRequest -= results.length;

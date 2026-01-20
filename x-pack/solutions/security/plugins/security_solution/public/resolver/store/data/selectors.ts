@@ -102,6 +102,30 @@ const lastResponseIndices = (state: DataState): string[] | undefined => {
     : undefined;
 };
 
+export const streamingTreeHasNodes = (state: DataState): boolean => {
+  return state.tree?.streamingTree?.nodes.length > 0;
+};
+
+export const streamingTreePhase = (
+  state: DataState
+): 'ancestors' | 'descendants' | 'stats' | 'complete' | null => {
+  return state.tree?.streamingTree?.phase ?? null;
+};
+
+export const streamingTreeProgress = (
+  state: DataState
+): {
+  ancestors: { current: number; total: number };
+  descendants: { current: number; total: number };
+  total: number;
+} => {
+  return state.tree?.streamingTree?.progress ?? { current: 0, total: 0 };
+};
+
+export const streamingTreeNodes = (state: DataState): ResolverNode[] => {
+  return state.tree?.streamingTree?.nodes ?? [];
+};
+
 /**
  * If we received a NewResolverTree, return the schema associated with that tree, otherwise return undefined.
  * As of writing, this is only used for the info popover in the graph_controls panel

@@ -89,6 +89,25 @@ export const resolverTreeHasNodes = composeSelectors(
   dataSelectors.resolverTreeHasNodes
 );
 
+export const streamingTreeHasNodes = composeSelectors(
+  dataStateSelector,
+  dataSelectors.streamingTreeHasNodes
+);
+
+export const streamingTreePhase = composeSelectors(
+  dataStateSelector,
+  dataSelectors.streamingTreePhase
+);
+
+export const streamingTreeProgress = composeSelectors(
+  dataStateSelector,
+  dataSelectors.streamingTreeProgress
+);
+
+export const streamingTreeNodes = composeSelectors(
+  dataStateSelector,
+  dataSelectors.streamingTreeNodes
+);
 /**
  * The position of nodes and edges.
  */

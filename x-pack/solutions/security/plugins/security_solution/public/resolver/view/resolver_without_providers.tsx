@@ -107,19 +107,23 @@ export const ResolverWithoutProviders = React.memo(
     const resolverTreeHasNodes = useSelector((state: State) =>
       selectors.resolverTreeHasNodes(state.analyzer[resolverComponentInstanceID])
     );
+    const streamingTreeHasNodes = useSelector((state: State) =>
+      selectors.streamingTreeHasNodes(state.analyzer[resolverComponentInstanceID])
+    );
+    const streamingTreePhase = useSelector((state: State) =>
+      selectors.streamingTreePhase(state.analyzer[resolverComponentInstanceID])
+    );
+    const streamingTreeProgress = useSelector((state: State) =>
+      selectors.streamingTreeProgress(state.analyzer[resolverComponentInstanceID])
+    );
     const colorMap = useColors();
-
     return (
       <StyledMapContainer
         className={className}
         backgroundColor={colorMap.resolverBackground}
         windowHeight={window.innerHeight}
       >
-        {isLoading ? (
-          <div data-test-subj="resolver:graph:loading" className="loading-container">
-            <EuiLoadingSpinner size="xl" />
-          </div>
-        ) : hasError ? (
+        {hasError ? (
           <div data-test-subj="resolver:graph:error" className="loading-container">
             <div>
               {' '}

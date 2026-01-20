@@ -6,6 +6,8 @@
  */
 
 import type { CoreStart } from '@kbn/core/public';
+import { from } from 'rxjs';
+import { httpResponseIntoObservable } from '@kbn/sse-utils-client';
 import type { DataAccessLayer, TimeRange } from '../types';
 import type {
   ResolverNode,
@@ -276,6 +278,40 @@ export function dataAccessLayerFactory(context: CoreStart): DataAccessLayer {
           agentId,
         }),
       });
+    },
+
+    resolverTreeStream({
+      dataId,
+      schema,
+      timeRange,
+      indices,
+      ancestors,
+      descendants,
+      agentId,
+    }: {
+      dataId: string;
+      schema: ResolverSchema;
+      timeRange?: TimeRange;
+      indices: string[];
+      ancestors: number;
+      descendants: number;
+      agentId: string;
+    }) {
+      return from(
+        context.http.post('/api/endpoint/resolver/tree/stream', {
+          body: JSON.stringify({
+            ancestors,
+            descendants,
+            timeRange,
+            schema,
+            nodes: [dataId],
+            indexPatterns: indices,
+            agentId,
+          }),
+          asResponse: true,
+          rawResponse: true,
+        })
+      ).pipe(httpResponseIntoObservable());
     },
 
     /**

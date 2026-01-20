@@ -31,6 +31,8 @@ import {
   serverReturnedCurrentRelatedEventData,
   serverFailedToReturnCurrentRelatedEventData,
   userOverrodeDateRange,
+  serverStreamingTreeProgress,
+  serverStreamingTreeComplete,
 } from './action';
 
 export const dataReducer = reducerWithInitialState(initialAnalyzerState)
@@ -134,6 +136,73 @@ export const dataReducer = reducerWithInitialState(initialAnalyzerState)
     )
   )
   .withHandling(
+    immerCase(serverStreamingTreeProgress, (draft, { id, nodes, phase, progress }) => {
+      const state: Draft<DataState> = draft[id].data;
+      if (!state.tree?.streamingTree) {
+        state.tree = {
+          ...state.tree,
+          streamingTree: {
+            nodes: [],
+            phase: null,
+            progress: {
+              ancestors: { current: 0, total: 0 },
+              descendants: { current: 0, total: 0 },
+              total: 0,
+            },
+          },
+        };
+      }
+      if (state.tree.streamingTree) {
+        state.tree.streamingTree.nodes.push(...nodes);
+        state.tree.streamingTree.phase = phase;
+        state.tree.streamingTree.progress = progress;
+      }
+      if (nodes.length > 0) {
+        state.tree.lastResponse = {
+          parameters: state.tree?.pendingRequestParameters,
+          successful: true,
+          result: {
+            originID: state.tree?.pendingRequestParameters?.databaseDocumentID ?? '',
+            nodes: [...(state.tree?.lastResponse?.result?.nodes ?? []), ...nodes],
+          },
+          dataSource: state.tree?.pendingRequestParameters?.dataSource ?? '',
+          schema: state.tree?.pendingRequestParameters?.schema ?? '',
+        };
+      }
+      return draft;
+    })
+  )
+  .withHandling(
+    immerCase(
+      serverStreamingTreeComplete,
+      (draft, { id, result, dataSource, schema, parameters, detectedBounds }) => {
+        const state: Draft<DataState> = draft[id].data;
+        state.tree = {
+          ...state.tree,
+          ...(state.tree?.currentParameters
+            ? {
+                currentParameters: {
+                  ...state.tree.currentParameters,
+                  agentId: parameters.agentId,
+                },
+              }
+            : {}),
+          lastResponse: {
+            result,
+            dataSource,
+            schema,
+            parameters,
+            successful: true,
+          },
+          pendingRequestParameters: undefined,
+          streamingTree: undefined,
+        };
+        state.detectedBounds = detectedBounds;
+        return draft;
+      }
+    )
+  )
+  .withHandling(
     immerCase(serverFailedToReturnResolverData, (draft, { id }) => {
       /** Only handle this if we are expecting a response */
       const state: Draft<DataState> = draft[id].data;
@@ -141,6 +210,7 @@ export const dataReducer = reducerWithInitialState(initialAnalyzerState)
         state.tree = {
           ...state.tree,
           pendingRequestParameters: undefined,
+          streamingTree: undefined,
           lastResponse: {
             parameters: state.tree?.pendingRequestParameters,
             successful: false,

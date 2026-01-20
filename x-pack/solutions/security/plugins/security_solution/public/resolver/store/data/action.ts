@@ -11,6 +11,7 @@ import type {
   SafeEndpointEvent,
   SafeResolverEvent,
   ResolverSchema,
+  ResolverNode,
 } from '../../../../common/endpoint/types';
 import type { TreeFetcherParameters, PanelViewAndParameters, TimeFilters } from '../../types';
 
@@ -232,3 +233,54 @@ export const serverReturnedCurrentRelatedEventData = actionCreator<{
   readonly id: string;
   readonly relatedEvent: SafeResolverEvent;
 }>('SERVER_RETURNED_CURRENT_RELATED_EVENT_DATA');
+
+export const serverStreamingTreeProgress = actionCreator<{
+  /**
+   * Id that identify the scope of analyzer
+   */
+  readonly id: string;
+  /**
+   * Incremental batch of nodes discovered
+   */
+  readonly nodes: ResolverNode[];
+  /**
+   * Current phase of tree building
+   */
+  readonly phase: 'ancestors' | 'descendants' | 'stats' | 'complete';
+  /**
+   * Progress information
+   */
+  readonly progress: {
+    ancestors: { current: number; total: number };
+    descendants: { current: number; total: number };
+    total: number;
+  };
+}>('SERVER_STREAMING_TREE_PROGRESS');
+
+export const serverStreamingTreeComplete = actionCreator<{
+  /**
+   * Id that identify the scope of analyzer
+   */
+  readonly id: string;
+  /**
+   * The complete result of fetching data
+   */
+  readonly result: NewResolverTree;
+  /**
+   * The current data source (i.e. endpoint, winlogbeat, etc...)
+   */
+  readonly dataSource: string;
+  /**
+   * The Resolver Schema for the current data source
+   */
+  readonly schema: ResolverSchema;
+  /**
+   * The database parameters that was used to fetch the resolver tree
+   */
+  readonly parameters: TreeFetcherParameters;
+  /**
+   * If the user supplied date range results in 0 process events,
+   *  an unbounded request is made, and the time range of the result set displayed to the user through this value.
+   */
+  readonly detectedBounds?: TimeFilters;
+}>('SERVER_STREAMING_TREE_COMPLETE');

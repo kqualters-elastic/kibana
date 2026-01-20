@@ -8,6 +8,7 @@
 import type { Dispatch, MiddlewareAPI, AnyAction } from 'redux';
 import type { DataAccessLayer } from '../../types';
 import { ResolverTreeFetcher } from './resolver_tree_fetcher';
+import { ResolverTreeStreamingFetcher } from './resolver_tree_streaming_fetcher';
 import type { State } from '../../../common/store/types';
 import { RelatedEventsFetcher } from './related_events_fetcher';
 import { CurrentRelatedEventFetcher } from './current_related_event_fetcher';
@@ -49,6 +50,7 @@ function isAnalyzerActive(action: AnyAction): boolean {
 export const resolverMiddlewareFactory: MiddlewareFactory = (dataAccessLayer: DataAccessLayer) => {
   return (api) => (next) => {
     const resolverTreeFetcher = ResolverTreeFetcher(dataAccessLayer, api);
+    const resolverTreeStreamingFetcher = ResolverTreeStreamingFetcher(dataAccessLayer, api);
     const relatedEventsFetcher = RelatedEventsFetcher(dataAccessLayer, api);
     const currentRelatedEventFetcher = CurrentRelatedEventFetcher(dataAccessLayer, api);
     const nodeDataFetcher = NodeDataFetcher(dataAccessLayer, api);
@@ -57,7 +59,7 @@ export const resolverMiddlewareFactory: MiddlewareFactory = (dataAccessLayer: Da
       next(action);
 
       if (action.payload?.id && isAnalyzerActive(action)) {
-        resolverTreeFetcher(action.payload.id);
+        resolverTreeStreamingFetcher(action.payload.id);
         relatedEventsFetcher(action.payload.id);
         nodeDataFetcher(action.payload.id);
         currentRelatedEventFetcher(action.payload.id);

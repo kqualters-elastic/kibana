@@ -4,7 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-import type { StartServicesAccessor } from '@kbn/core/server';
+import type { StartServicesAccessor, Logger } from '@kbn/core/server';
 import type { SecuritySolutionPluginRouter } from '../../types';
 import type { StartPlugins } from '../../plugin';
 import type { ConfigType } from '../../config';
@@ -14,13 +14,15 @@ import {
   validateTree,
 } from '../../../common/endpoint/schema/resolver';
 import { handleTree } from './resolver/tree/handler';
+import { handleTreeStreaming } from './resolver/tree/handler_streaming';
 import { handleEntities } from './resolver/entity/handler';
 import { handleEvents } from './resolver/events';
 
 export const registerResolverRoutes = (
   router: SecuritySolutionPluginRouter,
   startServices: StartServicesAccessor<StartPlugins>,
-  config: ConfigType
+  config: ConfigType,
+  logger: Logger
 ) => {
   const getRuleRegistry = async () => {
     const [, { ruleRegistry }] = await startServices();
@@ -44,6 +46,20 @@ export const registerResolverRoutes = (
       options: { authRequired: true },
     },
     handleTree(getRuleRegistry, getLicensing)
+  );
+
+  router.post(
+    {
+      path: '/api/endpoint/resolver/tree/stream',
+      security: {
+        authz: {
+          requiredPrivileges: ['securitySolution'],
+        },
+      },
+      validate: validateTree,
+      options: { authRequired: true },
+    },
+    handleTreeStreaming(getRuleRegistry, getLicensing, logger)
   );
 
   router.post(

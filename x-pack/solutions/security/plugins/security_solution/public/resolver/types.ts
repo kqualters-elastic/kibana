@@ -366,6 +366,18 @@ export interface DataState {
           readonly successful: false;
         }
     );
+    /**
+     * Streaming tree state for incremental updates
+     */
+    readonly streamingTree?: {
+      readonly nodes: ResolverNode[];
+      readonly phase: 'ancestors' | 'descendants' | 'stats' | 'complete' | null;
+      readonly progress: {
+        readonly ancestors: { readonly current: number; readonly total: number };
+        readonly descendants: { readonly current: number; readonly total: number };
+        readonly total: number;
+      };
+    };
   };
 
   /**
@@ -796,6 +808,51 @@ export interface DataAccessLayer {
     descendants: number;
     agentId: string;
   }): Promise<ResolverNode[]>;
+
+  /**
+   * Stream a resolver graph for a given id, emitting incremental updates as nodes are discovered.
+   */
+  resolverTreeStream({
+    dataId,
+    schema,
+    timeRange,
+    indices,
+    ancestors,
+    descendants,
+    agentId,
+  }: {
+    dataId: string;
+    schema: ResolverSchema;
+    timeRange?: TimeRange;
+    indices: string[];
+    ancestors: number;
+    descendants: number;
+    agentId: string;
+  }): import('rxjs').Observable<
+    | {
+        type: 'tree_progress';
+        data: {
+          phase: 'ancestors' | 'descendants' | 'stats' | 'complete';
+          nodes: ResolverNode[];
+          progress: {
+            ancestors: { current: number; total: number };
+            descendants: { current: number; total: number };
+            total: number;
+          };
+        };
+      }
+    | {
+        type: 'tree_complete';
+        data: {
+          result: ResolverNode[] | { alertIds: string[] | undefined; statsNodes: ResolverNode[] };
+          originID: string;
+        };
+      }
+    | {
+        type: 'tree_error';
+        data: { error: string };
+      }
+  >;
 
   /**
    * Get entities matching a document.
