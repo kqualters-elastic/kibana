@@ -77,7 +77,7 @@ interface OwnProps {
   onGroupClose: () => void;
   pageIndex: number;
   pageSize: number;
-  parentGroupingFilter?: string;
+  parentGroupingFilters?: Filter[];
   renderChildComponent: GroupChildComponentRenderer<AlertsGroupingAggregation>;
   runtimeMappings: RunTimeMappings;
   selectedGroup: string;
@@ -140,7 +140,7 @@ export const GroupedSubLevelComponent: React.FC<AlertsTableComponentProps> = ({
   onGroupClose,
   pageIndex,
   pageSize,
-  parentGroupingFilter,
+  parentGroupingFilters = DEFAULT_FILTERS,
   renderChildComponent,
   runtimeMappings,
   selectedGroup,
@@ -182,7 +182,7 @@ export const GroupedSubLevelComponent: React.FC<AlertsTableComponentProps> = ({
             ...defaultFilters,
             ...globalFilters,
             ...customFilters,
-            ...(parentGroupingFilter ? JSON.parse(parentGroupingFilter) : []),
+            ...parentGroupingFilters,
             ...buildTimeRangeFilter(from, to),
           ],
           kqlQuery: globalQuery,
@@ -198,7 +198,7 @@ export const GroupedSubLevelComponent: React.FC<AlertsTableComponentProps> = ({
       experimentalDataView,
       defaultFilters,
       globalFilters,
-      parentGroupingFilter,
+      parentGroupingFilters,
       from,
       to,
       globalQuery,
@@ -211,13 +211,13 @@ export const GroupedSubLevelComponent: React.FC<AlertsTableComponentProps> = ({
         buildEsQuery(undefined, globalQuery != null ? [globalQuery] : [], [
           ...(globalFilters?.filter((f) => f.meta.disabled === false) ?? []),
           ...(defaultFilters ?? []),
-          ...(parentGroupingFilter ? JSON.parse(parentGroupingFilter) : []),
+          ...parentGroupingFilters,
         ]),
       ];
     } catch (e) {
       return [];
     }
-  }, [defaultFilters, globalFilters, globalQuery, parentGroupingFilter]);
+  }, [defaultFilters, globalFilters, globalQuery, parentGroupingFilters]);
 
   // create a unique, but stable (across re-renders) value
   const uniqueValue = useMemo(() => `SuperUniqueValue-${uuidv4()}`, []);
@@ -359,41 +359,20 @@ export const GroupedSubLevelComponent: React.FC<AlertsTableComponentProps> = ({
 
   const onChangeGroupsPage = useCallback((index: number) => setPageIndex(index), [setPageIndex]);
 
-  return useMemo(
-    () =>
-      getGrouping({
-        activePage: pageIndex,
-        data: aggs,
-        groupingLevel,
-        additionalToolbarControls: [...additionalToolbarControls, inspect],
-        isLoading: loading || isLoadingGroups,
-        itemsPerPage: pageSize,
-        onChangeGroupsItemsPerPage,
-        onChangeGroupsPage,
-        onGroupClose,
-        renderChildComponent,
-        selectedGroup,
-        ...(groupTakeActionItems && { takeActionItems: getTakeActionItems }),
-      }),
-    [
-      aggs,
-      getGrouping,
-      getTakeActionItems,
-      groupingLevel,
-      groupTakeActionItems,
-      inspect,
-      isLoadingGroups,
-      loading,
-      onChangeGroupsItemsPerPage,
-      onChangeGroupsPage,
-      onGroupClose,
-      pageIndex,
-      pageSize,
-      renderChildComponent,
-      selectedGroup,
-      additionalToolbarControls,
-    ]
-  );
+  return getGrouping({
+    activePage: pageIndex,
+    data: aggs,
+    groupingLevel,
+    additionalToolbarControls: [...additionalToolbarControls, inspect],
+    isLoading: loading || isLoadingGroups,
+    itemsPerPage: pageSize,
+    onChangeGroupsItemsPerPage,
+    onChangeGroupsPage,
+    onGroupClose,
+    renderChildComponent,
+    selectedGroup,
+    ...(groupTakeActionItems && { takeActionItems: getTakeActionItems }),
+  });
 };
 
 export const GroupedSubLevel = React.memo(GroupedSubLevelComponent);

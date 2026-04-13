@@ -5,7 +5,15 @@
  * 2.0.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useDispatch } from 'react-redux';
 import type { Filter, Query } from '@kbn/es-query';
 import type { DataView, DataViewSpec } from '@kbn/data-views-plugin/common';
@@ -18,7 +26,7 @@ import {
   useGrouping,
   type GroupSettings,
 } from '@kbn/grouping';
-import { isEmpty, isEqual } from 'lodash/fp';
+import { isEqual } from 'lodash/fp';
 import type { Storage } from '@kbn/kibana-utils-plugin/public';
 import type { estypes } from '@elastic/elasticsearch';
 import type { TableIdLiteral } from '@kbn/securitysolution-data-table';
@@ -30,6 +38,7 @@ import type {
   GroupingSort,
   GroupPanelRenderer,
   ParsedGroupingAggregation,
+  DynamicGroupingProps,
 } from '@kbn/grouping/src';
 import type { PageScope } from '../../../data_view_manager/constants';
 import { useIsExperimentalFeatureEnabled } from '../../../common/hooks/use_experimental_features';
@@ -186,6 +195,194 @@ const useStorage = (storage: Storage, tableId: string) =>
     [storage, tableId]
   );
 
+/**
+ * Returns a stable reference to a Filter array using deep equality.
+ * Prevents downstream useCallback/useMemo from invalidating when a new
+ * array with identical contents is passed on each render.
+ */
+function useStableFilters(filters: Filter[]): Filter[] {
+  const ref = useRef(filters);
+  if (!isEqual(ref.current, filters)) {
+    ref.current = filters;
+  }
+  return ref.current;
+}
+
+type GetGroupingFn = (
+  props: Omit<DynamicGroupingProps<AlertsGroupingAggregation>, 'groupSelector' | 'pagination'>
+) => React.ReactElement;
+
+/**
+ * Context shared across all GroupingLevel instances for a given GroupedAlertsTable tree.
+ * Avoids prop-drilling the values that don't vary per level.
+ */
+interface AlertsGroupingCtx {
+  selectedGroups: string[];
+  getGrouping: GetGroupingFn;
+  groupStatsAggregations: (field: string) => NamedAggregation[];
+  pageIndex: number[];
+  pageSize: number[];
+  setPageVar: (newNumber: number, groupingLevel: number, pageType: 'index' | 'size') => void;
+  resetGroupChildrenPagination: (parentLevel: number) => void;
+  dataViewTitle: string | undefined;
+  runtimeMappings: RunTimeMappings;
+  multiValueFieldsToFlatten: string[];
+  leafRenderChildComponent: GroupChildComponentRenderer<AlertsGroupingAggregation>;
+  from: string;
+  to: string;
+  defaultFilters?: Filter[];
+  globalFilters: Filter[];
+  globalQuery: Query;
+  loading: boolean;
+  tableId: TableIdLiteral;
+  groupTakeActionItems?: GroupTakeActionItems;
+  additionalToolbarControls?: JSX.Element[];
+  onAggregationsChange?: (
+    aggs: ParsedGroupingAggregation<AlertsGroupingAggregation>,
+    groupingLevel?: number
+  ) => void;
+  unitsCountFilter?: estypes.QueryDslQueryContainer;
+  pageScope?: PageScope;
+  sort?: GroupingSort;
+}
+
+const AlertsGroupingContext = createContext<AlertsGroupingCtx | null>(null);
+
+interface GroupingLevelProps {
+  level: number;
+  parentGroupingFilters?: Filter[];
+}
+
+/**
+ * Renders one level of the grouped alerts accordion. Recursively renders itself
+ * (via renderChildComponent) for intermediate levels, and renders the leaf alerts
+ * table for the deepest level.
+ *
+ * Reads all shared state from AlertsGroupingContext so that per-level callbacks
+ * (rcc, onGroupClose, setPageIndex, setPageSize) can be properly memoized and
+ * won't change identity when unrelated state like `loading` updates. This keeps
+ * open flyouts alive across table auto-refreshes.
+ */
+const GroupingLevelComponent: React.FC<GroupingLevelProps> = ({
+  level,
+  parentGroupingFilters = [],
+}) => {
+  const ctx = useContext(AlertsGroupingContext);
+  if (!ctx) throw new Error('GroupingLevel must be rendered inside GroupedAlertsTable');
+
+  const {
+    selectedGroups,
+    getGrouping,
+    groupStatsAggregations,
+    pageIndex,
+    pageSize,
+    setPageVar,
+    resetGroupChildrenPagination,
+    dataViewTitle,
+    runtimeMappings,
+    multiValueFieldsToFlatten,
+    leafRenderChildComponent,
+    from,
+    to,
+    defaultFilters,
+    globalFilters,
+    globalQuery,
+    loading,
+    tableId,
+    groupTakeActionItems,
+    additionalToolbarControls,
+    onAggregationsChange,
+    unitsCountFilter,
+    pageScope,
+    sort,
+  } = ctx;
+
+  const selectedGroup = selectedGroups[level];
+  const isLeafLevel = level >= selectedGroups.length - 1;
+
+  // Stabilize the incoming filter array so callbacks that depend on it don't
+  // unnecessarily invalidate when a new-but-equal array is passed.
+  const stableParentFilters = useStableFilters(parentGroupingFilters);
+
+  const leafRcc = useCallback(
+    (
+      groupingFilters: Filter[],
+      sg?: string,
+      fieldBucket?: RawBucket<AlertsGroupingAggregation>
+    ) => {
+      return leafRenderChildComponent(
+        [...groupingFilters, ...stableParentFilters],
+        sg,
+        fieldBucket
+      );
+    },
+    [leafRenderChildComponent, stableParentFilters]
+  );
+
+  const intermediateRcc = useCallback(
+    (groupingFilters: Filter[]) => {
+      return (
+        <GroupingLevel
+          level={level + 1}
+          parentGroupingFilters={[...groupingFilters, ...stableParentFilters]}
+        />
+      );
+    },
+    [level, stableParentFilters]
+  );
+
+  const rcc = isLeafLevel ? leafRcc : intermediateRcc;
+
+  const onGroupClose = useCallback(
+    () => resetGroupChildrenPagination(level),
+    [resetGroupChildrenPagination, level]
+  );
+
+  const setPageIndexForLevel = useCallback(
+    (newIndex: number) => setPageVar(newIndex, level, 'index'),
+    [setPageVar, level]
+  );
+
+  const setPageSizeForLevel = useCallback(
+    (newSize: number) => setPageVar(newSize, level, 'size'),
+    [setPageVar, level]
+  );
+
+  return (
+    <GroupedSubLevel
+      additionalToolbarControls={additionalToolbarControls}
+      defaultFilters={defaultFilters}
+      from={from}
+      getGrouping={getGrouping}
+      globalFilters={globalFilters}
+      globalQuery={globalQuery}
+      groupingLevel={level}
+      groupStatsAggregations={groupStatsAggregations}
+      groupTakeActionItems={groupTakeActionItems}
+      loading={loading}
+      multiValueFieldsToFlatten={multiValueFieldsToFlatten}
+      onAggregationsChange={onAggregationsChange}
+      onGroupClose={onGroupClose}
+      pageIndex={pageIndex[level] ?? DEFAULT_PAGE_INDEX}
+      pageScope={pageScope}
+      pageSize={pageSize[level] ?? DEFAULT_PAGE_SIZE}
+      parentGroupingFilters={stableParentFilters}
+      renderChildComponent={rcc}
+      runtimeMappings={runtimeMappings}
+      selectedGroup={selectedGroup}
+      setPageIndex={setPageIndexForLevel}
+      setPageSize={setPageSizeForLevel}
+      signalIndexName={dataViewTitle}
+      sort={sort}
+      tableId={tableId}
+      to={to}
+      unitsCountFilter={unitsCountFilter}
+    />
+  );
+};
+
+const GroupingLevel = React.memo(GroupingLevelComponent);
+
 const GroupedAlertsTableComponent: React.FC<AlertsTableComponentProps> = (props) => {
   const dispatch = useDispatch();
   const newDataViewPickerEnabled = useIsExperimentalFeatureEnabled('newDataViewPickerEnabled');
@@ -271,7 +468,7 @@ const GroupedAlertsTableComponent: React.FC<AlertsTableComponentProps> = (props)
     [props.accordionExtraActionGroupStats?.renderer]
   );
 
-  const groupStatusAggregations = useMemo(
+  const groupStatsAggregations = useMemo(
     () => props.accordionExtraActionGroupStats?.aggregations || DEFAULT_GROUP_STATS_AGGREGATION,
     [props.accordionExtraActionGroupStats?.aggregations]
   );
@@ -295,12 +492,13 @@ const GroupedAlertsTableComponent: React.FC<AlertsTableComponentProps> = (props)
     tracker: track,
     settings: props.settings,
   });
+
   const groupId = useMemo(() => groupIdSelector(), []);
   const groupInRedux = useDeepEqualSelector((state) => groupId(state, props.tableId));
+
   useEffect(() => {
     // only ever set to `none` - siem only handles group selector when `none` is selected
     if (isNoneGroup(selectedGroups)) {
-      // set active groups from selected groups
       dispatch(
         updateGroups({
           activeGroups: selectedGroups,
@@ -312,7 +510,6 @@ const GroupedAlertsTableComponent: React.FC<AlertsTableComponentProps> = (props)
 
   useEffect(() => {
     if (groupInRedux != null && !isNoneGroup(groupInRedux.activeGroups)) {
-      // set selected groups from active groups
       setSelectedGroups(groupInRedux.activeGroups);
     }
   }, [groupInRedux, setSelectedGroups]);
@@ -354,6 +551,16 @@ const GroupedAlertsTableComponent: React.FC<AlertsTableComponentProps> = (props)
     [setStoragePageSize]
   );
 
+  const resetGroupChildrenPagination = useCallback((parentLevel: number) => {
+    setPageIndex((allPages) => {
+      const newArr = [...allPages];
+      for (let i = parentLevel + 1; i < newArr.length; i++) {
+        newArr[i] = DEFAULT_PAGE_INDEX;
+      }
+      return newArr;
+    });
+  }, []);
+
   const paginationResetTriggers = useRef({
     defaultFilters: props.defaultFilters,
     globalFilters: props.globalFilters,
@@ -380,84 +587,70 @@ const GroupedAlertsTableComponent: React.FC<AlertsTableComponentProps> = (props)
     selectedGroups,
   ]);
 
-  const getLevel = useCallback(
-    (level: number, levelSelectedGroup: string, parentGroupingFilter?: string) => {
-      let rcc;
-      if (level < selectedGroups.length - 1) {
-        rcc = (groupingFilters: Filter[]) => {
-          return getLevel(
-            level + 1,
-            selectedGroups[level + 1],
-            // stringify because if the filter is passed as an object, it will cause unnecessary re-rendering
-            JSON.stringify([
-              ...groupingFilters,
-              ...(parentGroupingFilter ? JSON.parse(parentGroupingFilter) : []),
-            ])
-          );
-        };
-      } else {
-        rcc = (
-          groupingFilters: Filter[],
-          selectedGroup?: string,
-          fieldBucket?: RawBucket<AlertsGroupingAggregation>
-        ) => {
-          return props.renderChildComponent(
-            [...groupingFilters, ...(parentGroupingFilter ? JSON.parse(parentGroupingFilter) : [])],
-            selectedGroup,
-            fieldBucket
-          );
-        };
-      }
-
-      const resetGroupChildrenPagination = (parentLevel: number) => {
-        setPageIndex((allPages) => {
-          const resetPages = allPages.splice(parentLevel + 1, allPages.length);
-          return [...allPages, ...resetPages.map(() => DEFAULT_PAGE_INDEX)];
-        });
-      };
-      return (
-        <GroupedSubLevel
-          {...props}
-          getGrouping={getGrouping}
-          groupingLevel={level}
-          groupStatsAggregations={groupStatusAggregations}
-          groupTakeActionItems={props.groupTakeActionItems}
-          onGroupClose={() => resetGroupChildrenPagination(level)}
-          pageIndex={pageIndex[level] ?? DEFAULT_PAGE_INDEX}
-          pageSize={pageSize[level] ?? DEFAULT_PAGE_SIZE}
-          parentGroupingFilter={parentGroupingFilter}
-          renderChildComponent={rcc}
-          runtimeMappings={runtimeMappings}
-          selectedGroup={levelSelectedGroup}
-          setPageIndex={(newIndex: number) => setPageVar(newIndex, level, 'index')}
-          setPageSize={(newSize: number) => setPageVar(newSize, level, 'size')}
-          signalIndexName={dataViewTitle}
-          multiValueFieldsToFlatten={multiValueFieldsToFlatten}
-          onAggregationsChange={props.onAggregationsChange}
-          additionalToolbarControls={props.additionalToolbarControls}
-          unitsCountFilter={props.unitsCountFilter}
-        />
-      );
-    },
-    [
-      dataViewTitle,
+  const ctxValue = useMemo<AlertsGroupingCtx>(
+    () => ({
+      selectedGroups,
       getGrouping,
-      groupStatusAggregations,
+      groupStatsAggregations,
       pageIndex,
       pageSize,
-      props,
-      runtimeMappings,
-      selectedGroups,
       setPageVar,
+      resetGroupChildrenPagination,
+      dataViewTitle,
+      runtimeMappings,
       multiValueFieldsToFlatten,
+      leafRenderChildComponent: props.renderChildComponent,
+      from: props.from,
+      to: props.to,
+      defaultFilters: props.defaultFilters,
+      globalFilters: props.globalFilters,
+      globalQuery: props.globalQuery,
+      loading: props.loading,
+      tableId: props.tableId,
+      groupTakeActionItems: props.groupTakeActionItems,
+      additionalToolbarControls: props.additionalToolbarControls,
+      onAggregationsChange: props.onAggregationsChange,
+      unitsCountFilter: props.unitsCountFilter,
+      pageScope: props.pageScope,
+      sort: props.sort,
+    }),
+    [
+      selectedGroups,
+      getGrouping,
+      groupStatsAggregations,
+      pageIndex,
+      pageSize,
+      setPageVar,
+      resetGroupChildrenPagination,
+      dataViewTitle,
+      runtimeMappings,
+      multiValueFieldsToFlatten,
+      props.renderChildComponent,
+      props.from,
+      props.to,
+      props.defaultFilters,
+      props.globalFilters,
+      props.globalQuery,
+      props.loading,
+      props.tableId,
+      props.groupTakeActionItems,
+      props.additionalToolbarControls,
+      props.onAggregationsChange,
+      props.unitsCountFilter,
+      props.pageScope,
+      props.sort,
     ]
   );
 
-  if (isEmpty(dataViewTitle)) {
+  if (!dataViewTitle) {
     return null;
   }
 
-  return getLevel(0, selectedGroups[0]);
+  return (
+    <AlertsGroupingContext.Provider value={ctxValue}>
+      <GroupingLevel level={0} />
+    </AlertsGroupingContext.Provider>
+  );
 };
 
 export const GroupedAlertsTable = React.memo(GroupedAlertsTableComponent);
